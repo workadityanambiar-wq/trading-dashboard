@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Quant Dashboard Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1a1a2e;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 36px 44px;
+  }
+  h1 { font-size: 26px; color: #0f0f1a; margin: 0 0 8px;
+       border-bottom: 3px solid #6366f1; padding-bottom: 10px; }
+  h2 { font-size: 17px; color: #1a1a3e; margin: 30px 0 10px;
+       border-bottom: 1.5px solid #e0e0f0; padding-bottom: 6px; }
+  h3 { font-size: 14px; color: #2a2a4e; margin: 18px 0 7px; }
+  h4 { font-size: 13px; color: #3a3a5e; margin: 12px 0 5px; }
+  p  { margin: 0 0 10px; }
+  ul, ol { margin: 6px 0 10px 22px; }
+  li { margin: 3px 0; }
+  a  { color: #6366f1; text-decoration: none; }
+  code {
+    font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+    font-size: 11.5px;
+    background: #f0f0fa;
+    border: 1px solid #ddddf0;
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  pre {
+    background: #1a1a2e;
+    color: #e8e8f8;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 10px 0 14px;
+    overflow-x: auto;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 12px;
+  }
+  th {
+    background: #6366f1;
+    color: white;
+    padding: 7px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 6px 12px;
+    border-bottom: 1px solid #e8e8f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8f8ff; }
+  hr { border: none; border-top: 1px solid #e0e0f0; margin: 24px 0; }
+  @media print {
+    body { padding: 20px 28px; font-size: 12px; }
+    pre  { page-break-inside: avoid; }
+    h2   { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<h1 id="quant-desk-user-guide">Quant Desk — User Guide</h1>
+<h2 id="starting-the-application">Starting the Application</h2>
+<p>You need two terminals running simultaneously.</p>
+<p><strong>Terminal 1 — Backend (Python / FastAPI)</strong></p>
+<pre><code>cd C:\Users\aditya.nambiar\trading-dashboard\backend
+python -m uvicorn app.main:app --reload --port 8000
+</code></pre>
+<p><strong>Terminal 2 — Frontend (Next.js)</strong></p>
+<pre><code>cd C:\Users\aditya.nambiar\trading-dashboard\frontend
+npm run dev
+</code></pre>
+<p>Then open <strong>http://localhost:3000</strong> in your browser (or whichever port Next.js reports).</p>
+<blockquote>
+<p>Data is sourced from <strong>yfinance</strong> and cached locally in a DuckDB file
+(<code>backend/market_data.duckdb</code>). The first load of any page fetches and
+caches price history in the background — subsequent loads are fast.</p>
+</blockquote>
+<hr />
+<h2 id="pages">Pages</h2>
+<h3 id="1-market-overview">1. Market Overview  <code>/</code></h3>
+<p>The home screen. Shows the state of the market at a glance.</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Index Cards</strong></td>
+<td>SPY, QQQ, IWM, VIX — price and returns for 1D / WTD / MTD / YTD / 1Y. Click any card to load its chart.</td>
+</tr>
+<tr>
+<td><strong>Candlestick Chart</strong></td>
+<td>1-year daily OHLCV chart for the selected index.</td>
+</tr>
+<tr>
+<td><strong>Market Breadth</strong></td>
+<td>% of S&amp;P 500 stocks trading above their 50-day and 200-day moving averages. Green = broad participation, red = narrow.</td>
+</tr>
+<tr>
+<td><strong>Sector Heatmap</strong></td>
+<td>11 GICS sectors, colour-coded by return. Toggle the time period (1D / 1W / 1M / 3M / YTD) using the buttons above the grid.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Breadth note:</strong> breadth populates once the Screener has loaded S&amp;P 500
+price data. On first launch, visit the Screener page first, wait a minute,
+then come back to the Overview.</p>
+</blockquote>
+<hr />
+<h3 id="2-universe-screener-screener">2. Universe Screener  <code>/screener</code></h3>
+<p>A sortable, filterable factor-score table for stocks.</p>
+<h4 id="universe-selector">Universe selector</h4>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S&amp;P 500</strong></td>
+<td>~503 large-cap US stocks, scores updated every 5 min</td>
+</tr>
+<tr>
+<td><strong>All US Listed</strong></td>
+<td>~12 000 securities from NASDAQ Trader FTP</td>
+</tr>
+<tr>
+<td><strong>Themes</strong></td>
+<td>Curated thematic baskets (see below)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="theme-universe">Theme universe</h4>
+<p>Click <strong>Themes</strong>, then pick a <strong>theme group</strong> (e.g. <em>AI Infrastructure</em>), then
+optionally narrow to a <strong>segment</strong> (e.g. <em>Photonics / Optical</em> or <em>Chip Equipment</em>).
+Z-scores are computed within the selected segment so rankings reflect
+relative strength inside the theme, not vs the full S&amp;P 500.</p>
+<p>Available theme groups:
+- AI Infrastructure · Semiconductors · Cloud &amp; Software · Healthcare
+- Finance · Energy · Consumer &amp; Media · Emerging Tech · Real Assets</p>
+<p>Each group contains 5–10 granular segments with curated ticker lists.</p>
+<h4 id="factor-score-columns">Factor score columns</h4>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Momentum 12-1M</td>
+<td>12-month return skipping the most recent month (classic momentum)</td>
+</tr>
+<tr>
+<td>Momentum 6-1M</td>
+<td>6-month version of the same</td>
+</tr>
+<tr>
+<td>Low Vol Z</td>
+<td>Higher = lower realised volatility (defensive)</td>
+</tr>
+<tr>
+<td>Liquidity Z</td>
+<td>Higher = higher average dollar volume (easier to trade)</td>
+</tr>
+<tr>
+<td>Macro Regime Z</td>
+<td>Higher = lower beta to SPY (less market-sensitive)</td>
+</tr>
+<tr>
+<td>Value Z</td>
+<td>Higher = cheaper on P/B, P/E, P/S <em>(requires fundamentals fetch)</em></td>
+</tr>
+<tr>
+<td>Quality Z</td>
+<td>Higher = better ROE and margins <em>(requires fundamentals fetch)</em></td>
+</tr>
+<tr>
+<td>Profitability Z</td>
+<td>Higher = stronger operating margins and ROA</td>
+</tr>
+<tr>
+<td>Earnings Rev Z</td>
+<td>Higher = positive analyst estimate revisions</td>
+</tr>
+<tr>
+<td>Sentiment Z</td>
+<td>Higher = strong buy ratings + price target upside</td>
+</tr>
+<tr>
+<td><strong>Composite</strong></td>
+<td>Equal-weight average of all available z-scores</td>
+</tr>
+</tbody>
+</table>
+<p>All Z-score columns: mean = 0, std = 1, winsorised at ±3.
+Green = top of universe, red = bottom.</p>
+<h4 id="fetching-fundamental-data">Fetching fundamental data</h4>
+<p>Click <strong>Fundamentals</strong> (top-right header button) to fetch Value / Quality /
+Sentiment data from yfinance for the top 100 tickers. This runs in the
+background — refresh the table after ~30 seconds.</p>
+<h4 id="filters-all-us-listed-mode-only">Filters (All US Listed mode only)</h4>
+<ul>
+<li>Exchange: NASDAQ / NYSE / Arca / CBOE / NYSE American</li>
+<li>Asset type: All / Stocks / ETFs</li>
+<li><strong>Fetch prices</strong> button: queues a background download of prices for stocks
+  not yet cached, enabling score computation on the next refresh</li>
+</ul>
+<hr />
+<h3 id="3-factor-explorer-factors">3. Factor Explorer  <code>/factors</code></h3>
+<p>Analyses the statistical quality of each factor signal over time.</p>
+<h4 id="universe-selector_1">Universe selector</h4>
+<p>S&amp;P 500, S&amp;P 1500, All Cached, or <strong>Custom</strong> (type comma/space-separated
+tickers — minimum 10 for meaningful z-scores).</p>
+<h4 id="factor-tabs">Factor tabs</h4>
+<ul>
+<li><strong>Price-based</strong> (solid border) — full IC history available:
+  Momentum 12-1, Momentum 6-1, Low Volatility, Liquidity, Macro Regime</li>
+<li><strong>Fundamental</strong> (dashed border) — only current cross-sectional scores;
+  historical IC requires time-series fundamental snapshots not yet stored</li>
+</ul>
+<h4 id="key-statistics">Key statistics</h4>
+<table>
+<thead>
+<tr>
+<th>Stat</th>
+<th>What it means</th>
+<th>Good range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mean IC</strong></td>
+<td>Average monthly Spearman rank correlation between factor score and 21-day forward return</td>
+<td>0.02 – 0.08</td>
+</tr>
+<tr>
+<td><strong>ICIR</strong></td>
+<td>IC ÷ std(IC) — signal-to-noise ratio</td>
+<td>&gt; 0.5</td>
+</tr>
+<tr>
+<td><strong>% Positive IC</strong></td>
+<td>Fraction of months where IC &gt; 0</td>
+<td>&gt; 55%</td>
+</tr>
+</tbody>
+</table>
+<h4 id="charts">Charts</h4>
+<ul>
+<li><strong>IC Chart</strong> — rolling monthly IC with 3-month moving average overlay.
+  Consistent positive values above the zero line = reliable factor.</li>
+<li><strong>Quintile Returns</strong> — equal-weight, monthly-rebalanced cumulative returns
+  for Q1 (bottom 20%) through Q5 (top 20% by factor score).
+  A wide Q5–Q1 spread = strong factor with good long-short spread.</li>
+</ul>
+<hr />
+<h3 id="4-short-term-signals-intraday">4. Short-Term Signals  <code>/intraday</code></h3>
+<p>Technical screener for short-horizon setups. Signals are computed from
+daily OHLCV data — RSI, MACD, Bollinger Bands, relative strength vs SPY,
+volume, and monthly pivot points.</p>
+<h4 id="universe-selector_2">Universe selector</h4>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S&amp;P 500</td>
+<td>Broad market scan</td>
+</tr>
+<tr>
+<td>S&amp;P 1500</td>
+<td>Mid and small-cap included</td>
+</tr>
+<tr>
+<td><strong>Themes</strong></td>
+<td>Scan within a specific theme or segment</td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>Your own ticker list (min 3 for a composite score)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="near-pivot-filter">Near Pivot filter</h4>
+<p>Click the <strong>Near Pivot</strong> button (target icon) to show only stocks within
+<strong>1–3% of their nearest monthly pivot point</strong>. Adjust the range with the
+number inputs that appear next to the button.</p>
+<p><strong>How monthly pivots are calculated</strong> (from prior month's OHLC):</p>
+<pre><code>PP  = (High + Low + Close) / 3          ← pivot point
+R1  = 2×PP − Low                         ← resistance 1
+R2  = PP + (High − Low)                  ← resistance 2
+R3  = High + 2×(PP − Low)               ← resistance 3
+S1  = 2×PP − High                        ← support 1
+S2  = PP − (High − Low)                  ← support 2
+S3  = Low − 2×(High − PP)               ← support 3
+</code></pre>
+<p>Stocks approaching a pivot level often react (bounce off support or
+break through resistance), making this a useful entry/exit timing filter.</p>
+<h4 id="signal-columns">Signal columns</h4>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Formula / Definition</th>
+<th>Reading the signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RSI</strong></td>
+<td>14-day Relative Strength Index</td>
+<td>&gt; 70 overbought (red) · &lt; 30 oversold (blue)</td>
+</tr>
+<tr>
+<td><strong>MACD</strong></td>
+<td>MACD histogram = MACD line − signal line</td>
+<td>Positive (green) = building momentum · Negative (red) = fading</td>
+</tr>
+<tr>
+<td><strong>BB%B</strong></td>
+<td>(Price − Lower Band) / Bandwidth</td>
+<td>&gt; 1 above upper band · &lt; 0 below lower band</td>
+</tr>
+<tr>
+<td><strong>MA50%</strong></td>
+<td>(Price / 50-day MA) − 1</td>
+<td>Positive = above MA, short-term uptrend</td>
+</tr>
+<tr>
+<td><strong>MA200%</strong></td>
+<td>(Price / 200-day MA) − 1</td>
+<td>Key long-term trend filter</td>
+</tr>
+<tr>
+<td><strong>RS 20d</strong></td>
+<td>Stock return − SPY return over 20 days</td>
+<td>Positive = outperforming market</td>
+</tr>
+<tr>
+<td><strong>RS 5d</strong></td>
+<td>Same over 5 days</td>
+<td>Short-term relative strength</td>
+</tr>
+<tr>
+<td><strong>Vol×</strong></td>
+<td>Today volume / 20-day avg volume</td>
+<td>&gt; 2× unusual activity (yellow)</td>
+</tr>
+<tr>
+<td><strong>ATR%</strong></td>
+<td>Average True Range / Price</td>
+<td>Higher = more volatile stock</td>
+</tr>
+<tr>
+<td><strong>Gap</strong></td>
+<td>Open[t] / Close[t−1] − 1</td>
+<td>Overnight gap direction</td>
+</tr>
+<tr>
+<td><strong>Rev5d</strong></td>
+<td>Negative of 5-day return</td>
+<td>Contrarian mean-reversion signal</td>
+</tr>
+<tr>
+<td><strong>Pivot</strong></td>
+<td>Nearest monthly pivot level name</td>
+<td>PP / R1 / R2 / R3 / S1 / S2 / S3</td>
+</tr>
+<tr>
+<td><strong>Pvt Dist</strong></td>
+<td>(Price / Pivot level) − 1</td>
+<td>Yellow highlight = within the 1–3% zone</td>
+</tr>
+<tr>
+<td><strong>Score</strong></td>
+<td>Composite z-score of RS, MA, MACD, volume</td>
+<td>Green = bullish setup · Red = bearish</td>
+</tr>
+</tbody>
+</table>
+<p>Click any column header to sort. Hover headers for full tooltips.
+Rows with pivot proximity are highlighted with a subtle amber background.</p>
+<hr />
+<h3 id="5-strategy-backtester-backtest">5. Strategy Backtester  <code>/backtest</code></h3>
+<p>Tests a factor-based long-only strategy on historical S&amp;P 500 data.</p>
+<h4 id="configuration">Configuration</h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Factor</td>
+<td>Signal used to rank and select stocks</td>
+</tr>
+<tr>
+<td>Top N</td>
+<td>Number of stocks to hold (top N by factor score)</td>
+</tr>
+<tr>
+<td>Transaction cost (bps)</td>
+<td>Round-trip cost per trade. 10 bps = 0.10%</td>
+</tr>
+<tr>
+<td>Start date</td>
+<td>Beginning of the test period</td>
+</tr>
+</tbody>
+</table>
+<p>Click <strong>Run Backtest</strong>. Results take 5–20 seconds to compute.</p>
+<h4 id="results-tearsheet">Results tearsheet</h4>
+<table>
+<thead>
+<tr>
+<th>Panel</th>
+<th>What to look for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Equity Curve</strong></td>
+<td>Portfolio vs SPY benchmark. Consistent line above benchmark = outperformance</td>
+</tr>
+<tr>
+<td><strong>Drawdown Chart</strong></td>
+<td>Underwater equity from peak. Shallower and shorter drawdowns = better risk management</td>
+</tr>
+<tr>
+<td><strong>Monthly Returns Heatmap</strong></td>
+<td>Year × Month grid coloured by return. Spot seasonal patterns and bad years</td>
+</tr>
+<tr>
+<td><strong>Rolling 12M Sharpe</strong></td>
+<td>Should stay consistently above zero; spikes downward signal regime changes</td>
+</tr>
+</tbody>
+</table>
+<h4 id="key-statistics_1">Key statistics</h4>
+<table>
+<thead>
+<tr>
+<th>Stat</th>
+<th>Benchmark to beat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CAGR</td>
+<td>&gt; SPY CAGR (~10% historically)</td>
+</tr>
+<tr>
+<td>Sharpe</td>
+<td>&gt; 0.7</td>
+</tr>
+<tr>
+<td>Sortino</td>
+<td>&gt; 1.0</td>
+</tr>
+<tr>
+<td>Max Drawdown</td>
+<td>&lt; −25%</td>
+</tr>
+<tr>
+<td>Calmar (CAGR / MaxDD)</td>
+<td>&gt; 0.5</td>
+</tr>
+<tr>
+<td>Information Ratio vs SPY</td>
+<td>&gt; 0.5</td>
+</tr>
+<tr>
+<td>Hit Rate</td>
+<td>% of months strategy beats SPY; &gt; 55% is solid</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="6-portfolio-optimizer-portfolio">6. Portfolio Optimizer  <code>/portfolio</code></h3>
+<p>Finds optimal weights for a basket of stocks using Modern Portfolio Theory.</p>
+<h4 id="input">Input</h4>
+<p>Enter comma-separated tickers in the text box, set an optional maximum
+single-position weight (default 25%), and pick a start date for the
+historical covariance estimation. Click <strong>Optimize</strong>.</p>
+<h4 id="methods-compared-side-by-side">Methods compared side-by-side</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>What it optimises</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Equal Weight</strong></td>
+<td>1/N baseline — simple, hard to beat</td>
+</tr>
+<tr>
+<td><strong>Max Sharpe</strong></td>
+<td>Highest Sharpe ratio on the efficient frontier</td>
+</tr>
+<tr>
+<td><strong>Min Volatility</strong></td>
+<td>Lowest portfolio variance</td>
+</tr>
+<tr>
+<td><strong>Risk Parity</strong></td>
+<td>Each holding contributes equally to total risk</td>
+</tr>
+</tbody>
+</table>
+<h4 id="output">Output</h4>
+<ul>
+<li><strong>Efficient Frontier</strong> — scatter of all risk/return combinations;
+  coloured markers show each method's portfolio</li>
+<li><strong>Weight Table</strong> — exact allocation per ticker for each method</li>
+<li><strong>Correlation Heatmap</strong> — identify which holdings are redundant</li>
+</ul>
+<hr />
+<h3 id="7-risk-dashboard-risk">7. Risk Dashboard  <code>/risk</code></h3>
+<p>Decomposes a portfolio's risk and return attribution.</p>
+<h4 id="input_1">Input</h4>
+<p>Enter holdings as <code>TICKER: weight</code> pairs, one per line or comma-separated:</p>
+<pre><code>AAPL: 0.25, MSFT: 0.20, NVDA: 0.20, GOOGL: 0.15, AMZN: 0.10, CASH: 0.10
+</code></pre>
+<p>Weights should sum to 1.0. Click <strong>Analyze Risk</strong>.</p>
+<h4 id="outputs">Outputs</h4>
+<table>
+<thead>
+<tr>
+<th>Panel</th>
+<th>What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Portfolio Stats</strong></td>
+<td>Annualised return, volatility, and Sharpe ratio</td>
+</tr>
+<tr>
+<td><strong>VaR / CVaR</strong></td>
+<td>At 95% and 99% confidence: maximum 1-day loss (Value at Risk) and expected loss in the worst 1–5% of days (Conditional VaR). Both historical and parametric methods shown</td>
+</tr>
+<tr>
+<td><strong>Fama-French Attribution</strong></td>
+<td>Regression on Mkt-RF, SMB, HML factors. Shows how much return comes from market exposure, size tilt, or value tilt vs genuine alpha (intercept)</td>
+</tr>
+<tr>
+<td><strong>Rolling Beta</strong></td>
+<td>60-day trailing beta to SPY. Stable near 1.0 = market-like; rising = increasing market sensitivity</td>
+</tr>
+<tr>
+<td><strong>Sector Exposure</strong></td>
+<td>% allocation by GICS sector based on holdings</td>
+</tr>
+<tr>
+<td><strong>Correlation Heatmap</strong></td>
+<td>Pairwise return correlations; dark red = highly correlated (concentration risk)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="data-caching">Data &amp; Caching</h2>
+<p>All market data is stored in <code>backend/market_data.duckdb</code>. Tables:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prices</code></td>
+<td>Daily OHLCV for all fetched tickers</td>
+</tr>
+<tr>
+<td><code>fundamentals</code></td>
+<td>P/B, P/E, P/S, ROE, margins, analyst data per ticker</td>
+</tr>
+<tr>
+<td><code>sp500_universe</code></td>
+<td>S&amp;P 500 constituent list (name, sector, sub-industry)</td>
+</tr>
+<tr>
+<td><code>us_universe</code></td>
+<td>~12 000 US-listed securities with exchange / ETF flag</td>
+</tr>
+</tbody>
+</table>
+<p>On first access, prices are fetched from yfinance and stored. On subsequent
+loads, only the delta since the last cached date is fetched — making refreshes
+much faster than the initial load.</p>
+<p><strong>Rate limits:</strong> yfinance has informal rate limits (~2 000 requests/hour).
+If bulk fetching causes errors, wait 60 seconds and retry.</p>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Failed to load market data" on Overview</td>
+<td>Backend is not running. Start <code>uvicorn</code> on port 8000.</td>
+</tr>
+<tr>
+<td>Market Breadth shows 0%</td>
+<td>Visit the <strong>Screener</strong> page first to trigger S&amp;P 500 price caching, wait ~1 min, refresh Overview.</td>
+</tr>
+<tr>
+<td>Factor scores / Composite all null</td>
+<td>Click <strong>Fundamentals</strong> on the Screener page and wait ~30 sec.</td>
+</tr>
+<tr>
+<td>Screener shows "Fetching price data…" progress bar</td>
+<td>Normal on first launch. Wait 2–5 minutes for yfinance to cache S&amp;P 500 history.</td>
+</tr>
+<tr>
+<td>Theme segment shows no signals</td>
+<td>Prices for those tickers are not yet cached. Visit Screener → Themes to trigger caching.</td>
+</tr>
+<tr>
+<td>Port 3000 already in use</td>
+<td>Run <code>Get-Process -Name node \| Stop-Process -Force</code> then <code>npm run dev</code>.</td>
+</tr>
+<tr>
+<td><code>market_data.duckdb</code> locked error</td>
+<td>Only one process can write. Stop all uvicorn instances then restart one.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

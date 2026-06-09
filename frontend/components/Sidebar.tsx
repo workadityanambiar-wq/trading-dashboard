@@ -1,0 +1,65 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  ScanSearch,
+  TrendingUp,
+  FlaskConical,
+  PieChart,
+  ShieldAlert,
+  Activity,
+} from "lucide-react";
+
+const NAV = [
+  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/screener", label: "Screener", icon: ScanSearch },
+  { href: "/factors", label: "Factors", icon: TrendingUp },
+  { href: "/intraday", label: "ST Signals", icon: Activity },
+  { href: "/backtest", label: "Backtester", icon: FlaskConical },
+  { href: "/portfolio", label: "Portfolio", icon: PieChart },
+  { href: "/risk", label: "Risk", icon: ShieldAlert },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="w-52 shrink-0 flex flex-col border-r border-border bg-surface">
+      <div className="px-4 py-5 border-b border-border">
+        <span className="text-sm font-semibold tracking-widest text-accent uppercase">
+          Quant
+        </span>
+        <span className="text-sm font-semibold tracking-widest text-text-muted uppercase">
+          Desk
+        </span>
+      </div>
+
+      <nav className="flex-1 py-4 space-y-0.5 px-2">
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
+                active
+                  ? "bg-surface-2 text-text-primary"
+                  : "text-text-muted hover:text-text-primary hover:bg-surface-2"
+              )}
+            >
+              <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="px-4 py-3 border-t border-border text-xs text-text-muted">
+        Data: yfinance
+      </div>
+    </aside>
+  );
+}
