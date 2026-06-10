@@ -6,9 +6,18 @@ import type { OHLCVBar } from "@/lib/api";
 interface Props {
   bars: OHLCVBar[];
   height?: number;
+  showMA?: boolean;
 }
 
-export function CandlestickChart({ bars, height = 320 }: Props) {
+function calcSMA(values: number[], period: number): (number | null)[] {
+  return values.map((_, i) => {
+    if (i < period - 1) return null;
+    const slice = values.slice(i - period + 1, i + 1);
+    return slice.reduce((s, v) => s + v, 0) / period;
+  });
+}
+
+export function CandlestickChart({ bars, height = 320, showMA = true }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
@@ -17,7 +26,7 @@ export function CandlestickChart({ bars, height = 320 }: Props) {
 
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#111118" },
+        background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#6b6b80",
       },
       grid: {
@@ -50,6 +59,9 @@ export function CandlestickChart({ bars, height = 320 }: Props) {
 
     chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
+    const times = bars.map((b) => b.time as any);
+    const closes = bars.map((b) => b.close);
+
     candles.setData(
       bars.map((b) => ({ time: b.time as any, open: b.open, high: b.high, low: b.low, close: b.close }))
     );
@@ -60,6 +72,38 @@ export function CandlestickChart({ bars, height = 320 }: Props) {
         color: b.close >= b.open ? "#22c55e30" : "#ef444430",
       }))
     );
+
+    if (showMA && bars.length >= 50) {
+      const ma50vals = calcSMA(closes, 50);
+      const ma50 = (chart as any).addLineSeries({
+        color: "#f59e0b",
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      ma50.setData(
+        ma50vals
+          .map((v, i) => v != null ? { time: times[i], value: v } : null)
+          .filter(Boolean)
+      );
+    }
+
+    if (showMA && bars.length >= 200) {
+      const ma200vals = calcSMA(closes, 200);
+      const ma200 = (chart as any).addLineSeries({
+        color: "#6366f1",
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      ma200.setData(
+        ma200vals
+          .map((v, i) => v != null ? { time: times[i], value: v } : null)
+          .filter(Boolean)
+      );
+    }
 
     chart.timeScale().fitContent();
 
@@ -73,7 +117,7 @@ export function CandlestickChart({ bars, height = 320 }: Props) {
       chart.remove();
       chartRef.current = null;
     };
-  }, [bars, height]);
+  }, [bars, height, showMA]);
 
-  return <div ref={containerRef} className="w-full" />;
+  return <div ref={containerRef} className="w-full" style={{ height }} />;
 }

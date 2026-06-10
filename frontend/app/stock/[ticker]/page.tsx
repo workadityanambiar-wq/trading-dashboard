@@ -2,6 +2,7 @@
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type StockDetailResponse } from "@/lib/api";
+import { TradingViewWidget } from "@/components/charts/TradingViewWidget";
 import { CandlestickChart } from "@/components/charts/CandlestickChart";
 import { RefreshCw, TrendingUp, TrendingDown, Minus, Star, CalendarDays, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -212,16 +213,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ ticker: 
         </div>
       )}
 
-      {/* Chart */}
+      {/* Chart — TradingView widget primary, local OHLCV fallback */}
       <div className="rounded-lg border border-border bg-surface p-4">
-        <div className="text-xs text-text-muted mb-3">1-Year Price History</div>
-        {data.bars.length > 0 ? (
-          <CandlestickChart bars={data.bars} height={340} />
-        ) : (
-          <div className="flex items-center justify-center h-40 text-text-muted text-xs">
-            No OHLCV bars available
-          </div>
-        )}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-text-muted">Price Chart</span>
+          <span className="text-[10px] text-text-muted/60">Powered by TradingView</span>
+        </div>
+        <TradingViewWidget symbol={ticker} height={400} />
       </div>
 
       {/* Bottom grid */}

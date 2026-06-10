@@ -6,8 +6,9 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
-  Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown,
+  Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown, LineChart,
 } from "lucide-react";
+import { ChartModal } from "@/components/ChartModal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -74,9 +75,10 @@ type SortKey = "ticker" | "setup" | "stage" | "regime_adjusted_score" | "rs_spy_
 
 export default function WatchlistPage() {
   const { tickers, add, remove, clear, mounted } = useWatchlist();
-  const [input, setInput]     = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("regime_adjusted_score");
-  const [sortAsc, setSortAsc] = useState(false);
+  const [input, setInput]           = useState("");
+  const [sortKey, setSortKey]       = useState<SortKey>("regime_adjusted_score");
+  const [sortAsc, setSortAsc]       = useState(false);
+  const [chartTicker, setChartTicker] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const universe = tickers.join(",");
@@ -120,7 +122,7 @@ export default function WatchlistPage() {
       let bv: number | string | null;
       if (sortKey === "ticker")  { av = a.ticker; bv = b.ticker; }
       else if (sortKey === "setup") { av = a.setup; bv = b.setup; }
-      else { av = (a as Record<string, unknown>)[sortKey] as number | null; bv = (b as Record<string, unknown>)[sortKey] as number | null; }
+      else { av = (a as unknown as Record<string, unknown>)[sortKey] as number | null; bv = (b as unknown as Record<string, unknown>)[sortKey] as number | null; }
 
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
@@ -184,6 +186,7 @@ export default function WatchlistPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      {chartTicker && <ChartModal ticker={chartTicker} onClose={() => setChartTicker(null)} />}
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -310,9 +313,18 @@ export default function WatchlistPage() {
                   <tr key={r.ticker}
                     className={cn("hover:bg-surface-2 transition-colors", isNoSetup && "opacity-60")}>
                     <td className="px-3 py-2.5 font-mono font-semibold text-text-primary">
-                      <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
-                        {r.ticker}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
+                          {r.ticker}
+                        </Link>
+                        <button
+                          onClick={() => setChartTicker(r.ticker)}
+                          title="Quick chart"
+                          className="text-text-muted/30 hover:text-accent transition-colors"
+                        >
+                          <LineChart size={10} strokeWidth={1.5} />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className={cn("px-1.5 py-0.5 rounded border text-[10px] font-semibold", sm.color, sm.bg, sm.border)}

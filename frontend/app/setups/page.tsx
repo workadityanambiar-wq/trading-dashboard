@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star, LineChart } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { ChartModal } from "@/components/ChartModal";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -325,6 +326,7 @@ export default function SetupsPage() {
   const [universe, setUniverse]             = useState("sp500");
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
+  const [chartTicker, setChartTicker]       = useState<string | null>(null);
   const { has: wlHas, add: wlAdd, remove: wlRemove } = useWatchlist();
   const PAGE_SIZE = 50;
 
@@ -371,6 +373,7 @@ export default function SetupsPage() {
 
   return (
     <div className="space-y-4 max-w-screen-2xl">
+      {chartTicker && <ChartModal ticker={chartTicker} onClose={() => setChartTicker(null)} />}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -567,6 +570,13 @@ export default function SetupsPage() {
                         >
                           {row.ticker}
                         </Link>
+                        <button
+                          onClick={() => setChartTicker(row.ticker)}
+                          title="Quick chart"
+                          className="text-text-muted/30 hover:text-accent transition-colors"
+                        >
+                          <LineChart size={10} strokeWidth={1.5} />
+                        </button>
                       </div>
                     </td>
 

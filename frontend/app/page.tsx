@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { IndexCard } from "@/components/IndexCard";
 import { SectorHeatmap } from "@/components/charts/SectorHeatmap";
 import { BreadthPanel } from "@/components/BreadthPanel";
-import { CandlestickChart } from "@/components/charts/CandlestickChart";
+import { TradingViewWidget } from "@/components/charts/TradingViewWidget";
 import { RefreshCw } from "lucide-react";
 
 type Period = "change_1d" | "change_1w" | "change_1m" | "change_3m" | "change_ytd";
@@ -33,12 +33,6 @@ export default function OverviewPage() {
     queryKey: ["overview"],
     queryFn: api.getOverview,
     refetchInterval: 5 * 60 * 1000,
-  });
-
-  const { data: chartData, isLoading: chartLoading } = useQuery({
-    queryKey: ["prices", activeTicker],
-    queryFn: () => api.getPrices(activeTicker, "1y"),
-    enabled: !!activeTicker,
   });
 
   if (isLoading) {
@@ -106,15 +100,14 @@ export default function OverviewPage() {
         <div className="xl:col-span-3 rounded-lg border border-border bg-surface p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium">{activeTicker}</span>
-            <span className="text-xs text-text-muted">1Y · Daily</span>
+            <span className="text-[10px] text-text-muted/60">Powered by TradingView</span>
           </div>
-          {chartLoading ? (
-            <div className="h-80 flex items-center justify-center text-text-muted text-xs">
-              Loading chart...
-            </div>
-          ) : chartData ? (
-            <CandlestickChart bars={chartData.bars} height={320} />
-          ) : null}
+          <TradingViewWidget
+            key={activeTicker}
+            symbol={activeTicker}
+            height={340}
+            allowSymbolChange={false}
+          />
         </div>
         <BreadthPanel data={overview.breadth} />
       </div>

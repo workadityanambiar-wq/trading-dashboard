@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type RSRankingEntry } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, LineChart } from "lucide-react";
 import Link from "next/link";
+import { ChartModal } from "@/components/ChartModal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -113,12 +114,13 @@ const SORT_OPTIONS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RSPage() {
-  const [universe,   setUniverse]   = useState("sp500");
-  const [minRsRank,  setMinRsRank]  = useState(0);
-  const [sectorFlt,  setSectorFlt]  = useState("");
-  const [trendFlt,   setTrendFlt]   = useState<"all" | "rising" | "falling">("all");
-  const [sortBy,     setSortBy]     = useState("rs_composite");
-  const [page,       setPage]       = useState(1);
+  const [universe,      setUniverse]     = useState("sp500");
+  const [minRsRank,     setMinRsRank]    = useState(0);
+  const [sectorFlt,     setSectorFlt]    = useState("");
+  const [trendFlt,      setTrendFlt]     = useState<"all" | "rising" | "falling">("all");
+  const [sortBy,        setSortBy]       = useState("rs_composite");
+  const [page,          setPage]         = useState(1);
+  const [chartTicker,   setChartTicker]  = useState<string | null>(null);
   const PAGE_SIZE = 100;
 
   const queryKey = ["rs-rankings", universe, minRsRank, sectorFlt, trendFlt, sortBy, page];
@@ -156,6 +158,7 @@ export default function RSPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      {chartTicker && <ChartModal ticker={chartTicker} onClose={() => setChartTicker(null)} />}
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -331,9 +334,18 @@ export default function RSPage() {
                     {(page - 1) * PAGE_SIZE + i + 1}
                   </td>
                   <td className="px-3 py-2 font-mono font-semibold text-text-primary">
-                    <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
-                      {r.ticker}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
+                        {r.ticker}
+                      </Link>
+                      <button
+                        onClick={() => setChartTicker(r.ticker)}
+                        title="Quick chart"
+                        className="text-text-muted/30 hover:text-accent transition-colors"
+                      >
+                        <LineChart size={10} strokeWidth={1.5} />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <SectorLabel sector={r.sector} />

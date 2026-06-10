@@ -111,7 +111,10 @@ def _fetch_batch(tickers: List[str], start: str, end: str) -> pd.DataFrame:
 
 def _parse_single(raw: pd.DataFrame, ticker: str) -> pd.DataFrame:
     raw = raw.copy()
-    raw.columns = [c.lower().replace(" ", "_") for c in raw.columns]
+    # newer yfinance returns MultiIndex columns even for single tickers
+    if isinstance(raw.columns, pd.MultiIndex):
+        raw.columns = raw.columns.get_level_values(0)
+    raw.columns = [str(c).lower().replace(" ", "_") for c in raw.columns]
     adj_col = "adj_close" if "adj_close" in raw.columns else "close"
     df = pd.DataFrame(
         {
@@ -137,7 +140,7 @@ def _parse_multi(raw: pd.DataFrame, tickers: List[str]) -> pd.DataFrame:
             else:
                 sub = raw.copy()
 
-            sub.columns = [c.lower().replace(" ", "_") for c in sub.columns]
+            sub.columns = [str(c).lower().replace(" ", "_") for c in sub.columns]
             adj_col = "adj_close" if "adj_close" in sub.columns else "close"
 
             df = pd.DataFrame(
