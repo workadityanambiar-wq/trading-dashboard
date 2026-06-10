@@ -21,6 +21,7 @@ import {
   Network,
   Waves,
   Globe,
+  Layers,
 } from "lucide-react";
 
 const NAV = [
@@ -40,8 +41,9 @@ const NAV = [
   { href: "/factors",   label: "Factors",   icon: TrendingUp },
   { href: "/intraday",  label: "ST Signals",icon: Activity },
   { href: "/backtest",  label: "Backtester",icon: FlaskConical },
-  { href: "/portfolio", label: "Portfolio", icon: PieChart },
-  { href: "/risk",      label: "Risk",      icon: ShieldAlert },
+  { href: "/portfolio",    label: "Portfolio",    icon: PieChart },
+  { href: "/risk",         label: "Risk",         icon: ShieldAlert },
+  { href: "/risk-engine",  label: "Risk Engine",  icon: Layers },
 ];
 
 export function Sidebar() {

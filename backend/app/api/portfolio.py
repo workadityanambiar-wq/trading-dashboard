@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 
 from app.core.data import cache, fetcher
-from app.core.portfolio import optimizer
+from app.core.portfolio import optimizer, hybrid
 
 router = APIRouter(tags=["portfolio"])
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ _START_5Y = (datetime.today() - timedelta(days=5 * 365)).strftime("%Y-%m-%d")
 _TODAY = datetime.today().strftime("%Y-%m-%d")
 
 VALID_METHODS = {"equal_weight", "max_sharpe", "min_volatility", "hrp"}
+VALID_REGIMES = {"Strong Trend", "Choppy", "Bear", "Panic"}
 
 
 class OptimizeRequest(BaseModel):
@@ -54,6 +55,90 @@ class OptimizeRequest(BaseModel):
         if not (0.01 <= v <= 1.0):
             raise ValueError("max_weight must be between 0.01 and 1.0")
         return v
+
+
+class HybridRequest(BaseModel):
+    tickers:    list[str]
+    regime:     str              = "Strong Trend"
+    signals:    dict[str, float] = {}
+    cvar_limit: float            = 0.02
+    max_weight: float            = 0.20
+    tau:        float            = 0.05
+    start_date: str              = "2020-01-01"
+
+    @field_validator("tickers")
+    @classmethod
+    def check_tickers(cls, v):
+        if len(v) < 2:
+            raise ValueError("Need at least 2 tickers")
+        if len(v) > 50:
+            raise ValueError("Max 50 tickers for hybrid engine")
+        return [t.upper().strip() for t in v]
+
+    @field_validator("regime")
+    @classmethod
+    def check_regime(cls, v):
+        if v not in VALID_REGIMES:
+            raise ValueError(f"regime must be one of {VALID_REGIMES}")
+        return v
+
+    @field_validator("cvar_limit")
+    @classmethod
+    def check_cvar(cls, v):
+        if not (0.001 <= v <= 0.10):
+            raise ValueError("cvar_limit must be between 0.001 and 0.10")
+        return v
+
+    @field_validator("max_weight")
+    @classmethod
+    def check_max_weight(cls, v):
+        if not (0.02 <= v <= 1.0):
+            raise ValueError("max_weight must be between 0.02 and 1.0")
+        return v
+
+
+@router.post("/hybrid")
+async def hybrid_optimize(req: HybridRequest):
+    """
+    5-layer hybrid allocation:
+      1. HRP base  →  2. Black-Litterman / ML tilts  →  3. CVaR control
+      →  4. (ML embedded in BL views)  →  5. Regime overlay
+    """
+    await asyncio.get_event_loop().run_in_executor(
+        None, fetcher.ensure_prices, req.tickers, req.start_date, _TODAY
+    )
+    prices = cache.get_adj_close(req.tickers, req.start_date, _TODAY)
+    if prices.empty:
+        raise HTTPException(503, "No price data available for the requested tickers.")
+
+    missing = [t for t in req.tickers if t not in prices.columns]
+    if missing:
+        logger.warning(f"Hybrid engine — missing prices for: {missing}")
+
+    if len(prices.columns) < 2:
+        raise HTTPException(400, "Need prices for at least 2 tickers.")
+
+    result = await asyncio.get_event_loop().run_in_executor(
+        None,
+        hybrid.run,
+        prices,
+        req.regime,
+        req.signals or {},
+        req.cvar_limit,
+        req.max_weight,
+        req.tau,
+    )
+
+    if "error" in result:
+        raise HTTPException(422, result["error"])
+
+    return {
+        "tickers_used":         prices.columns.tolist(),
+        "tickers_missing":      missing,
+        "price_history_start":  prices.index[0].strftime("%Y-%m-%d"),
+        "price_history_end":    prices.index[-1].strftime("%Y-%m-%d"),
+        **result,
+    }
 
 
 @router.post("/optimize")

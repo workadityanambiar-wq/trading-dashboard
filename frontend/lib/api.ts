@@ -534,6 +534,50 @@ export interface BreadthParams {
   lookback_days?: number;
 }
 
+// ── Hybrid Risk Engine types ──────────────────────────────────────────────────
+
+export type RegimeName = "Strong Trend" | "Choppy" | "Bear" | "Panic";
+
+export interface HybridRequest {
+  tickers:    string[];
+  regime?:    RegimeName;
+  signals?:   Record<string, number>;
+  cvar_limit?: number;
+  max_weight?: number;
+  tau?:        number;
+  start_date?: string;
+}
+
+export interface HybridLayerWeights {
+  hrp:    Record<string, number>;
+  bl:     Record<string, number>;
+  cvar:   Record<string, number>;
+  regime: Record<string, number>;
+}
+
+export interface HybridMetrics {
+  annualized_return:    number;
+  annualized_volatility: number;
+  sharpe_ratio:         number;
+  max_drawdown:         number;
+  cvar_95_daily:        number;
+}
+
+export interface HybridResponse {
+  tickers_used:        string[];
+  tickers_missing:     string[];
+  price_history_start: string;
+  price_history_end:   string;
+  layers:              HybridLayerWeights;
+  final_weights:       Record<string, number>;
+  equity_fraction:     number;
+  cash_pct:            number;
+  cvar_95_daily:       number;
+  regime:              string;
+  n_holdings:          number;
+  metrics:             HybridMetrics;
+}
+
 // ── API client ────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -676,6 +720,8 @@ export const api = {
   },
   getStockDetail: (ticker: string) =>
     apiFetch<StockDetailResponse>(`/technical/stock/${encodeURIComponent(ticker)}`),
+  hybridOptimize: (req: HybridRequest) =>
+    apiFetch<HybridResponse>("/portfolio/hybrid", { method: "POST", body: JSON.stringify(req) }),
   getBreadth: (params?: BreadthParams) => {
     const q = new URLSearchParams();
     if (params?.universe)               q.set("universe",      params.universe);
