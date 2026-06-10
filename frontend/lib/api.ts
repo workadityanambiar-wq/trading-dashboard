@@ -345,6 +345,58 @@ export interface BacktestResult {
   n_tickers_available: number;
 }
 
+// ── Stock detail types ────────────────────────────────────────────────────────
+
+export interface StockDetailSignals {
+  setup:                 string;
+  stage:                 number | null;
+  chg_1d:                number | null;
+  rsi:                   number | null;
+  ma50_dist:             number | null;
+  ma200_dist:            number | null;
+  dist_52w_high:         number | null;
+  vol_surge:             number | null;
+  bb_width_pct:          number | null;
+  atr_pct:               number | null;
+  atr_dollar:            number | null;
+  breakout_score:        number | null;
+  confluence_score:      number | null;
+  regime_alignment:      number | null;
+  regime_adjusted_score: number | null;
+  triple_rs:             boolean;
+  accum_score:           number | null;
+  nearest_pivot:         string | null;
+  pivot_dist:            number | null;
+  rs_spy_20d:            number | null;
+  rs_sector_20d:         number | null;
+}
+
+export interface StockDetailResponse {
+  ticker:            string;
+  name:              string;
+  sector:            string;
+  price:             number | null;
+  as_of:             string | null;
+  bars:              OHLCVBar[];
+  signals:           StockDetailSignals;
+  trade: {
+    entry:      number | null;
+    stop:       number | null;
+    target:     number | null;
+    rr:         number | null;
+    atr_dollar: number | null;
+  };
+  rs_periods: {
+    rs_5d:   number | null;
+    rs_20d:  number | null;
+    rs_63d:  number | null;
+    rs_252d: number | null;
+  };
+  earnings_date:    string | null;
+  days_to_earnings: number | null;
+  regime:           string;
+}
+
 // ── Breadth types ─────────────────────────────────────────────────────────────
 
 export interface BreadthSnapshot {
@@ -515,6 +567,8 @@ export const api = {
     if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
     return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
   },
+  getStockDetail: (ticker: string) =>
+    apiFetch<StockDetailResponse>(`/technical/stock/${encodeURIComponent(ticker)}`),
   getBreadth: (params?: BreadthParams) => {
     const q = new URLSearchParams();
     if (params?.universe)               q.set("universe",      params.universe);

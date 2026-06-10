@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type RSRankingEntry } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import Link from "next/link";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -330,7 +331,9 @@ export default function RSPage() {
                     {(page - 1) * PAGE_SIZE + i + 1}
                   </td>
                   <td className="px-3 py-2 font-mono font-semibold text-text-primary">
-                    {r.ticker}
+                    <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
+                      {r.ticker}
+                    </Link>
                   </td>
                   <td className="px-3 py-2">
                     <SectorLabel sector={r.sector} />

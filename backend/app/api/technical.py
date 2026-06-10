@@ -1282,3 +1282,160 @@ async def get_regime():
         "breadth_above_50d":  round(breadth_above_50d * 100, 1) if breadth_above_50d  else None,
         "breadth_above_200d": round(breadth_above_200d * 100, 1) if breadth_above_200d else None,
     }
+
+
+# ── /stock/{ticker} ───────────────────────────────────────────────────────────
+
+@router.get("/stock/{ticker}")
+async def get_stock_detail(ticker: str):
+    """
+    Full drill-down for a single stock: OHLCV bars, all computed signals,
+    trade levels (entry/stop/target), RS at multiple periods, and earnings.
+    """
+    t       = ticker.strip().upper()
+    ohlcv   = await _fetch_ohlcv([t])
+    prices  = ohlcv.get("adj_close", pd.DataFrame())
+    high    = ohlcv.get("high",      pd.DataFrame())
+    low_df  = ohlcv.get("low",       pd.DataFrame())
+    open_df = ohlcv.get("open",      pd.DataFrame())
+    volume  = ohlcv.get("volume",    pd.DataFrame())
+
+    if prices.empty or t not in prices.columns:
+        raise HTTPException(404, f"No price data for {t}")
+
+    # ── OHLCV bars for chart (last 365 trading days) ──────────────────────────
+    bars = []
+    for idx in prices.index[-365:]:
+        c = prices.at[idx, t]
+        if pd.isna(c):
+            continue
+        o = open_df.at[idx, t] if not open_df.empty and t in open_df.columns and not pd.isna(open_df.at[idx, t]) else c
+        h = high.at[idx, t]   if not high.empty   and t in high.columns   and not pd.isna(high.at[idx, t])   else c
+        l = low_df.at[idx, t] if not low_df.empty  and t in low_df.columns and not pd.isna(low_df.at[idx, t])  else c
+        v = volume.at[idx, t] if not volume.empty  and t in volume.columns and not pd.isna(volume.at[idx, t])  else 0
+        bars.append({
+            "time":   idx.strftime("%Y-%m-%d"),
+            "open":   round(float(o), 4),
+            "high":   round(float(h), 4),
+            "low":    round(float(l), 4),
+            "close":  round(float(c), 4),
+            "volume": int(v),
+        })
+
+    # ── Signals ───────────────────────────────────────────────────────────────
+    sector_map = _build_sector_etf_mapping([t])
+    signals_df = await asyncio.get_event_loop().run_in_executor(
+        None, compute_all_signals,
+        prices,
+        high    if not high.empty    else None,
+        low_df  if not low_df.empty  else None,
+        open_df if not open_df.empty else None,
+        volume  if not volume.empty  else None,
+        sector_map or None,
+    )
+
+    if t not in signals_df.index:
+        raise HTTPException(404, f"Could not compute signals for {t}")
+
+    sig   = signals_df.loc[t]
+    price = _safe(prices[t].dropna().iloc[-1])
+    setup = str(sig.get("setup", "No Setup"))
+
+    # Trade levels via ATR
+    atr_ratio_val = sig.get("atr_ratio")
+    atr_dollar = (float(price) * float(atr_ratio_val)
+                  if (price and atr_ratio_val and not np.isnan(float(atr_ratio_val)))
+                  else None)
+    stop_price   = _safe(float(price) - 2.0 * atr_dollar) if (price and atr_dollar) else None
+    target_price = _safe(float(price) + 3.0 * atr_dollar) if (price and atr_dollar) else None
+    rr = (_safe((target_price - price) / (price - stop_price))
+          if (price and stop_price and target_price and price != stop_price) else None)
+
+    # RS vs SPY at multiple periods
+    spy_s = prices["SPY"].dropna() if "SPY" in prices.columns else pd.Series(dtype=float)
+    tk_s  = prices[t].dropna()
+
+    def _rs_period(days: int) -> Optional[float]:
+        if len(tk_s) < days + 1 or len(spy_s) < days + 1:
+            return None
+        tk_ret  = float(tk_s.iloc[-1]  / tk_s.iloc[-(days + 1)]  - 1)
+        spy_ret = float(spy_s.iloc[-1] / spy_s.iloc[-(days + 1)] - 1)
+        return round(tk_ret - spy_ret, 4)
+
+    # Regime + regime-adjusted score
+    spy_vs_50d = spy_vs_200d = None
+    if len(spy_s) >= 50:
+        spy_vs_50d = float(spy_s.iloc[-1] / spy_s.rolling(50).mean().iloc[-1] - 1)
+    if len(spy_s) >= 200:
+        spy_vs_200d = float(spy_s.iloc[-1] / spy_s.rolling(200).mean().iloc[-1] - 1)
+    regime_name, _, _, _ = _determine_regime(spy_vs_50d, spy_vs_200d, None, None)
+    affinity   = _REGIME_SETUP_AFFINITY.get(setup, {}).get(regime_name, 50)
+    confluence = _safe(sig.get("confluence_score"))
+    regime_adjusted = round(confluence * 0.70 + affinity * 0.30, 1) if confluence is not None else None
+
+    # Name / sector from universe data
+    name = sector_label = ""
+    try:
+        sp500_df  = uni_module.get_sp500()
+        sp500_row = sp500_df[sp500_df["ticker"] == t]
+        if not sp500_row.empty:
+            name          = str(sp500_row["name"].iloc[0])
+            sector_label  = str(sp500_row["sector"].iloc[0])
+    except Exception:
+        pass
+
+    # Upcoming earnings
+    today_date   = datetime.today().date()
+    earnings_map = cache.get_earnings_dates([t])
+    ed           = earnings_map.get(t)
+
+    np_raw        = sig.get("nearest_pivot")
+    nearest_pivot = str(np_raw).upper() if (np_raw is not None and str(np_raw) != "nan") else None
+
+    return {
+        "ticker":  t,
+        "name":    name or t,
+        "sector":  sector_label,
+        "price":   price,
+        "as_of":   tk_s.index[-1].strftime("%Y-%m-%d") if not tk_s.empty else None,
+        "bars":    bars,
+        "signals": {
+            "setup":                 setup,
+            "stage":                 _safe(sig.get("stage")),
+            "chg_1d":                _safe(sig.get("chg_1d")),
+            "rsi":                   _safe(sig.get("rsi")),
+            "ma50_dist":             _safe(sig.get("ma50_dist")),
+            "ma200_dist":            _safe(sig.get("ma200_dist")),
+            "dist_52w_high":         _safe(sig.get("dist_52w_high")),
+            "vol_surge":             _safe(sig.get("vol_surge")),
+            "bb_width_pct":          _safe(sig.get("bb_width_pct")),
+            "atr_pct":               _safe(sig.get("atr_pct")),
+            "atr_dollar":            _safe(atr_dollar),
+            "breakout_score":        _safe(sig.get("breakout_score")),
+            "confluence_score":      confluence,
+            "regime_alignment":      affinity,
+            "regime_adjusted_score": regime_adjusted,
+            "triple_rs":             bool(sig.get("triple_rs", 0) == 1.0),
+            "accum_score":           _safe(sig.get("accum_score")),
+            "nearest_pivot":         nearest_pivot,
+            "pivot_dist":            _safe(sig.get("pivot_dist")),
+            "rs_spy_20d":            _safe(sig.get("rs_spy_20d")),
+            "rs_sector_20d":         _safe(sig.get("rs_sector_20d")),
+        },
+        "trade": {
+            "entry":      price,
+            "stop":       stop_price,
+            "target":     target_price,
+            "rr":         rr,
+            "atr_dollar": _safe(atr_dollar),
+        },
+        "rs_periods": {
+            "rs_5d":   _rs_period(5),
+            "rs_20d":  _rs_period(20),
+            "rs_63d":  _rs_period(63),
+            "rs_252d": _rs_period(252),
+        },
+        "earnings_date":    str(ed) if ed else None,
+        "days_to_earnings": (ed - today_date).days if (ed and (ed - today_date).days >= 0) else None,
+        "regime":           regime_name,
+    }

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type SetupSignal } from "@/lib/api";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import {
   Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown,
 } from "lucide-react";
@@ -309,7 +310,9 @@ export default function WatchlistPage() {
                   <tr key={r.ticker}
                     className={cn("hover:bg-surface-2 transition-colors", isNoSetup && "opacity-60")}>
                     <td className="px-3 py-2.5 font-mono font-semibold text-text-primary">
-                      {r.ticker}
+                      <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
+                        {r.ticker}
+                      </Link>
                     </td>
                     <td className="px-3 py-2.5">
                       <span className={cn("px-1.5 py-0.5 rounded border text-[10px] font-semibold", sm.color, sm.bg, sm.border)}

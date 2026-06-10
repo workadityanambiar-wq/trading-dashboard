@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
 
@@ -560,7 +561,12 @@ export default function SetupsPage() {
                             strokeWidth={1.5}
                           />
                         </button>
-                        {row.ticker}
+                        <Link
+                          href={`/stock/${row.ticker}`}
+                          className="hover:text-accent transition-colors"
+                        >
+                          {row.ticker}
+                        </Link>
                       </div>
                     </td>
 
