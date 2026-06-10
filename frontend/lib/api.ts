@@ -345,6 +345,33 @@ export interface BacktestResult {
   n_tickers_available: number;
 }
 
+// ── Correlations types ────────────────────────────────────────────────────────
+
+export interface CorrPair {
+  t1:   string;
+  t2:   string;
+  corr: number;
+}
+
+export interface CorrelationsResponse {
+  universe:         string;
+  period_days:      number;
+  n_stocks:         number;
+  as_of:            string | null;
+  tickers:          string[];
+  matrix:           number[][];
+  avg_correlation:  number;
+  most_correlated:  CorrPair[];
+  least_correlated: CorrPair[];
+  message?:         string;
+}
+
+export interface CorrelationsParams {
+  universe?:    string;
+  period_days?: number;
+  top_n?:       number;
+}
+
 // ── Stock detail types ────────────────────────────────────────────────────────
 
 export interface StockDetailSignals {
@@ -566,6 +593,13 @@ export const api = {
     if (params?.only_setups)           q.set("only_setups", "true");
     if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
     return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
+  },
+  getCorrelations: (params?: CorrelationsParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)               q.set("universe",    params.universe);
+    if (params?.period_days != null)    q.set("period_days", String(params.period_days));
+    if (params?.top_n != null)          q.set("top_n",       String(params.top_n));
+    return apiFetch<CorrelationsResponse>(`/technical/correlations?${q.toString()}`);
   },
   getStockDetail: (ticker: string) =>
     apiFetch<StockDetailResponse>(`/technical/stock/${encodeURIComponent(ticker)}`),

@@ -1284,6 +1284,103 @@ async def get_regime():
     }
 
 
+# ── /correlations ────────────────────────────────────────────────────────────
+
+@router.get("/correlations")
+async def get_correlations(
+    universe:    str = Query("sectors"),
+    period_days: int = Query(63,  ge=10, le=504),
+    top_n:       int = Query(30,  ge=5,  le=60),
+):
+    """
+    Hierarchically-clustered correlation matrix for the selected universe.
+    universe: 'sectors' | 'sp500' | 'nifty50' | 'euro_top' | 'etfs' | comma-sep tickers
+    """
+    from scipy.cluster.hierarchy import linkage, leaves_list
+    from scipy.spatial.distance import squareform
+
+    _SECTOR_EXTRAS = ["SPY", "QQQ", "IWM", "GLD", "TLT"]
+    if universe == "sectors":
+        tickers = list(uni_module.SECTOR_ETFS.keys()) + _SECTOR_EXTRAS
+    else:
+        tickers = _resolve_tickers(universe, "", "")
+
+    if not tickers:
+        return {"universe": universe, "period_days": period_days, "n_stocks": 0,
+                "as_of": None, "tickers": [], "matrix": [],
+                "avg_correlation": 0, "most_correlated": [], "least_correlated": []}
+
+    # Fetch more history than period_days to handle gaps/weekends
+    lookback = period_days + 90
+    start    = (datetime.today() - timedelta(days=lookback)).strftime("%Y-%m-%d")
+    raw      = await asyncio.get_event_loop().run_in_executor(
+        None, cache.get_ohlcv_wide, tickers, start, _TODAY
+    )
+    prices = raw.get("adj_close", pd.DataFrame()).ffill()
+
+    avail = [t for t in tickers if t in prices.columns and prices[t].notna().sum() >= period_days // 2]
+    if len(avail) < 2:
+        return {"universe": universe, "period_days": period_days, "n_stocks": 0,
+                "as_of": None, "tickers": [], "matrix": [],
+                "avg_correlation": 0, "most_correlated": [], "least_correlated": [],
+                "message": "Insufficient cached price data"}
+
+    prices = prices[avail]
+
+    # For large universes trim to top_n (mix of leaders + laggards by 3M return)
+    if len(avail) > top_n and universe != "sectors":
+        ret3m = prices.iloc[-1] / prices.iloc[max(0, len(prices) - 63)] - 1
+        half    = top_n // 2
+        leaders  = ret3m.nlargest(half).index.tolist()
+        laggards = ret3m.nsmallest(top_n - half).index.tolist()
+        avail    = list(dict.fromkeys(leaders + laggards))
+        prices   = prices[avail]
+
+    # Compute correlation on last period_days trading days of returns
+    returns = prices.pct_change().dropna().tail(period_days)
+    corr    = returns.corr().fillna(0)
+
+    # Hierarchical clustering — reorder so correlated tickers are adjacent
+    dist_mat = (1 - corr).clip(lower=0)
+    dist_mat = (dist_mat + dist_mat.T) / 2
+    np.fill_diagonal(dist_mat.values, 0)
+    try:
+        condensed = squareform(dist_mat.values, checks=False)
+        condensed = np.clip(condensed, 0, None)
+        Z     = linkage(condensed, method="ward")
+        order = leaves_list(Z)
+    except Exception:
+        order = list(range(len(avail)))
+
+    ordered_tickers = [avail[i] for i in order]
+    ordered_corr    = corr.loc[ordered_tickers, ordered_tickers]
+
+    # Pair analysis (upper triangle only)
+    pairs = []
+    n = len(ordered_tickers)
+    for i in range(n):
+        for j in range(i + 1, n):
+            pairs.append((ordered_tickers[i], ordered_tickers[j],
+                          float(ordered_corr.iloc[i, j])))
+
+    pairs.sort(key=lambda x: x[2], reverse=True)
+    most_correlated  = [{"t1": p[0], "t2": p[1], "corr": round(p[2], 3)} for p in pairs[:10]]
+    least_correlated = [{"t1": p[0], "t2": p[1], "corr": round(p[2], 3)} for p in reversed(pairs[-10:])]
+    avg_corr = round(float(np.nanmean([p[2] for p in pairs])), 3) if pairs else 0.0
+
+    return {
+        "universe":        universe,
+        "period_days":     period_days,
+        "n_stocks":        len(ordered_tickers),
+        "as_of":           prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
+        "tickers":         ordered_tickers,
+        "matrix":          [[round(v, 3) for v in row] for row in ordered_corr.values.tolist()],
+        "avg_correlation": avg_corr,
+        "most_correlated": most_correlated,
+        "least_correlated":least_correlated,
+    }
+
+
 # ── /stock/{ticker} ───────────────────────────────────────────────────────────
 
 @router.get("/stock/{ticker}")
