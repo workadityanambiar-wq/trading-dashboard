@@ -314,7 +314,90 @@ export const api = {
     if (params.pivot_max != null) q.set("pivot_max", String(params.pivot_max));
     return apiFetch<TechnicalSignalsResponse>(`/technical/signals?${q.toString()}`);
   },
+  getSetups: (params: SetupsParams) => {
+    const q = new URLSearchParams();
+    if (params.universe)      q.set("universe", params.universe);
+    if (params.setup_filter)  q.set("setup_filter", params.setup_filter);
+    if (params.stage_filter)  q.set("stage_filter", params.stage_filter);
+    if (params.min_score)     q.set("min_score", String(params.min_score));
+    if (params.sort_by)       q.set("sort_by", params.sort_by);
+    if (params.desc != null)  q.set("desc", String(params.desc));
+    if (params.page)          q.set("page", String(params.page));
+    if (params.page_size)     q.set("page_size", String(params.page_size));
+    return apiFetch<SetupsResponse>(`/technical/setups?${q.toString()}`);
+  },
+  getRegime: () => apiFetch<RegimeResponse>("/technical/regime"),
 };
+
+// ── Setups / Decision Engine types ───────────────────────────────────────────
+
+export type SetupName =
+  | "Early Breakout"
+  | "Volatility Squeeze"
+  | "Momentum Continuation"
+  | "Institutional Accumulation"
+  | "Mean Reversion Bounce"
+  | "Failed Breakdown Reversal"
+  | "No Setup";
+
+export interface SetupSignal {
+  ticker: string;
+  price: number | null;
+  chg_1d: number | null;
+  setup: SetupName;
+  stage: number | null;
+  breakout_score: number | null;
+  confluence_score: number | null;
+  rsi: number | null;
+  rs_spy_20d: number | null;
+  vol_surge: number | null;
+  ma50_dist: number | null;
+  ma200_dist: number | null;
+  bb_width_pct: number | null;
+  atr_pct: number | null;
+  dist_52w_high: number | null;
+  accum_score: number | null;
+  nearest_pivot: string | null;
+  pivot_dist: number | null;
+  entry: number | null;
+  stop: number | null;
+  target: number | null;
+  rr: number | null;
+  atr_dollar: number | null;
+}
+
+export interface SetupsResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  universe_size: number;
+  as_of: string | null;
+  results: SetupSignal[];
+}
+
+export interface SetupsParams {
+  universe?: string;
+  setup_filter?: string;
+  stage_filter?: string;
+  min_score?: number;
+  sort_by?: string;
+  desc?: boolean;
+  page?: number;
+  page_size?: number;
+}
+
+export interface RegimeResponse {
+  regime: "Strong Trend" | "Choppy" | "Bear" | "Panic";
+  description: string;
+  best_strategy: string;
+  score: number;
+  vix: number | null;
+  spy_vs_50d: number | null;
+  spy_vs_200d: number | null;
+  breadth_above_50d: number | null;
+  breadth_above_200d: number | null;
+}
 
 // ── Portfolio types ───────────────────────────────────────────────────────────
 

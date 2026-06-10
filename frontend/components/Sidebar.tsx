@@ -10,10 +10,12 @@ import {
   PieChart,
   ShieldAlert,
   Activity,
+  Zap,
 } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/setups", label: "Setups", icon: Zap },
   { href: "/screener", label: "Screener", icon: ScanSearch },
   { href: "/factors", label: "Factors", icon: TrendingUp },
   { href: "/intraday", label: "ST Signals", icon: Activity },
