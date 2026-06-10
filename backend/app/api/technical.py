@@ -72,6 +72,20 @@ def _next_monthly_opex(from_date: date) -> date:
     return third_friday
 
 
+def _get_ticker_sector_map(universe: str) -> dict[str, str]:
+    """Best-effort {ticker: sector} for any universe."""
+    try:
+        if universe == "nifty50":
+            return india_module.get_nifty50().set_index("ticker")["sector"].to_dict()
+        if universe == "euro_top":
+            return global_module.get_euro_top().set_index("ticker")["sector"].to_dict()
+        if universe == "etfs":
+            return global_module.get_popular_etfs().set_index("ticker")["sector"].to_dict()
+        return uni_module.get_sp500().set_index("ticker")["sector"].to_dict()
+    except Exception:
+        return {}
+
+
 def _build_sector_etf_mapping(tickers: list[str]) -> dict[str, str]:
     """Map each stock ticker to its sector ETF based on S&P 500 sector data."""
     try:
@@ -770,6 +784,125 @@ async def get_mtf_alignment(
         "universe_size": len(tickers),
         "as_of":         prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
         "results":       page_rows,
+    }
+
+
+# ── /rs-rankings ─────────────────────────────────────────────────────────────
+
+@router.get("/rs-rankings")
+async def get_rs_rankings(
+    universe:    str  = Query("sp500"),
+    min_rs_rank: int  = Query(0,   ge=0, le=99),
+    sector:      str  = Query("",  description="Filter by sector (exact match)"),
+    sort_by:     str  = Query("rs_composite"),
+    desc:        bool = Query(True),
+    page:        int  = Query(1,   ge=1),
+    page_size:   int  = Query(100, ge=1, le=500),
+):
+    """
+    IBD-style Relative Strength rankings.
+    RS composite = 40%×252D + 20%×126D + 20%×63D + 20%×20D, scaled 0–99.
+    rs_trend > 0 means short-term RS is improving versus the 3-month baseline.
+    """
+    tickers = _resolve_tickers(universe, "", "")
+    if not tickers:
+        return {"total": 0, "page": page, "pages": 1, "results": [], "universe_size": 0}
+
+    ohlcv  = await _fetch_ohlcv(tickers)
+    prices = ohlcv.get("adj_close", pd.DataFrame())
+
+    if prices.empty or "SPY" not in prices.columns:
+        return {"total": 0, "page": page, "pages": 1, "results": [],
+                "universe_size": len(tickers), "message": "No price data cached"}
+
+    spy       = prices["SPY"].dropna()
+    skip_cols = set(_SECTOR_ETF_TICKERS) | {"SPY"}
+    stocks    = prices[[c for c in prices.columns if c not in skip_cols]].copy()
+    n         = len(stocks)
+
+    def _excess(days: int) -> pd.Series:
+        if n < days + 1:
+            return pd.Series(dtype=float)
+        bm = float(spy.iloc[-1] / spy.iloc[-(days + 1)] - 1) if len(spy) >= days + 1 else 0.0
+        return (stocks.iloc[-1] / stocks.iloc[-(days + 1)] - 1 - bm).rename(f"rs_{days}d")
+
+    rs_5d   = _excess(5)
+    rs_20d  = _excess(20)
+    rs_63d  = _excess(63)
+    rs_126d = _excess(126)
+    rs_252d = _excess(252)
+
+    def _rank(s: pd.Series) -> pd.Series:
+        return (s.rank(pct=True) * 99).round(1) if not s.empty else s
+
+    rk20  = _rank(rs_20d)
+    rk63  = _rank(rs_63d)
+    rk126 = _rank(rs_126d)
+    rk252 = _rank(rs_252d)
+
+    # Composite with IBD-style weighting
+    parts, wts = [], []
+    for rk, w in [(rk252, 0.40), (rk126, 0.20), (rk63, 0.20), (rk20, 0.20)]:
+        if not rk.empty:
+            parts.append(rk * w); wts.append(w)
+    rs_composite = sum(parts) / sum(wts) if parts else pd.Series(dtype=float)
+
+    # Trend: (rank_20D − rank_63D) / 99 → −1 … +1
+    rs_trend = ((rk20 - rk63) / 99.0).round(4) if not rk20.empty and not rk63.empty else pd.Series(dtype=float)
+
+    last_prices = prices.iloc[-1].dropna()
+    prev_prices = prices.dropna(how="all").iloc[-2] if len(prices.dropna(how="all")) >= 2 else pd.Series(dtype=float)
+    sector_info = _get_ticker_sector_map(universe)
+
+    rows = []
+    for ticker in stocks.columns:
+        comp = rs_composite.get(ticker, np.nan) if not rs_composite.empty else np.nan
+        if np.isnan(float(comp)):
+            continue
+        price  = _safe(last_prices.get(ticker))
+        prev   = prev_prices.get(ticker)
+        chg_1d = _safe((last_prices.get(ticker, np.nan) / prev - 1) if prev and prev > 0 else None)
+        trend  = rs_trend.get(ticker, np.nan) if not rs_trend.empty else np.nan
+        rows.append({
+            "ticker":       ticker,
+            "price":        price,
+            "chg_1d":       chg_1d,
+            "sector":       sector_info.get(ticker, ""),
+            "rs_5d":        _safe(rs_5d.get(ticker))   if not rs_5d.empty   else None,
+            "rs_20d":       _safe(rs_20d.get(ticker))  if not rs_20d.empty  else None,
+            "rs_63d":       _safe(rs_63d.get(ticker))  if not rs_63d.empty  else None,
+            "rs_126d":      _safe(rs_126d.get(ticker)) if not rs_126d.empty else None,
+            "rs_252d":      _safe(rs_252d.get(ticker)) if not rs_252d.empty else None,
+            "rs_composite": round(float(comp), 1),
+            "rs_rank":      int(round(float(comp))),
+            "rs_trend":     None if np.isnan(float(trend)) else round(float(trend), 4),
+        })
+
+    if min_rs_rank > 0:
+        rows = [r for r in rows if r["rs_rank"] >= min_rs_rank]
+    if sector:
+        rows = [r for r in rows if r["sector"] == sector]
+
+    def sort_key(r):
+        v = r.get(sort_by)
+        return v if v is not None else (-9999 if desc else 9999)
+    rows.sort(key=sort_key, reverse=desc)
+
+    total  = len(rows)
+    offset = (page - 1) * page_size
+
+    return {
+        "total":         total,
+        "page":          page,
+        "page_size":     page_size,
+        "pages":         max(1, -(-total // page_size)),
+        "universe_size": len(tickers),
+        "leaders":       sum(1 for r in rows if r["rs_rank"] >= 80),
+        "laggards":      sum(1 for r in rows if r["rs_rank"] <= 20),
+        "rising":        sum(1 for r in rows if (r["rs_trend"] or 0) > 0.10),
+        "falling":       sum(1 for r in rows if (r["rs_trend"] or 0) < -0.10),
+        "as_of":         prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
+        "results":       rows[offset: offset + page_size],
     }
 
 

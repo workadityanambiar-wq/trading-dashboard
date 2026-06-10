@@ -201,6 +201,47 @@ export interface SummaryResponse {
   factors: FactorSummary[];
 }
 
+// ── RS Rankings types ─────────────────────────────────────────────────────────
+
+export interface RSRankingEntry {
+  ticker: string;
+  price: number | null;
+  chg_1d: number | null;
+  sector: string;
+  rs_5d: number | null;
+  rs_20d: number | null;
+  rs_63d: number | null;
+  rs_126d: number | null;
+  rs_252d: number | null;
+  rs_composite: number;
+  rs_rank: number;
+  rs_trend: number | null;
+}
+
+export interface RSRankingsResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  universe_size: number;
+  leaders: number;
+  laggards: number;
+  rising: number;
+  falling: number;
+  as_of: string | null;
+  results: RSRankingEntry[];
+}
+
+export interface RSRankingsParams {
+  universe?: string;
+  min_rs_rank?: number;
+  sector?: string;
+  sort_by?: string;
+  desc?: boolean;
+  page?: number;
+  page_size?: number;
+}
+
 // ── Earnings Calendar types ───────────────────────────────────────────────────
 
 export interface EarningsCalendarStock {
@@ -413,6 +454,17 @@ export const api = {
     if (params?.page)        q.set("page",       String(params.page));
     if (params?.page_size)   q.set("page_size",  String(params.page_size));
     return apiFetch<PreBreakoutResponse>(`/technical/prebreakout?${q.toString()}`);
+  },
+  getRSRankings: (params?: RSRankingsParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)              q.set("universe",     params.universe);
+    if (params?.min_rs_rank != null && params.min_rs_rank > 0) q.set("min_rs_rank", String(params.min_rs_rank));
+    if (params?.sector)                q.set("sector",       params.sector);
+    if (params?.sort_by)               q.set("sort_by",      params.sort_by);
+    if (params?.desc != null)          q.set("desc",         String(params.desc));
+    if (params?.page)                  q.set("page",         String(params.page));
+    if (params?.page_size)             q.set("page_size",    String(params.page_size));
+    return apiFetch<RSRankingsResponse>(`/technical/rs-rankings?${q.toString()}`);
   },
   getEarningsCalendar: (params?: EarningsCalendarParams) => {
     const q = new URLSearchParams();

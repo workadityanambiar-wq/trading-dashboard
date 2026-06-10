@@ -15,6 +15,7 @@ import {
   Crosshair,
   AlignCenter,
   CalendarDays,
+  BarChart3,
 } from "lucide-react";
 
 const NAV = [
@@ -24,6 +25,7 @@ const NAV = [
   { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
   { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
   { href: "/earnings",    label: "Earnings",     icon: CalendarDays },
+  { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
   { href: "/screener",  label: "Screener",  icon: ScanSearch },
   { href: "/factors",   label: "Factors",   icon: TrendingUp },
   { href: "/intraday",  label: "ST Signals",icon: Activity },
