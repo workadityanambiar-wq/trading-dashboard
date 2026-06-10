@@ -363,3 +363,58 @@ def get_tickers_with_prices() -> set:
     with _conn() as con:
         rows = con.execute("SELECT DISTINCT ticker FROM prices").fetchall()
     return {r[0] for r in rows}
+
+
+# ── Earnings calendar ─────────────────────────────────────────────────────────
+
+def _ensure_earnings_table(con) -> None:
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS earnings_calendar (
+            ticker       VARCHAR NOT NULL PRIMARY KEY,
+            earnings_date DATE,
+            fetched_at   TIMESTAMP DEFAULT now()
+        )
+    """)
+
+
+def store_earnings(data: dict) -> None:
+    """data: {ticker: date | None}. Upserts into earnings_calendar."""
+    if not data:
+        return
+    rows = [{"ticker": t, "earnings_date": d} for t, d in data.items()]
+    df = pd.DataFrame(rows)
+    with _conn() as con:
+        _ensure_earnings_table(con)
+        con.register("_earn", df)
+        con.execute("DELETE FROM earnings_calendar WHERE ticker IN (SELECT ticker FROM _earn)")
+        con.execute("""
+            INSERT INTO earnings_calendar (ticker, earnings_date, fetched_at)
+            SELECT ticker, earnings_date, now() FROM _earn
+        """)
+        con.unregister("_earn")
+
+
+def get_earnings_dates(tickers: List[str], max_age_hours: int = 168) -> dict:
+    """Returns {ticker: date} for tickers with a cached earnings date within max_age_hours."""
+    if not tickers:
+        return {}
+    placeholders = ",".join(["?" for _ in tickers])
+    with _conn() as con:
+        _ensure_earnings_table(con)
+        rows = con.execute(
+            f"""
+            SELECT ticker, earnings_date
+            FROM earnings_calendar
+            WHERE ticker IN ({placeholders})
+              AND fetched_at >= now() - INTERVAL '{max_age_hours} hours'
+              AND earnings_date IS NOT NULL
+            """,
+            tickers,
+        ).fetchall()
+    return {row[0]: row[1] for row in rows}
+
+
+def get_uncached_earnings_tickers(tickers: List[str], max_age_hours: int = 168) -> List[str]:
+    """Returns tickers that have no fresh earnings cache entry."""
+    cached = get_earnings_dates(tickers, max_age_hours)
+    return [t for t in tickers if t not in cached]

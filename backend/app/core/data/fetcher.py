@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta, date
-from typing import List, Optional
+from typing import List, Optional, Dict
 import time
 import logging
 
@@ -45,6 +45,47 @@ def ensure_prices(
             cache.store_prices(df)
         if i + _BATCH_SIZE < len(to_fetch):
             time.sleep(_RATE_LIMIT_SLEEP)
+
+
+# ── Earnings calendar ─────────────────────────────────────────────────────────
+
+def fetch_earnings_calendar(tickers: List[str], sleep: float = 0.15) -> Dict[str, Optional[date]]:
+    """Fetch next earnings dates for tickers from yfinance. Returns {ticker: date | None}."""
+    result: Dict[str, Optional[date]] = {}
+    for ticker in tickers:
+        try:
+            cal = yf.Ticker(ticker).calendar
+            result[ticker] = _parse_earnings_date(cal)
+        except Exception:
+            result[ticker] = None
+        time.sleep(sleep)
+    return result
+
+
+def _parse_earnings_date(cal) -> Optional[date]:
+    """Extract next earnings date from a yfinance calendar object (handles all known formats)."""
+    if cal is None:
+        return None
+    try:
+        if isinstance(cal, dict):
+            raw = cal.get("Earnings Date", [])
+            d = raw[0] if isinstance(raw, list) and raw else (raw if not isinstance(raw, list) else None)
+        elif isinstance(cal, pd.DataFrame):
+            if "Earnings Date" in cal.index:
+                d = cal.loc["Earnings Date"].iloc[0]
+            elif "Earnings Date" in cal.columns:
+                d = cal["Earnings Date"].iloc[0]
+            else:
+                return None
+        else:
+            return None
+
+        if d is None:
+            return None
+        ts = pd.Timestamp(d)
+        return None if pd.isna(ts) else ts.date()
+    except Exception:
+        return None
 
 
 def _fetch_batch(tickers: List[str], start: str, end: str) -> pd.DataFrame:

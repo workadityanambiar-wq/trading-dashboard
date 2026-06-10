@@ -129,6 +129,53 @@ def relative_strength_vs_spy(prices: pd.DataFrame, period: int = 20) -> pd.Serie
     return (stocks - spy_ret).rename(f"rs_spy_{period}d")
 
 
+def relative_strength_vs_sector(
+    prices: pd.DataFrame,
+    ticker_to_sector_etf: dict,
+    period: int = 20,
+) -> tuple:
+    """
+    Triple RS: stock vs sector ETF, sector ETF vs SPY.
+    Returns (rs_sector_20d, sector_vs_spy_20d) — both as pd.Series indexed by ticker.
+    """
+    nan_pair = (
+        pd.Series(np.nan, index=prices.columns, name="rs_sector_20d"),
+        pd.Series(np.nan, index=prices.columns, name="sector_vs_spy_20d"),
+    )
+    if len(prices) < period + 1 or not ticker_to_sector_etf:
+        return nan_pair
+
+    ret = prices.iloc[-1] / prices.iloc[-(period + 1)] - 1
+    spy_ret = float(ret.get("SPY", np.nan))
+    if np.isnan(spy_ret):
+        spy_ret = 0.0
+
+    rs_sector_vals: dict = {}
+    sector_vs_spy_vals: dict = {}
+
+    for ticker in prices.columns:
+        if ticker == "SPY":
+            continue
+        etf = ticker_to_sector_etf.get(ticker)
+        if etf and etf in ret.index:
+            sector_ret = float(ret[etf])
+            if np.isnan(sector_ret):
+                rs_sector_vals[ticker] = np.nan
+                sector_vs_spy_vals[ticker] = np.nan
+            else:
+                stock_ret = float(ret.get(ticker, np.nan))
+                rs_sector_vals[ticker] = stock_ret - sector_ret
+                sector_vs_spy_vals[ticker] = sector_ret - spy_ret
+        else:
+            rs_sector_vals[ticker] = np.nan
+            sector_vs_spy_vals[ticker] = np.nan
+
+    return (
+        pd.Series(rs_sector_vals, name="rs_sector_20d"),
+        pd.Series(sector_vs_spy_vals, name="sector_vs_spy_20d"),
+    )
+
+
 # ── Short-term reversal ───────────────────────────────────────────────────────
 
 def short_term_reversal(prices: pd.DataFrame, period: int = 5) -> pd.Series:
@@ -459,6 +506,8 @@ def breakout_score(df: pd.DataFrame) -> pd.Series:
         weights.append(("stage", (df["stage"] == 2.0).astype(float) * 100, 0.10))
     if "accum_score" in df.columns:
         weights.append(("accum", norm(df["accum_score"], -1, 1),      0.10))
+    if "rs_sector_20d" in df.columns:
+        weights.append(("rs_sect", norm(df["rs_sector_20d"], -0.05, 0.10), 0.10))
 
     if not weights:
         return pd.Series(50.0, index=df.index, name="breakout_score")
@@ -497,7 +546,11 @@ def confluence_score(df: pd.DataFrame) -> pd.Series:
     if "rsi" in df.columns:
         rsi_score = norm(df["rsi"], 30, 70)
         rsi_score = rsi_score.where(df["rsi"] < 80, 20).where(df["rsi"] > 20, 20)
-        weights.append(("rsi",   rsi_score,                             0.05))
+        weights.append(("rsi",      rsi_score,                              0.05))
+    if "rs_sector_20d" in df.columns:
+        weights.append(("rs_sect",  norm(df["rs_sector_20d"],   -0.05, 0.10), 0.10))
+    if "sector_vs_spy_20d" in df.columns:
+        weights.append(("sect_spy", norm(df["sector_vs_spy_20d"], -0.05, 0.08), 0.05))
 
     if not weights:
         return pd.Series(50.0, index=df.index, name="confluence_score")
@@ -505,6 +558,57 @@ def confluence_score(df: pd.DataFrame) -> pd.Series:
     total_w = sum(w for _, _, w in weights)
     score   = sum(s * w for _, s, w in weights) / total_w
     return score.clip(0, 100).rename("confluence_score")
+
+
+# ── Coiled-spring score ───────────────────────────────────────────────────────
+
+def coiled_spring_score(df: pd.DataFrame) -> pd.Series:
+    """0–100 score for compression/coiling before a potential breakout.
+    Rewards: tight range, drying volume, near 52W high, Stage 2, positive RS.
+    """
+    def norm(s: pd.Series, lo: float, hi: float) -> pd.Series:
+        return ((s.clip(lo, hi) - lo) / (hi - lo) * 100).fillna(50)
+
+    weights: list[tuple[str, pd.Series, float]] = []
+
+    # Tightness: inverted percentile → lower percentile = more compressed = higher score
+    if "bb_width_pct" in df.columns:
+        weights.append(("bb",    norm(1 - df["bb_width_pct"],      0, 1),             0.20))
+    if "atr_pct" in df.columns:
+        weights.append(("atr",   norm(1 - df["atr_pct"],           0, 1),             0.15))
+    if "range_compression" in df.columns:
+        weights.append(("rc",    norm(1 - df["range_compression"], 0, 1),             0.15))
+
+    # Volume: drying up (< 1.0 = below avg = good for coiling)
+    if "vol_surge" in df.columns:
+        weights.append(("vol",   norm(2.0 - df["vol_surge"].clip(0, 2.0), 0, 2),     0.15))
+
+    # Proximity to 52W high — near high but not extended
+    if "dist_52w_high" in df.columns:
+        weights.append(("d52",   norm(df["dist_52w_high"], -0.20, 0),                0.15))
+
+    # Stage 2 (uptrend) is the ideal coiling environment
+    if "stage" in df.columns:
+        weights.append(("stage", (df["stage"] == 2.0).astype(float) * 100,           0.10))
+
+    # Silent RS build — stock quietly outperforming
+    if "rs_spy_20d" in df.columns:
+        weights.append(("rs",    norm(df["rs_spy_20d"], -0.03, 0.08),                0.10))
+
+    # Accumulation — smart money quietly positioning
+    if "accum_score" in df.columns:
+        weights.append(("accum", norm(df["accum_score"], -0.5, 1.0),                 0.05))
+
+    # NR7 bonus — narrowest range in 7 sessions
+    if "nr7" in df.columns:
+        weights.append(("nr7",   df["nr7"].fillna(0) * 100,                          0.05))
+
+    if not weights:
+        return pd.Series(50.0, index=df.index, name="coiled_spring_score")
+
+    total_w = sum(w for _, _, w in weights)
+    score   = sum(s * w for _, s, w in weights) / total_w
+    return score.clip(0, 100).rename("coiled_spring_score")
 
 
 # ── Master compute function ───────────────────────────────────────────────────
@@ -515,6 +619,7 @@ def compute_all_signals(
     low:  pd.DataFrame | None = None,
     open_prices: pd.DataFrame | None = None,
     volume: pd.DataFrame | None = None,
+    ticker_to_sector_etf: dict | None = None,
 ) -> pd.DataFrame:
     """Compute all signals and return a ticker-indexed DataFrame."""
 
@@ -576,6 +681,11 @@ def compute_all_signals(
     if volume is not None and not volume.empty:
         parts["accum_score"] = accumulation_score(adj_close, volume)
 
+    if ticker_to_sector_etf:
+        rs_sect, sect_vs_spy = relative_strength_vs_sector(adj_close, ticker_to_sector_etf)
+        parts["rs_sector_20d"]    = rs_sect
+        parts["sector_vs_spy_20d"] = sect_vs_spy
+
     df = pd.DataFrame({k: v for k, v in parts.items() if isinstance(v, pd.Series)})
     if df.empty:
         return df
@@ -600,8 +710,17 @@ def compute_all_signals(
         result = result.join(piv_df[["nearest_pivot"]], how="left")
 
     # ── Setup engine + scores ─────────────────────────────────────────────────
-    result["setup"]           = classify_setups(result)
-    result["breakout_score"]  = breakout_score(result)
-    result["confluence_score"] = confluence_score(result)
+    result["setup"]               = classify_setups(result)
+    result["breakout_score"]      = breakout_score(result)
+    result["confluence_score"]    = confluence_score(result)
+    result["coiled_spring_score"] = coiled_spring_score(result)
+
+    # Triple RS: stock outperforms sector AND sector outperforms market
+    if all(c in result.columns for c in ["rs_spy_20d", "rs_sector_20d", "sector_vs_spy_20d"]):
+        result["triple_rs"] = (
+            (result["rs_spy_20d"] > 0) &
+            (result["rs_sector_20d"] > 0) &
+            (result["sector_vs_spy_20d"] > 0)
+        ).astype(float)
 
     return result

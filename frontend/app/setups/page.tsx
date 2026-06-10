@@ -1,9 +1,9 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api, type SetupName, type RegimeResponse } from "@/lib/api";
+import { api, type SetupName, type RegimeResponse, type SetupWinRateStat } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -41,11 +41,13 @@ const SETUPS: SetupName[] = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "confluence_score", label: "Confluence" },
-  { value: "breakout_score",   label: "Breakout" },
-  { value: "rs_spy_20d",       label: "RS vs SPY" },
-  { value: "vol_surge",        label: "Volume" },
-  { value: "rsi",              label: "RSI" },
+  { value: "confluence_score",  label: "Confluence" },
+  { value: "breakout_score",    label: "Breakout" },
+  { value: "rs_spy_20d",        label: "RS vs SPY" },
+  { value: "rs_sector_20d",     label: "RS vs Sector" },
+  { value: "sector_vs_spy_20d", label: "Sector vs SPY" },
+  { value: "vol_surge",         label: "Volume" },
+  { value: "rsi",               label: "RSI" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -60,6 +62,36 @@ function num(v: number | null, dec = 1): string {
   return v.toFixed(dec);
 }
 
+function eventBadge(daysToEarn: number | null, daysToOpex: number | null) {
+  if (daysToEarn != null && daysToEarn >= 0 && daysToEarn <= 7) {
+    const hot = daysToEarn <= 2;
+    return (
+      <span
+        className={cn(
+          "px-1.5 py-0.5 rounded border text-xs font-medium",
+          hot
+            ? "text-red-400 border-red-500/40 bg-red-500/10"
+            : "text-amber-400 border-amber-500/40 bg-amber-500/10",
+        )}
+        title={`Earnings in ${daysToEarn} day${daysToEarn === 1 ? "" : "s"} — high event risk`}
+      >
+        E{daysToEarn}d
+      </span>
+    );
+  }
+  if (daysToOpex != null && daysToOpex <= 2) {
+    return (
+      <span
+        className="px-1.5 py-0.5 rounded border text-xs font-medium text-amber-400 border-amber-500/40 bg-amber-500/10"
+        title={`Monthly options expiry in ${daysToOpex} day${daysToOpex === 1 ? "" : "s"}`}
+      >
+        OX{daysToOpex}d
+      </span>
+    );
+  }
+  return <span className="text-text-muted text-xs">—</span>;
+}
+
 function scoreBar(v: number | null) {
   const val = v ?? 0;
   const color = val >= 70 ? "bg-emerald-500" : val >= 50 ? "bg-amber-500" : "bg-red-500";
@@ -71,6 +103,172 @@ function scoreBar(v: number | null) {
       <span className={cn("text-xs tabular-nums font-medium",
         val >= 70 ? "text-emerald-400" : val >= 50 ? "text-amber-400" : "text-red-400"
       )}>{Math.round(val)}</span>
+    </div>
+  );
+}
+
+// ── Win-rate panel ────────────────────────────────────────────────────────────
+
+const SETUP_ORDER: SetupName[] = [
+  "Early Breakout",
+  "Volatility Squeeze",
+  "Momentum Continuation",
+  "Institutional Accumulation",
+  "Mean Reversion Bounce",
+  "Failed Breakdown Reversal",
+];
+
+function WinRatesPanel() {
+  const [open, setOpen]         = useState(false);
+  const [computing, setComputing] = useState(false);
+  const pollRef                 = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { data, refetch, isFetching } = useQuery({
+    queryKey: ["setup-winrates"],
+    queryFn:  () => api.getSetupWinRates(),
+    staleTime: 60 * 60 * 1000,
+    enabled: open,
+  });
+
+  // Poll every 8s while backend is computing
+  useEffect(() => {
+    if (data?.status === "computing") {
+      pollRef.current = setTimeout(() => refetch(), 8000);
+    }
+    return () => { if (pollRef.current) clearTimeout(pollRef.current); };
+  }, [data, refetch]);
+
+  const handleCompute = useCallback(async () => {
+    setComputing(true);
+    await api.getSetupWinRates(true);
+    setComputing(false);
+    refetch();
+  }, [refetch]);
+
+  const isComputing = data?.status === "computing" || computing;
+  const results     = data?.results;
+
+  function wr(v?: number) {
+    if (v == null) return <span className="text-text-muted">—</span>;
+    const pct = (v * 100).toFixed(1);
+    const col  = v >= 0.6 ? "text-emerald-400" : v >= 0.5 ? "text-amber-400" : "text-red-400";
+    return <span className={cn("font-medium tabular-nums", col)}>{pct}%</span>;
+  }
+
+  function ret(v?: number) {
+    if (v == null) return <span className="text-text-muted">—</span>;
+    const pct = (v * 100).toFixed(1);
+    return (
+      <span className={cn("tabular-nums", v >= 0 ? "text-emerald-400" : "text-red-400")}>
+        {v >= 0 ? "+" : ""}{pct}%
+      </span>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-surface">
+      {/* Header — always visible */}
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-2">
+          <FlaskConical size={13} className="text-accent" />
+          <span className="text-sm font-medium">Historical Setup Win Rates</span>
+          {results && (
+            <span className="text-xs text-text-muted ml-1">5y S&P 500 · month-end sampling</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {isComputing && (
+            <span className="text-xs text-amber-400 flex items-center gap-1">
+              <RefreshCw size={10} className="animate-spin" /> Computing…
+            </span>
+          )}
+          <ChevronDown size={14} className={cn("text-text-muted transition-transform", open && "rotate-180")} />
+        </div>
+      </button>
+
+      {/* Body */}
+      {open && (
+        <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
+          {/* Compute button */}
+          {!results && !isComputing && (
+            <div className="flex items-center gap-3 text-sm text-text-muted">
+              <span>No cached data. Run the backtest to see win rates.</span>
+              <button
+                onClick={handleCompute}
+                disabled={isComputing}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-border hover:border-accent hover:text-text-primary transition-colors"
+              >
+                <FlaskConical size={11} />
+                Run Backtest
+              </button>
+            </div>
+          )}
+
+          {isComputing && !results && (
+            <p className="text-xs text-text-muted">
+              Computing 5 years of setup history across S&P 500… this takes ~30–60 seconds.
+            </p>
+          )}
+
+          {/* Results table */}
+          {results && (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="py-2 pr-4 text-left text-text-muted font-medium">Setup</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Trades</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Win% 5d</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Win% 10d</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Win% 20d</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Avg 10d</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Median 10d</th>
+                      <th className="py-2 px-3 text-right text-text-muted font-medium">Expect. 10d</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SETUP_ORDER.map((name) => {
+                      const s: SetupWinRateStat | undefined = results[name];
+                      const meta = SETUP_META[name];
+                      return (
+                        <tr key={name} className="border-b border-border/40 hover:bg-surface-2/40">
+                          <td className="py-2 pr-4">
+                            <span className={cn("font-medium", meta?.color ?? "text-text-primary")}>{name}</span>
+                          </td>
+                          <td className="py-2 px-3 text-right tabular-nums text-text-muted">
+                            {s?.n_10d ?? "—"}
+                          </td>
+                          <td className="py-2 px-3 text-right">{wr(s?.win_rate_5d)}</td>
+                          <td className="py-2 px-3 text-right">{wr(s?.win_rate_10d)}</td>
+                          <td className="py-2 px-3 text-right">{wr(s?.win_rate_20d)}</td>
+                          <td className="py-2 px-3 text-right">{ret(s?.avg_ret_10d)}</td>
+                          <td className="py-2 px-3 text-right">{ret(s?.median_ret_10d)}</td>
+                          <td className="py-2 px-3 text-right">{ret(s?.expectancy_10d)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center justify-between text-xs text-text-muted pt-1">
+                <span>Win% ≥60% <span className="text-emerald-400">■</span> · ≥50% <span className="text-amber-400">■</span> · &lt;50% <span className="text-red-400">■</span></span>
+                <button
+                  onClick={handleCompute}
+                  disabled={isComputing}
+                  className="flex items-center gap-1 hover:text-text-primary transition-colors"
+                >
+                  <RefreshCw size={10} className={isComputing ? "animate-spin" : ""} />
+                  Recompute
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -118,11 +316,18 @@ function RegimeCard({ data }: { data: RegimeResponse }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SetupsPage() {
-  const [setupFilter, setSetupFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<string>("");
-  const [sortBy, setSortBy]           = useState("confluence_score");
-  const [page, setPage]               = useState(1);
+  const [setupFilter, setSetupFilter]       = useState<string>("");
+  const [stageFilter, setStageFilter]       = useState<string>("");
+  const [sortBy, setSortBy]                 = useState("confluence_score");
+  const [page, setPage]                     = useState(1);
+  const [fetchingEvents, setFetchingEvents] = useState(false);
   const PAGE_SIZE = 50;
+
+  const handlePrefetchEvents = useCallback(async () => {
+    setFetchingEvents(true);
+    try { await api.prefetchEvents("sp500"); } catch {}
+    setFetchingEvents(false);
+  }, []);
 
   const regimeQuery = useQuery({
     queryKey: ["regime"],
@@ -172,6 +377,15 @@ export default function SetupsPage() {
         <div className="flex items-center gap-3">
           {data?.as_of && <span className="text-xs text-text-muted">As of {data.as_of}</span>}
           <button
+            onClick={handlePrefetchEvents}
+            disabled={fetchingEvents}
+            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
+            title="Fetch earnings dates for S&P 500 (runs in background)"
+          >
+            <Calendar size={12} className={fetchingEvents ? "animate-pulse" : ""} />
+            {fetchingEvents ? "Fetching…" : "Fetch Earnings"}
+          </button>
+          <button
             onClick={() => { setupsQuery.refetch(); regimeQuery.refetch(); }}
             disabled={setupsQuery.isFetching}
             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
@@ -187,6 +401,9 @@ export default function SetupsPage() {
       {regimeQuery.isLoading && (
         <div className="h-24 rounded-lg border border-border bg-surface animate-pulse" />
       )}
+
+      {/* Historical win rates */}
+      <WinRatesPanel />
 
       {/* Setup filter pills */}
       <div className="flex flex-wrap gap-2">
@@ -275,6 +492,10 @@ export default function SetupsPage() {
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">1D</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">RSI</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">RS/SPY</th>
+                <th className="px-3 py-2.5 text-right text-text-muted font-medium">RS/Sect</th>
+                <th className="px-3 py-2.5 text-right text-text-muted font-medium">Sect/SPY</th>
+                <th className="px-3 py-2.5 text-center text-text-muted font-medium" title="Stock outperforms sector AND sector outperforms market">3×RS</th>
+                <th className="px-3 py-2.5 text-center text-text-muted font-medium" title="E=Earnings days away · OX=Options expiry days away">Events</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">Vol×</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">52W Dist</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">Entry</th>
@@ -348,6 +569,41 @@ export default function SetupsPage() {
                       {pct(row.rs_spy_20d)}
                     </td>
 
+                    {/* RS vs Sector */}
+                    <td className={cn("px-3 py-2.5 text-right tabular-nums",
+                      row.rs_sector_20d == null ? "text-text-muted" :
+                      row.rs_sector_20d > 0 ? "text-emerald-400" : "text-red-400"
+                    )}>
+                      {pct(row.rs_sector_20d)}
+                    </td>
+
+                    {/* Sector vs SPY */}
+                    <td className={cn("px-3 py-2.5 text-right tabular-nums",
+                      row.sector_vs_spy_20d == null ? "text-text-muted" :
+                      row.sector_vs_spy_20d > 0 ? "text-emerald-400" : "text-red-400"
+                    )}>
+                      {pct(row.sector_vs_spy_20d)}
+                    </td>
+
+                    {/* Triple RS badge */}
+                    <td className="px-3 py-2.5 text-center">
+                      {row.triple_rs ? (
+                        <span
+                          className="inline-block text-emerald-400 font-bold text-xs tracking-tighter"
+                          title="Stock outperforms sector AND sector outperforms SPY"
+                        >
+                          ↑↑↑
+                        </span>
+                      ) : (
+                        <span className="text-text-muted text-xs">—</span>
+                      )}
+                    </td>
+
+                    {/* Event risk */}
+                    <td className="px-3 py-2.5 text-center">
+                      {eventBadge(row.days_to_earnings, row.days_to_opex)}
+                    </td>
+
                     {/* Volume surge */}
                     <td className={cn("px-3 py-2.5 text-right tabular-nums",
                       row.vol_surge == null ? "text-text-muted" :
@@ -403,6 +659,10 @@ export default function SetupsPage() {
         <div className="flex flex-wrap gap-4 text-xs text-text-muted border border-border bg-surface rounded p-3">
           <div><span className="font-medium text-text-primary">Confluence</span> = trend + RS + momentum + vol + squeeze (0–100)</div>
           <div><span className="font-medium text-text-primary">Breakout</span> = squeeze + RS + 52W proximity + vol surge (0–100)</div>
+          <div><span className="font-medium text-text-primary">RS/Sect</span> = stock outperformance vs its sector ETF (20d)</div>
+          <div><span className="font-medium text-text-primary">Sect/SPY</span> = sector ETF outperformance vs SPY (20d)</div>
+          <div><span className="font-medium text-text-primary">↑↑↑</span> Triple RS: stock &gt; sector &gt; market — strongest momentum stack</div>
+          <div><span className="font-medium text-text-primary">E2d</span> = earnings in 2 days (red ≤2d, amber ≤7d) · <span className="font-medium text-text-primary">OX1d</span> = monthly OPEX tomorrow</div>
           <div><span className="font-medium text-text-primary">Stop/Target</span> = ATR-based (2× ATR stop · 3× ATR target)</div>
           <div><span className="font-medium text-text-primary">Stage</span>: S2 Uptrend is the highest-quality entry zone</div>
         </div>

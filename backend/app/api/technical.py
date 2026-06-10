@@ -2,24 +2,58 @@
 Short-term technical signals screener + setup engine + market regime.
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Optional
 import numpy as np
 import pandas as pd
 import logging
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Query, HTTPException
 
 from app.core.data import cache
 from app.core.data.universe_themes import THEMES, get_tickers_for, themes_as_dict
 from app.core.data import universe as uni_module
 from app.core.factors.technical import compute_all_signals
+from app.core.backtest.setup_backtest import (
+    run_setup_backtest, load_cached_winrates, save_winrates_cache,
+)
 
 router = APIRouter(tags=["technical"])
 logger = logging.getLogger(__name__)
 
 _START_1Y = (datetime.today() - timedelta(days=365)).strftime("%Y-%m-%d")
 _TODAY    = datetime.today().strftime("%Y-%m-%d")
+
+_SECTOR_ETF_TICKERS = list(uni_module.SECTOR_ETFS.keys())
+_SECTOR_NAME_TO_ETF = {v["sector"]: k for k, v in uni_module.SECTOR_ETFS.items()}
+
+
+def _next_monthly_opex(from_date: date) -> date:
+    """Returns the next 3rd Friday of a month (standard monthly options expiry)."""
+    for delta in range(3):
+        month = from_date.month + delta
+        year = from_date.year + (month - 1) // 12
+        month = (month - 1) % 12 + 1
+        first = date(year, month, 1)
+        first_friday = first + timedelta(days=(4 - first.weekday()) % 7)
+        third_friday = first_friday + timedelta(weeks=2)
+        if third_friday >= from_date:
+            return third_friday
+    return third_friday
+
+
+def _build_sector_etf_mapping(tickers: list[str]) -> dict[str, str]:
+    """Map each stock ticker to its sector ETF based on S&P 500 sector data."""
+    try:
+        sp500 = uni_module.get_sp500()
+        ticker_sector = sp500.set_index("ticker")["sector"].to_dict()
+        return {
+            t: _SECTOR_NAME_TO_ETF[ticker_sector[t]]
+            for t in tickers
+            if t in ticker_sector and ticker_sector.get(t) in _SECTOR_NAME_TO_ETF
+        }
+    except Exception:
+        return {}
 
 
 def _safe(val) -> Optional[float]:
@@ -91,14 +125,90 @@ def _determine_regime(
 
 
 async def _fetch_ohlcv(tickers: list[str]) -> dict:
-    tickers_with_spy = list(dict.fromkeys(["SPY"] + tickers))
+    all_tickers = list(dict.fromkeys(["SPY"] + _SECTOR_ETF_TICKERS + tickers))
     ohlcv = await asyncio.get_event_loop().run_in_executor(
-        None, cache.get_ohlcv_wide, tickers_with_spy, _START_1Y, _TODAY
+        None, cache.get_ohlcv_wide, all_tickers, _START_1Y, _TODAY
     )
     for key in ohlcv:
         if not ohlcv[key].empty:
             ohlcv[key] = ohlcv[key].ffill()
     return ohlcv
+
+
+# ── /setup-winrates ───────────────────────────────────────────────────────────
+
+_START_5Y = (datetime.today() - timedelta(days=5 * 365)).strftime("%Y-%m-%d")
+_winrate_computing = False
+
+
+def _bg_compute_winrates() -> None:
+    global _winrate_computing
+    _winrate_computing = True
+    try:
+        tickers = uni_module.get_sp500()["ticker"].tolist()
+        all_tickers = list(dict.fromkeys(["SPY"] + tickers))
+        ohlcv = cache.get_ohlcv_wide(all_tickers, _START_5Y, _TODAY)
+        prices = ohlcv.get("adj_close", pd.DataFrame()).ffill()
+        high   = ohlcv.get("high",      pd.DataFrame()).ffill()
+        low    = ohlcv.get("low",       pd.DataFrame()).ffill()
+        volume = ohlcv.get("volume",    pd.DataFrame()).ffill()
+        if prices.empty:
+            logger.warning("Setup backtest: no price data available")
+            return
+        results = run_setup_backtest(prices, high, low, volume)
+        save_winrates_cache(results)
+    except Exception as e:
+        logger.error(f"Setup backtest failed: {e}")
+    finally:
+        _winrate_computing = False
+
+
+@router.get("/setup-winrates")
+async def get_setup_winrates(
+    background_tasks: BackgroundTasks,
+    recompute: bool = Query(False),
+):
+    """
+    Returns historical win rates for each named setup.
+    Results are cached for 7 days. Pass ?recompute=true to force a fresh run.
+    """
+    global _winrate_computing
+
+    if not recompute:
+        cached = load_cached_winrates()
+        if cached:
+            return {"status": "ok", "results": cached}
+
+    if _winrate_computing:
+        return {"status": "computing", "results": None}
+
+    background_tasks.add_task(_bg_compute_winrates)
+    return {"status": "computing", "results": None}
+
+
+# ── background earnings fetch ─────────────────────────────────────────────────
+
+def _bg_fetch_earnings(tickers: list[str]) -> None:
+    from app.core.data import fetcher
+    data = fetcher.fetch_earnings_calendar(tickers)
+    cache.store_earnings(data)
+    logger.info(f"Earnings calendar fetched for {len(data)} tickers")
+
+
+# ── /prefetch-events ──────────────────────────────────────────────────────────
+
+@router.post("/prefetch-events")
+async def prefetch_events(
+    background_tasks: BackgroundTasks,
+    universe: str = Query("sp500"),
+):
+    """Trigger background fetch of earnings dates for a universe."""
+    tickers = _resolve_tickers(universe, "", "")
+    uncached = cache.get_uncached_earnings_tickers(tickers)
+    if not uncached:
+        return {"status": "cached", "tickers": 0}
+    background_tasks.add_task(_bg_fetch_earnings, uncached)
+    return {"status": "fetching", "tickers": len(uncached)}
 
 
 # ── /themes ───────────────────────────────────────────────────────────────────
@@ -139,6 +249,7 @@ async def get_signals(
         return {"total": 0, "page": page, "pages": 1, "results": [],
                 "universe_size": len(tickers), "message": "No price data cached"}
 
+    sector_map = _build_sector_etf_mapping(tickers)
     signals_df = await asyncio.get_event_loop().run_in_executor(
         None, compute_all_signals,
         prices,
@@ -146,6 +257,7 @@ async def get_signals(
         low    if not low.empty    else None,
         open_p if not open_p.empty else None,
         volume if not volume.empty else None,
+        sector_map or None,
     )
     signals_df = signals_df.drop(index="SPY", errors="ignore")
 
@@ -165,23 +277,26 @@ async def get_signals(
         nearest_pivot = str(np_raw).upper() if (np_raw is not None and str(np_raw) != "nan") else None
 
         rows.append({
-            "ticker":         ticker,
-            "price":          price,
-            "chg_1d":         chg_1d,
-            "rsi":            _safe(r.get("rsi")),
-            "bb_pct_b":       _safe(r.get("bb_pct_b")),
-            "macd_hist":      _safe(r.get("macd_hist")),
-            "ma50_dist":      _safe(r.get("ma50_dist")),
-            "ma200_dist":     _safe(r.get("ma200_dist")),
-            "rs_spy_20d":     _safe(r.get("rs_spy_20d")),
-            "rs_spy_5d":      _safe(r.get("rs_spy_5d")),
-            "vol_surge":      _safe(r.get("vol_surge")),
-            "atr_ratio":      _safe(r.get("atr_ratio")),
-            "overnight_gap":  _safe(r.get("overnight_gap")),
-            "rev_5d":         _safe(r.get("rev_5d")),
-            "momentum_score": _safe(r.get("momentum_score")),
-            "pivot_dist":     _safe(r.get("pivot_dist")),
-            "nearest_pivot":  nearest_pivot,
+            "ticker":            ticker,
+            "price":             price,
+            "chg_1d":            chg_1d,
+            "rsi":               _safe(r.get("rsi")),
+            "bb_pct_b":          _safe(r.get("bb_pct_b")),
+            "macd_hist":         _safe(r.get("macd_hist")),
+            "ma50_dist":         _safe(r.get("ma50_dist")),
+            "ma200_dist":        _safe(r.get("ma200_dist")),
+            "rs_spy_20d":        _safe(r.get("rs_spy_20d")),
+            "rs_spy_5d":         _safe(r.get("rs_spy_5d")),
+            "rs_sector_20d":     _safe(r.get("rs_sector_20d")),
+            "sector_vs_spy_20d": _safe(r.get("sector_vs_spy_20d")),
+            "triple_rs":         bool(r.get("triple_rs", 0) == 1.0),
+            "vol_surge":         _safe(r.get("vol_surge")),
+            "atr_ratio":         _safe(r.get("atr_ratio")),
+            "overnight_gap":     _safe(r.get("overnight_gap")),
+            "rev_5d":            _safe(r.get("rev_5d")),
+            "momentum_score":    _safe(r.get("momentum_score")),
+            "pivot_dist":        _safe(r.get("pivot_dist")),
+            "nearest_pivot":     nearest_pivot,
         })
 
     if search:
@@ -243,6 +358,7 @@ async def get_setups(
         return {"total": 0, "page": page, "pages": 1, "results": [],
                 "universe_size": len(tickers), "message": "No price data cached"}
 
+    sector_map = _build_sector_etf_mapping(tickers)
     signals_df = await asyncio.get_event_loop().run_in_executor(
         None, compute_all_signals,
         prices,
@@ -250,6 +366,7 @@ async def get_setups(
         low    if not low.empty    else None,
         open_p if not open_p.empty else None,
         volume if not volume.empty else None,
+        sector_map or None,
     )
     signals_df = signals_df.drop(index="SPY", errors="ignore")
 
@@ -277,32 +394,53 @@ async def get_setups(
         nearest_pivot = str(np_raw).upper() if (np_raw is not None and str(np_raw) != "nan") else None
 
         rows.append({
-            "ticker":           ticker,
-            "price":            price,
-            "chg_1d":           _safe(r.get("chg_1d")),
-            "setup":            setup,
-            "stage":            _safe(r.get("stage")),
-            "breakout_score":   _safe(r.get("breakout_score")),
-            "confluence_score": _safe(r.get("confluence_score")),
-            "rsi":              _safe(r.get("rsi")),
-            "rs_spy_20d":       _safe(r.get("rs_spy_20d")),
-            "vol_surge":        _safe(r.get("vol_surge")),
-            "ma50_dist":        _safe(r.get("ma50_dist")),
-            "ma200_dist":       _safe(r.get("ma200_dist")),
-            "bb_width_pct":     _safe(r.get("bb_width_pct")),
-            "atr_pct":          _safe(r.get("atr_pct")),
-            "dist_52w_high":    _safe(r.get("dist_52w_high")),
-            "accum_score":      _safe(r.get("accum_score")),
-            "nearest_pivot":    nearest_pivot,
-            "pivot_dist":       _safe(r.get("pivot_dist")),
-            "entry":            _safe(entry),
-            "stop":             stop_price,
-            "target":           target_price,
-            "rr":               rr,
-            "atr_dollar":       _safe(atr_dollar),
+            "ticker":            ticker,
+            "price":             price,
+            "chg_1d":            _safe(r.get("chg_1d")),
+            "setup":             setup,
+            "stage":             _safe(r.get("stage")),
+            "breakout_score":    _safe(r.get("breakout_score")),
+            "confluence_score":  _safe(r.get("confluence_score")),
+            "rsi":               _safe(r.get("rsi")),
+            "rs_spy_20d":        _safe(r.get("rs_spy_20d")),
+            "rs_sector_20d":     _safe(r.get("rs_sector_20d")),
+            "sector_vs_spy_20d": _safe(r.get("sector_vs_spy_20d")),
+            "triple_rs":         bool(r.get("triple_rs", 0) == 1.0),
+            "vol_surge":         _safe(r.get("vol_surge")),
+            "ma50_dist":         _safe(r.get("ma50_dist")),
+            "ma200_dist":        _safe(r.get("ma200_dist")),
+            "bb_width_pct":      _safe(r.get("bb_width_pct")),
+            "atr_pct":           _safe(r.get("atr_pct")),
+            "dist_52w_high":     _safe(r.get("dist_52w_high")),
+            "accum_score":       _safe(r.get("accum_score")),
+            "nearest_pivot":     nearest_pivot,
+            "pivot_dist":        _safe(r.get("pivot_dist")),
+            "entry":             _safe(entry),
+            "stop":              stop_price,
+            "target":            target_price,
+            "rr":                rr,
+            "atr_dollar":        _safe(atr_dollar),
         })
 
-    # Filters
+    # ── Event enrichment ──────────────────────────────────────────────────────
+    today_date   = datetime.today().date()
+    next_opex    = _next_monthly_opex(today_date)
+    days_to_opex = (next_opex - today_date).days
+    all_tickers  = [r["ticker"] for r in rows]
+    earnings_map = cache.get_earnings_dates(all_tickers)
+
+    for r in rows:
+        ed = earnings_map.get(r["ticker"])
+        if ed is not None:
+            days = (ed - today_date).days
+            r["earnings_date"]    = str(ed)
+            r["days_to_earnings"] = days if days >= 0 else None
+        else:
+            r["earnings_date"]    = None
+            r["days_to_earnings"] = None
+        r["days_to_opex"] = days_to_opex
+
+    # ── Filters ───────────────────────────────────────────────────────────────
     if setup_filter:
         rows = [r for r in rows if r["setup"] == setup_filter]
     else:
@@ -320,6 +458,134 @@ async def get_setups(
 
     if min_score > 0:
         rows = [r for r in rows if (r.get("confluence_score") or 0) >= min_score]
+
+    def sort_key(r):
+        v = r.get(sort_by)
+        return v if v is not None else (-9999 if desc else 9999)
+    rows.sort(key=sort_key, reverse=desc)
+
+    total     = len(rows)
+    offset    = (page - 1) * page_size
+    page_rows = rows[offset: offset + page_size]
+
+    return {
+        "total":         total,
+        "page":          page,
+        "page_size":     page_size,
+        "pages":         max(1, -(-total // page_size)),
+        "universe_size": len(tickers),
+        "as_of":         prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
+        "results":       page_rows,
+    }
+
+
+# ── /prebreakout ─────────────────────────────────────────────────────────────
+
+@router.get("/prebreakout")
+async def get_prebreakout(
+    universe:  str   = Query("sp500"),
+    min_score: float = Query(55, description="Min coiled_spring_score 0-100"),
+    sort_by:   str   = Query("coiled_spring_score"),
+    desc:      bool  = Query(True),
+    page:      int   = Query(1, ge=1),
+    page_size: int   = Query(50, ge=1, le=200),
+):
+    """
+    Pre-Breakout screener: stocks in a 'coiled spring' state.
+    Filters for Stage 2, above MAs, tight range, drying volume, near 52W high.
+    """
+    tickers = _resolve_tickers(universe, "", "")
+    if not tickers:
+        return {"total": 0, "page": page, "pages": 1, "results": [], "universe_size": 0}
+
+    ohlcv  = await _fetch_ohlcv(tickers)
+    prices = ohlcv.get("adj_close", pd.DataFrame())
+    high   = ohlcv.get("high",      pd.DataFrame())
+    low    = ohlcv.get("low",       pd.DataFrame())
+    open_p = ohlcv.get("open",      pd.DataFrame())
+    volume = ohlcv.get("volume",    pd.DataFrame())
+
+    if prices.empty or len(prices.columns) < 2:
+        return {"total": 0, "page": page, "pages": 1, "results": [],
+                "universe_size": len(tickers), "message": "No price data cached"}
+
+    sector_map = _build_sector_etf_mapping(tickers)
+    signals_df = await asyncio.get_event_loop().run_in_executor(
+        None, compute_all_signals,
+        prices,
+        high   if not high.empty   else None,
+        low    if not low.empty    else None,
+        open_p if not open_p.empty else None,
+        volume if not volume.empty else None,
+        sector_map or None,
+    )
+    signals_df = signals_df.drop(index="SPY", errors="ignore")
+
+    last_prices = prices.iloc[-1].dropna()
+
+    rows = []
+    for ticker in signals_df.index:
+        if ticker == "SPY":
+            continue
+        r     = signals_df.loc[ticker]
+        price = _safe(last_prices.get(ticker))
+
+        cs_score = r.get("coiled_spring_score")
+        stage    = r.get("stage")
+        ma50     = r.get("ma50_dist")
+        vol_s    = r.get("vol_surge")
+        dist52   = r.get("dist_52w_high")
+
+        # Hard filter: Stage 2, above 50-MA, near 52W high, volume not surging
+        if cs_score is None or float(cs_score) < min_score:
+            continue
+        if stage is None or float(stage) != 2.0:
+            continue
+        if ma50 is None or float(ma50) < 0:
+            continue
+        if dist52 is None or float(dist52) < -0.20:
+            continue
+        if vol_s is not None and float(vol_s) > 1.5:
+            continue
+
+        rows.append({
+            "ticker":             ticker,
+            "price":              price,
+            "chg_1d":             _safe(r.get("chg_1d")),
+            "coiled_spring_score": round(float(cs_score), 1),
+            "stage":              _safe(stage),
+            "bb_width_pct":       _safe(r.get("bb_width_pct")),
+            "atr_pct":            _safe(r.get("atr_pct")),
+            "range_compression":  _safe(r.get("range_compression")),
+            "vol_surge":          _safe(vol_s),
+            "dist_52w_high":      _safe(dist52),
+            "rs_spy_20d":         _safe(r.get("rs_spy_20d")),
+            "rs_sector_20d":      _safe(r.get("rs_sector_20d")),
+            "triple_rs":          bool(r.get("triple_rs", 0) == 1.0),
+            "accum_score":        _safe(r.get("accum_score")),
+            "ma50_dist":          _safe(ma50),
+            "ma200_dist":         _safe(r.get("ma200_dist")),
+            "nr7":                bool(r.get("nr7", 0) == 1.0),
+            "rsi":                _safe(r.get("rsi")),
+            "breakout_score":     _safe(r.get("breakout_score")),
+        })
+
+    # Event enrichment
+    today_date   = datetime.today().date()
+    next_opex    = _next_monthly_opex(today_date)
+    days_to_opex = (next_opex - today_date).days
+    earnings_map = cache.get_earnings_dates([r["ticker"] for r in rows])
+
+    for r in rows:
+        ed = earnings_map.get(r["ticker"])
+        if ed is not None:
+            days = (ed - today_date).days
+            r["earnings_date"]    = str(ed)
+            r["days_to_earnings"] = days if days >= 0 else None
+        else:
+            r["earnings_date"]    = None
+            r["days_to_earnings"] = None
+        r["days_to_opex"] = days_to_opex
 
     def sort_key(r):
         v = r.get(sort_by)

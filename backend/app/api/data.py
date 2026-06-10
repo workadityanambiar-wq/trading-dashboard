@@ -174,6 +174,105 @@ def _bg_fetch_sp500(tickers: List[str]) -> None:
         logger.error(f"SP500 breadth prefetch failed: {e}")
 
 
+@router.get("/sector-rotation")
+async def get_sector_rotation():
+    """
+    Relative Rotation Graph data for all 11 GICS sector ETFs vs SPY.
+    RS Ratio  = % deviation of (sector/SPY) from its 252-day mean  → strength level
+    RS Momentum = 21-day change in RS Ratio                         → acceleration
+    """
+    watchlist = universe.get_watchlist_tickers()
+    today = datetime.today().strftime("%Y-%m-%d")
+
+    await asyncio.get_event_loop().run_in_executor(
+        None, fetcher.ensure_prices, watchlist, _START_2Y, today
+    )
+
+    prices = cache.get_adj_close(watchlist, _START_2Y, today)
+    if prices.empty or "SPY" not in prices.columns:
+        raise HTTPException(503, "Price data unavailable")
+
+    prices = prices.ffill()
+    spy    = prices["SPY"].dropna()
+
+    sectors_out = []
+    current_rs: dict[str, float] = {}
+
+    for ticker, meta in universe.SECTOR_ETFS.items():
+        if ticker not in prices.columns:
+            continue
+        sec = prices[ticker].dropna()
+        common = sec.index.intersection(spy.index)
+        if len(common) < 252:
+            continue
+
+        s  = sec.loc[common]
+        sp = spy.loc[common]
+
+        rel      = s / sp
+        rs_mean  = rel.rolling(252).mean()
+        rs_ratio = ((rel - rs_mean) / rs_mean * 100)
+
+        rs_momentum = rs_ratio - rs_ratio.shift(21)
+
+        cur_ratio   = float(rs_ratio.iloc[-1])
+        cur_mom     = float(rs_momentum.iloc[-1])
+        current_rs[ticker] = cur_ratio
+
+        if cur_ratio >= 0 and cur_mom >= 0:
+            quadrant = "Leading"
+        elif cur_ratio < 0 and cur_mom >= 0:
+            quadrant = "Improving"
+        elif cur_ratio >= 0 and cur_mom < 0:
+            quadrant = "Weakening"
+        else:
+            quadrant = "Lagging"
+
+        # Trail: up to 8 weekly snapshots (every 5 trading days) + current
+        trail: list[list[float]] = []
+        for i in range(7, 0, -1):
+            offset = i * 5
+            if offset < len(rs_ratio):
+                r = rs_ratio.iloc[-offset - 1]
+                m = rs_momentum.iloc[-offset - 1]
+                if not (np.isnan(r) or np.isnan(m)):
+                    trail.append([round(float(r), 3), round(float(m), 3)])
+        trail.append([round(cur_ratio, 3), round(cur_mom, 3)])
+
+        now = s.index[-1]
+        one_week     = now - timedelta(days=7)
+        one_month    = now - pd.DateOffset(months=1)
+        three_months = now - pd.DateOffset(months=3)
+        first_of_year = pd.Timestamp(now.year, 1, 1)
+
+        sectors_out.append({
+            "ticker":       ticker,
+            "name":         meta["name"],
+            "sector":       meta["sector"],
+            "rs_ratio":     round(cur_ratio, 3),
+            "rs_momentum":  round(cur_mom, 3),
+            "quadrant":     quadrant,
+            "trail":        trail,
+            "change_1d":    round(_safe_return(s, -2), 4),
+            "change_1w":    round(_safe_return(s, _get_ref_idx(s, one_week)),     4),
+            "change_1m":    round(_safe_return(s, _get_ref_idx(s, one_month)),    4),
+            "change_3m":    round(_safe_return(s, _get_ref_idx(s, three_months)), 4),
+            "change_ytd":   round(_safe_return(s, _get_ref_idx(s, first_of_year - timedelta(days=1))), 4),
+        })
+
+    sorted_rs = sorted(current_rs.items(), key=lambda x: x[1], reverse=True)
+    rank_map  = {t: r + 1 for r, (t, _) in enumerate(sorted_rs)}
+    for item in sectors_out:
+        item["rs_rank"] = rank_map.get(item["ticker"], 99)
+
+    sectors_out.sort(key=lambda x: x["rs_rank"])
+
+    return {
+        "as_of":   str(spy.index[-1].date()) if not spy.empty else today,
+        "sectors": sectors_out,
+    }
+
+
 @router.get("/prices/{ticker}", response_model=PricesResponse)
 async def get_prices(ticker: str, period: str = Query("1y")):
     period_map = {"1m": 30, "3m": 90, "6m": 180, "1y": 365, "2y": 730, "5y": 1825}

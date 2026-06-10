@@ -11,17 +11,21 @@ import {
   ShieldAlert,
   Activity,
   Zap,
+  RotateCcw,
+  Crosshair,
 } from "lucide-react";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/setups", label: "Setups", icon: Zap },
-  { href: "/screener", label: "Screener", icon: ScanSearch },
-  { href: "/factors", label: "Factors", icon: TrendingUp },
-  { href: "/intraday", label: "ST Signals", icon: Activity },
-  { href: "/backtest", label: "Backtester", icon: FlaskConical },
+  { href: "/",          label: "Overview",  icon: LayoutDashboard },
+  { href: "/setups",    label: "Setups",    icon: Zap },
+  { href: "/rotation",  label: "Rotation",  icon: RotateCcw },
+  { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
+  { href: "/screener",  label: "Screener",  icon: ScanSearch },
+  { href: "/factors",   label: "Factors",   icon: TrendingUp },
+  { href: "/intraday",  label: "ST Signals",icon: Activity },
+  { href: "/backtest",  label: "Backtester",icon: FlaskConical },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
-  { href: "/risk", label: "Risk", icon: ShieldAlert },
+  { href: "/risk",      label: "Risk",      icon: ShieldAlert },
 ];
 
 export function Sidebar() {

@@ -20,6 +20,29 @@ export interface SectorReturn {
   change_ytd: number;
 }
 
+export type RotationQuadrant = "Leading" | "Improving" | "Weakening" | "Lagging";
+
+export interface SectorRotationPoint {
+  ticker: string;
+  name: string;
+  sector: string;
+  rs_ratio: number;
+  rs_momentum: number;
+  quadrant: RotationQuadrant;
+  rs_rank: number;
+  trail: [number, number][];
+  change_1d: number;
+  change_1w: number;
+  change_1m: number;
+  change_3m: number;
+  change_ytd: number;
+}
+
+export interface SectorRotationResponse {
+  as_of: string;
+  sectors: SectorRotationPoint[];
+}
+
 export interface BreadthData {
   above_50ma_pct: number;
   above_200ma_pct: number;
@@ -267,6 +290,7 @@ export const FACTOR_OPTIONS: { value: string; label: string; icHistory: boolean 
 
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
+  getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
   getPrices: (ticker: string, period = "1y") =>
     apiFetch<PricesResponse>(`/data/prices/${ticker}?period=${period}`),
   getUniverse: () => apiFetch<{ ticker: string; name: string; sector: string; sub_industry: string }[]>("/data/universe"),
@@ -327,6 +351,20 @@ export const api = {
     return apiFetch<SetupsResponse>(`/technical/setups?${q.toString()}`);
   },
   getRegime: () => apiFetch<RegimeResponse>("/technical/regime"),
+  getPreBreakout: (params?: PreBreakoutParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)    q.set("universe",   params.universe);
+    if (params?.min_score != null) q.set("min_score", String(params.min_score));
+    if (params?.sort_by)     q.set("sort_by",    params.sort_by);
+    if (params?.desc != null) q.set("desc",      String(params.desc));
+    if (params?.page)        q.set("page",       String(params.page));
+    if (params?.page_size)   q.set("page_size",  String(params.page_size));
+    return apiFetch<PreBreakoutResponse>(`/technical/prebreakout?${q.toString()}`);
+  },
+  prefetchEvents: (universe = "sp500") =>
+    fetch(`/api/technical/prefetch-events?universe=${universe}`, { method: "POST" }),
+  getSetupWinRates: (recompute = false) =>
+    apiFetch<SetupWinRatesResponse>(`/technical/setup-winrates${recompute ? "?recompute=true" : ""}`),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────
@@ -350,6 +388,9 @@ export interface SetupSignal {
   confluence_score: number | null;
   rsi: number | null;
   rs_spy_20d: number | null;
+  rs_sector_20d: number | null;
+  sector_vs_spy_20d: number | null;
+  triple_rs: boolean | null;
   vol_surge: number | null;
   ma50_dist: number | null;
   ma200_dist: number | null;
@@ -364,6 +405,9 @@ export interface SetupSignal {
   target: number | null;
   rr: number | null;
   atr_dollar: number | null;
+  earnings_date: string | null;
+  days_to_earnings: number | null;
+  days_to_opex: number | null;
 }
 
 export interface SetupsResponse {
@@ -380,6 +424,66 @@ export interface SetupsParams {
   universe?: string;
   setup_filter?: string;
   stage_filter?: string;
+  min_score?: number;
+  sort_by?: string;
+  desc?: boolean;
+  page?: number;
+  page_size?: number;
+}
+
+// ── Setup win-rate types ──────────────────────────────────────────────────────
+
+export interface SetupWinRateStat {
+  setup: string;
+  n_5d?: number;   win_rate_5d?: number;   avg_ret_5d?: number;   median_ret_5d?: number;   expectancy_5d?: number;
+  n_10d?: number;  win_rate_10d?: number;  avg_ret_10d?: number;  median_ret_10d?: number;  expectancy_10d?: number;
+  n_20d?: number;  win_rate_20d?: number;  avg_ret_20d?: number;  median_ret_20d?: number;  expectancy_20d?: number;
+}
+
+export interface SetupWinRatesResponse {
+  status: "ok" | "computing";
+  results: Record<string, SetupWinRateStat> | null;
+}
+
+// ── Pre-Breakout / Coiled-Spring types ───────────────────────────────────────
+
+export interface CoiledSpringSignal {
+  ticker: string;
+  price: number | null;
+  chg_1d: number | null;
+  coiled_spring_score: number;
+  stage: number | null;
+  bb_width_pct: number | null;
+  atr_pct: number | null;
+  range_compression: number | null;
+  vol_surge: number | null;
+  dist_52w_high: number | null;
+  rs_spy_20d: number | null;
+  rs_sector_20d: number | null;
+  triple_rs: boolean;
+  accum_score: number | null;
+  ma50_dist: number | null;
+  ma200_dist: number | null;
+  nr7: boolean;
+  rsi: number | null;
+  breakout_score: number | null;
+  earnings_date: string | null;
+  days_to_earnings: number | null;
+  days_to_opex: number | null;
+}
+
+export interface PreBreakoutResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  universe_size: number;
+  as_of: string | null;
+  results: CoiledSpringSignal[];
+}
+
+export interface PreBreakoutParams {
+  universe?: string;
   min_score?: number;
   sort_by?: string;
   desc?: boolean;
@@ -510,6 +614,9 @@ export interface TechnicalSignal {
   ma200_dist: number | null;
   rs_spy_20d: number | null;
   rs_spy_5d: number | null;
+  rs_sector_20d: number | null;
+  sector_vs_spy_20d: number | null;
+  triple_rs: boolean | null;
   vol_surge: number | null;
   atr_ratio: number | null;
   overnight_gap: number | null;
