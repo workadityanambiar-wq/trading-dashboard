@@ -16,9 +16,11 @@ import {
   AlignCenter,
   CalendarDays,
   BarChart3,
+  Star,
 } from "lucide-react";
 
 const NAV = [
+  { href: "/watchlist",   label: "Watchlist",    icon: Star },
   { href: "/",          label: "Overview",  icon: LayoutDashboard },
   { href: "/setups",    label: "Setups",    icon: Zap },
   { href: "/rotation",  label: "Rotation",  icon: RotateCcw },

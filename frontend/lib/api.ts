@@ -424,14 +424,15 @@ export const api = {
   },
   getSetups: (params: SetupsParams) => {
     const q = new URLSearchParams();
-    if (params.universe)      q.set("universe",      params.universe);
-    if (params.setup_filter)  q.set("setup_filter",  params.setup_filter);
-    if (params.stage_filter)  q.set("stage_filter",  params.stage_filter);
-    if (params.min_score)     q.set("min_score",     String(params.min_score));
+    if (params.universe)            q.set("universe",          params.universe);
+    if (params.setup_filter)        q.set("setup_filter",      params.setup_filter);
+    if (params.stage_filter)        q.set("stage_filter",      params.stage_filter);
+    if (params.min_score)           q.set("min_score",         String(params.min_score));
     q.set("sort_by", params.sort_by ?? "regime_adjusted_score");
-    if (params.desc != null)  q.set("desc",          String(params.desc));
-    if (params.page)          q.set("page",          String(params.page));
-    if (params.page_size)     q.set("page_size",     String(params.page_size));
+    if (params.desc != null)        q.set("desc",              String(params.desc));
+    if (params.page)                q.set("page",              String(params.page));
+    if (params.page_size)           q.set("page_size",         String(params.page_size));
+    if (params.include_no_setup)    q.set("include_no_setup",  "true");
     return apiFetch<SetupsResponse>(`/technical/setups?${q.toString()}`);
   },
   getRegime: () => apiFetch<RegimeResponse>("/technical/regime"),
@@ -548,6 +549,7 @@ export interface SetupsParams {
   desc?: boolean;
   page?: number;
   page_size?: number;
+  include_no_setup?: boolean;
 }
 
 // ── Setup win-rate types ──────────────────────────────────────────────────────

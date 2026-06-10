@@ -388,14 +388,15 @@ async def get_signals(
 
 @router.get("/setups")
 async def get_setups(
-    universe:     str  = Query("sp500"),
-    setup_filter: str  = Query("", description="Filter by exact setup name"),
-    stage_filter: str  = Query("", description="Comma-separated stages, e.g. '2' or '1,2'"),
-    min_score:    float = Query(0,  description="Min confluence score 0-100"),
-    sort_by:      str  = Query("regime_adjusted_score"),
-    desc:         bool = Query(True),
-    page:         int  = Query(1, ge=1),
-    page_size:    int  = Query(50, ge=1, le=200),
+    universe:         str   = Query("sp500"),
+    setup_filter:     str   = Query("", description="Filter by exact setup name"),
+    stage_filter:     str   = Query("", description="Comma-separated stages, e.g. '2' or '1,2'"),
+    min_score:        float = Query(0,  description="Min confluence score 0-100"),
+    sort_by:          str   = Query("regime_adjusted_score"),
+    desc:             bool  = Query(True),
+    page:             int   = Query(1, ge=1),
+    page_size:        int   = Query(50, ge=1, le=200),
+    include_no_setup: bool  = Query(False, description="Include tickers with no active setup (for watchlist)"),
 ):
     tickers = _resolve_tickers(universe, "", "")
     if not tickers:
@@ -518,7 +519,7 @@ async def get_setups(
     # ── Filters ───────────────────────────────────────────────────────────────
     if setup_filter:
         rows = [r for r in rows if r["setup"] == setup_filter]
-    else:
+    elif not include_no_setup:
         rows = [r for r in rows if r["setup"] != "No Setup"]
 
     if stage_filter:

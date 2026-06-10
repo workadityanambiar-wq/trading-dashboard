@@ -3,7 +3,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
+import { useWatchlist } from "@/hooks/useWatchlist";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -323,6 +324,7 @@ export default function SetupsPage() {
   const [universe, setUniverse]             = useState("sp500");
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
+  const { has: wlHas, add: wlAdd, remove: wlRemove } = useWatchlist();
   const PAGE_SIZE = 50;
 
   const handlePrefetchEvents = useCallback(async () => {
@@ -546,7 +548,21 @@ export default function SetupsPage() {
                     )}
                   >
                     {/* Ticker */}
-                    <td className="px-3 py-2.5 font-medium text-text-primary">{row.ticker}</td>
+                    <td className="px-3 py-2.5 font-medium text-text-primary">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => wlHas(row.ticker) ? wlRemove(row.ticker) : wlAdd(row.ticker)}
+                          title={wlHas(row.ticker) ? "Remove from watchlist" : "Add to watchlist"}
+                          className="shrink-0 transition-colors"
+                        >
+                          <Star size={11}
+                            className={wlHas(row.ticker) ? "fill-amber-400 text-amber-400" : "text-text-muted/30 hover:text-amber-400"}
+                            strokeWidth={1.5}
+                          />
+                        </button>
+                        {row.ticker}
+                      </div>
+                    </td>
 
                     {/* Setup badge */}
                     <td className="px-3 py-2.5">
