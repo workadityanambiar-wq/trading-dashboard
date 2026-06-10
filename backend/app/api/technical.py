@@ -10,7 +10,7 @@ import logging
 
 from fastapi import APIRouter, BackgroundTasks, Query, HTTPException
 
-from app.core.data import cache
+from app.core.data import cache, fetcher
 from app.core.data.universe_themes import THEMES, get_tickers_for, themes_as_dict
 from app.core.data import universe as uni_module
 from app.core.data import universe_india as india_module
@@ -1281,6 +1281,133 @@ async def get_regime():
         "spy_vs_200d":       round(spy_vs_200d * 100, 2)  if spy_vs_200d        else None,
         "breadth_above_50d":  round(breadth_above_50d * 100, 1) if breadth_above_50d  else None,
         "breadth_above_200d": round(breadth_above_200d * 100, 1) if breadth_above_200d else None,
+    }
+
+
+# ── /volatility ──────────────────────────────────────────────────────────────
+
+_VOL_TICKERS = ["^VIX", "^VIX3M", "^VVIX", "^SKEW", "SPY"]
+
+def _vol_regime(vix: float) -> tuple[str, str]:
+    """(label, color_key) for a VIX level."""
+    if vix < 12:  return "Very Low",  "green"
+    if vix < 18:  return "Low",       "green"
+    if vix < 25:  return "Normal",    "yellow"
+    if vix < 35:  return "Elevated",  "orange"
+    if vix < 50:  return "High",      "red"
+    return               "Crisis",    "red"
+
+
+@router.get("/volatility")
+async def get_volatility_dashboard(
+    lookback_days: int = Query(252, ge=63, le=1260),
+):
+    """
+    VIX level, term structure (VIX1M/VIX3M), percentile, VVIX, SKEW,
+    vol regime label, and full daily history for chart rendering.
+    """
+    start = (datetime.today() - timedelta(days=lookback_days + 60)).strftime("%Y-%m-%d")
+
+    # Ensure data is cached
+    await asyncio.get_event_loop().run_in_executor(
+        None, fetcher.ensure_prices, _VOL_TICKERS, start, _TODAY
+    )
+
+    raw    = await asyncio.get_event_loop().run_in_executor(
+        None, cache.get_ohlcv_wide, _VOL_TICKERS, start, _TODAY
+    )
+    prices = raw.get("adj_close", pd.DataFrame()).ffill()
+
+    if prices.empty or "^VIX" not in prices.columns:
+        return {"error": "VIX data not available — backend may need to prefetch"}
+
+    vix_s = prices["^VIX"].dropna()
+    if vix_s.empty:
+        return {"error": "VIX series empty"}
+
+    # ── Current snapshot ──────────────────────────────────────────────────────
+    current_vix   = float(vix_s.iloc[-1])
+    vix_ma20      = float(vix_s.rolling(20).mean().iloc[-1]) if len(vix_s) >= 20 else None
+    vix_ma50      = float(vix_s.rolling(50).mean().iloc[-1]) if len(vix_s) >= 50 else None
+    regime_label, regime_color = _vol_regime(current_vix)
+
+    # VIX percentile vs trailing 252 days
+    vix_1y      = vix_s.tail(252)
+    vix_pct_1y  = round(float((vix_1y < current_vix).mean()) * 100, 1)
+    vix_1y_low  = round(float(vix_1y.min()), 2)
+    vix_1y_high = round(float(vix_1y.max()), 2)
+
+    # VIX3M and term structure (contango / backwardation)
+    vix3m_s          = prices["^VIX3M"].dropna() if "^VIX3M" in prices.columns else pd.Series(dtype=float)
+    current_vix3m    = float(vix3m_s.iloc[-1]) if not vix3m_s.empty else None
+    # Negative = contango (normal: near-term < long-term), Positive = backwardation (panic)
+    term_structure   = round(current_vix / current_vix3m - 1, 4) if current_vix3m else None
+
+    # VVIX and SKEW
+    vvix_s       = prices["^VVIX"].dropna() if "^VVIX" in prices.columns else pd.Series(dtype=float)
+    skew_s       = prices["^SKEW"].dropna() if "^SKEW" in prices.columns else pd.Series(dtype=float)
+    current_vvix = round(float(vvix_s.iloc[-1]), 2) if not vvix_s.empty else None
+    current_skew = round(float(skew_s.iloc[-1]), 2) if not skew_s.empty else None
+
+    # VVIX percentile
+    vvix_pct_1y = None
+    if not vvix_s.empty:
+        v_1y = vvix_s.tail(252)
+        vvix_pct_1y = round(float((v_1y < float(vvix_s.iloc[-1])).mean()) * 100, 1)
+
+    # SPY context
+    spy_s     = prices["SPY"].dropna() if "SPY" in prices.columns else pd.Series(dtype=float)
+    spy_1m    = round(float(spy_s.iloc[-1] / spy_s.iloc[-22] - 1), 4) if len(spy_s) >= 22 else None
+    spy_3m    = round(float(spy_s.iloc[-1] / spy_s.iloc[-64] - 1), 4) if len(spy_s) >= 64 else None
+    spy_ytd   = None
+    if not spy_s.empty:
+        this_year = str(spy_s.index[-1].year) + "-01-01"
+        ytd_prices = spy_s[spy_s.index >= this_year]
+        spy_ytd = round(float(ytd_prices.iloc[-1] / ytd_prices.iloc[0] - 1), 4) if len(ytd_prices) >= 2 else None
+
+    # ── History series ────────────────────────────────────────────────────────
+    ma20_full  = vix_s.rolling(20).mean()
+    ma50_full  = vix_s.rolling(50).mean()
+    start_idx  = max(0, len(vix_s) - lookback_days)
+    history    = []
+
+    for i in range(start_idx, len(vix_s)):
+        d   = vix_s.index[i]
+        v   = round(float(vix_s.iloc[i]), 2)
+        m20 = round(float(ma20_full.iloc[i]), 2) if not pd.isna(ma20_full.iloc[i]) else None
+        m50 = round(float(ma50_full.iloc[i]), 2) if not pd.isna(ma50_full.iloc[i]) else None
+
+        v3m = None
+        if not vix3m_s.empty and d in vix3m_s.index and not pd.isna(vix3m_s.loc[d]):
+            v3m = round(float(vix3m_s.loc[d]), 2)
+
+        history.append({
+            "date":    d.strftime("%Y-%m-%d"),
+            "vix":     v,
+            "vix_ma20":m20,
+            "vix_ma50":m50,
+            "vix3m":   v3m,
+        })
+
+    return {
+        "as_of":          vix_s.index[-1].strftime("%Y-%m-%d"),
+        "vix":            round(current_vix, 2),
+        "vix_ma20":       round(vix_ma20, 2)  if vix_ma20  else None,
+        "vix_ma50":       round(vix_ma50, 2)  if vix_ma50  else None,
+        "regime":         regime_label,
+        "regime_color":   regime_color,
+        "vix_pct_1y":     vix_pct_1y,
+        "vix_1y_low":     vix_1y_low,
+        "vix_1y_high":    vix_1y_high,
+        "vix3m":          round(current_vix3m, 2) if current_vix3m else None,
+        "term_structure": term_structure,
+        "vvix":           current_vvix,
+        "vvix_pct_1y":    vvix_pct_1y,
+        "skew":           current_skew,
+        "spy_1m":         spy_1m,
+        "spy_3m":         spy_3m,
+        "spy_ytd":        spy_ytd,
+        "history":        history,
     }
 
 

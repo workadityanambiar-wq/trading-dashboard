@@ -345,6 +345,38 @@ export interface BacktestResult {
   n_tickers_available: number;
 }
 
+// ── Volatility dashboard types ────────────────────────────────────────────────
+
+export interface VolHistoryPoint {
+  date:     string;
+  vix:      number;
+  vix_ma20: number | null;
+  vix_ma50: number | null;
+  vix3m:    number | null;
+}
+
+export interface VolatilityResponse {
+  as_of:          string;
+  vix:            number;
+  vix_ma20:       number | null;
+  vix_ma50:       number | null;
+  regime:         string;
+  regime_color:   string;
+  vix_pct_1y:     number;
+  vix_1y_low:     number;
+  vix_1y_high:    number;
+  vix3m:          number | null;
+  term_structure: number | null;
+  vvix:           number | null;
+  vvix_pct_1y:    number | null;
+  skew:           number | null;
+  spy_1m:         number | null;
+  spy_3m:         number | null;
+  spy_ytd:        number | null;
+  history:        VolHistoryPoint[];
+  error?:         string;
+}
+
 // ── Correlations types ────────────────────────────────────────────────────────
 
 export interface CorrPair {
@@ -594,6 +626,8 @@ export const api = {
     if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
     return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
   },
+  getVolatility: (lookback_days = 252) =>
+    apiFetch<VolatilityResponse>(`/technical/volatility?lookback_days=${lookback_days}`),
   getCorrelations: (params?: CorrelationsParams) => {
     const q = new URLSearchParams();
     if (params?.universe)               q.set("universe",    params.universe);
