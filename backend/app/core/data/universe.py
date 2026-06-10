@@ -12,6 +12,10 @@ INDEX_TICKERS: Dict[str, str] = {
     "IWM": "Russell 2000",
     "DIA": "Dow Jones",
     "^VIX": "VIX",
+    "^NSEI": "Nifty 50",
+    "^STOXX50E": "Euro Stoxx 50",
+    "^N225": "Nikkei 225",
+    "^FTSE": "FTSE 100",
 }
 
 SECTOR_ETFS: Dict[str, Dict] = {

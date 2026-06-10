@@ -13,6 +13,8 @@ from fastapi import APIRouter, BackgroundTasks, Query, HTTPException
 from app.core.data import cache
 from app.core.data.universe_themes import THEMES, get_tickers_for, themes_as_dict
 from app.core.data import universe as uni_module
+from app.core.data import universe_india as india_module
+from app.core.data import universe_global as global_module
 from app.core.factors.technical import compute_all_signals
 from app.core.backtest.setup_backtest import (
     run_setup_backtest, load_cached_winrates, save_winrates_cache,
@@ -26,6 +28,22 @@ _TODAY    = datetime.today().strftime("%Y-%m-%d")
 
 _SECTOR_ETF_TICKERS = list(uni_module.SECTOR_ETFS.keys())
 _SECTOR_NAME_TO_ETF = {v["sector"]: k for k, v in uni_module.SECTOR_ETFS.items()}
+
+_IN_SUFFIXES = {".NS"}
+_EU_SUFFIXES = {".DE", ".PA", ".L", ".AS", ".SW", ".MC", ".MI"}
+
+
+def _universe_benchmark(tickers: list[str]) -> tuple[str, bool]:
+    """Return (benchmark_ticker, use_sector_etfs).
+    Non-US universes use their regional index and skip US sector ETFs."""
+    n = max(len(tickers), 1)
+    ns = sum(1 for t in tickers if any(t.endswith(s) for s in _IN_SUFFIXES))
+    eu = sum(1 for t in tickers if any(t.endswith(s) for s in _EU_SUFFIXES))
+    if ns / n > 0.4:
+        return "^NSEI", False
+    if eu / n > 0.4:
+        return "^STOXX50E", False
+    return "SPY", True
 
 # How well each setup type fits each market regime (0–100).
 # High score = regime is a tailwind for this setup type.
@@ -84,6 +102,12 @@ def _resolve_tickers(universe: str, theme: str, segment: str) -> list[str]:
         return uni_module.get_sp500()["ticker"].tolist()
     if universe == "sp1500":
         return uni_module.get_sp1500_tickers()
+    if universe == "nifty50":
+        return india_module.get_nifty50()["ticker"].tolist()
+    if universe == "euro_top":
+        return global_module.get_euro_top()["ticker"].tolist()
+    if universe == "etfs":
+        return global_module.get_popular_etfs()["ticker"].tolist()
     if universe == "all_cached":
         return list(cache.get_tickers_with_prices())
     return [t.strip().upper() for t in universe.split(",") if t.strip()]
@@ -137,13 +161,17 @@ def _determine_regime(
 
 
 async def _fetch_ohlcv(tickers: list[str]) -> dict:
-    all_tickers = list(dict.fromkeys(["SPY"] + _SECTOR_ETF_TICKERS + tickers))
+    benchmark, use_sector_etfs = _universe_benchmark(tickers)
+    extra = _SECTOR_ETF_TICKERS if use_sector_etfs else []
+    all_tickers = list(dict.fromkeys([benchmark] + extra + tickers))
     ohlcv = await asyncio.get_event_loop().run_in_executor(
         None, cache.get_ohlcv_wide, all_tickers, _START_1Y, _TODAY
     )
     for key in ohlcv:
         if not ohlcv[key].empty:
             ohlcv[key] = ohlcv[key].ffill()
+            if benchmark != "SPY" and benchmark in ohlcv[key].columns:
+                ohlcv[key] = ohlcv[key].rename(columns={benchmark: "SPY"})
     return ohlcv
 
 

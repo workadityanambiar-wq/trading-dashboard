@@ -158,6 +158,9 @@ export default function MTFPage() {
         >
           <option value="sp500">S&P 500</option>
           <option value="sp1500">S&P 1500</option>
+          <option value="nifty50">Nifty 50</option>
+          <option value="euro_top">Europe Top 40</option>
+          <option value="etfs">Popular ETFs</option>
           <option value="all_cached">All Cached</option>
         </select>
 

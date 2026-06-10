@@ -320,6 +320,7 @@ export default function SetupsPage() {
   const [setupFilter, setSetupFilter]       = useState<string>("");
   const [stageFilter, setStageFilter]       = useState<string>("");
   const [sortBy, setSortBy]                 = useState("regime_adjusted_score");
+  const [universe, setUniverse]             = useState("sp500");
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
   const PAGE_SIZE = 50;
@@ -338,9 +339,9 @@ export default function SetupsPage() {
   });
 
   const setupsQuery = useQuery({
-    queryKey: ["setups", setupFilter, stageFilter, sortBy, page],
+    queryKey: ["setups", universe, setupFilter, stageFilter, sortBy, page],
     queryFn:  () => api.getSetups({
-      universe:     "sp500",
+      universe,
       setup_filter: setupFilter,
       stage_filter: stageFilter,
       sort_by:      sortBy,
@@ -439,6 +440,20 @@ export default function SetupsPage() {
 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-3">
+        {/* Universe */}
+        <select
+          value={universe}
+          onChange={e => { setUniverse(e.target.value); setPage(1); }}
+          className="text-xs bg-surface-2 border border-border rounded-md px-2.5 py-1.5 text-text-primary focus:outline-none"
+        >
+          <option value="sp500">S&P 500</option>
+          <option value="sp1500">S&P 1500</option>
+          <option value="nifty50">Nifty 50</option>
+          <option value="euro_top">Europe Top 40</option>
+          <option value="etfs">Popular ETFs</option>
+          <option value="all_cached">All Cached</option>
+        </select>
+
         {/* Stage filter */}
         <div className="flex items-center gap-1">
           <span className="text-xs text-text-muted mr-1">Stage</span>
