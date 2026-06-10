@@ -643,6 +643,108 @@ async def get_prebreakout(
     }
 
 
+# ── /mtf ─────────────────────────────────────────────────────────────────────
+
+@router.get("/mtf")
+async def get_mtf_alignment(
+    universe:  str  = Query("sp500"),
+    min_align: int  = Query(2, ge=0, le=3, description="Min timeframes aligned (0–3)"),
+    sort_by:   str  = Query("mtf_score"),
+    desc:      bool = Query(True),
+    page:      int  = Query(1, ge=1),
+    page_size: int  = Query(50, ge=1, le=200),
+):
+    """
+    Multi-Timeframe Alignment screener.
+    Surfaces stocks where Weekly, Daily, and Short-term trends agree.
+    min_align=3 → all three timeframes bullish (strongest signal).
+    """
+    tickers = _resolve_tickers(universe, "", "")
+    if not tickers:
+        return {"total": 0, "page": page, "pages": 1, "results": [], "universe_size": 0}
+
+    ohlcv  = await _fetch_ohlcv(tickers)
+    prices = ohlcv.get("adj_close", pd.DataFrame())
+    high   = ohlcv.get("high",      pd.DataFrame())
+    low    = ohlcv.get("low",       pd.DataFrame())
+    open_p = ohlcv.get("open",      pd.DataFrame())
+    volume = ohlcv.get("volume",    pd.DataFrame())
+
+    if prices.empty or len(prices.columns) < 2:
+        return {"total": 0, "page": page, "pages": 1, "results": [],
+                "universe_size": len(tickers), "message": "No price data cached"}
+
+    sector_map = _build_sector_etf_mapping(tickers)
+    signals_df = await asyncio.get_event_loop().run_in_executor(
+        None, compute_all_signals,
+        prices,
+        high   if not high.empty   else None,
+        low    if not low.empty    else None,
+        open_p if not open_p.empty else None,
+        volume if not volume.empty else None,
+        sector_map or None,
+    )
+    signals_df = signals_df.drop(index="SPY", errors="ignore")
+
+    last_prices = prices.iloc[-1].dropna()
+
+    rows = []
+    for ticker in signals_df.index:
+        if ticker == "SPY":
+            continue
+        r         = signals_df.loc[ticker]
+        alignment = r.get("mtf_alignment")
+        if alignment is None:
+            continue
+        if int(alignment) < min_align:
+            continue
+
+        rows.append({
+            "ticker":          ticker,
+            "price":           _safe(last_prices.get(ticker)),
+            "chg_1d":          _safe(r.get("chg_1d")),
+            "mtf_score":       _safe(r.get("mtf_score")),
+            "mtf_alignment":   int(alignment),
+            "mtf_weekly_bull": bool(r.get("mtf_weekly_bull", 0)),
+            "mtf_daily_bull":  bool(r.get("mtf_daily_bull",  0)),
+            "mtf_short_bull":  bool(r.get("mtf_short_bull",  0)),
+            "mtf_wk_signals":  int(r.get("mtf_wk_signals", 0)),
+            "mtf_d_signals":   int(r.get("mtf_d_signals",  0)),
+            "mtf_st_signals":  int(r.get("mtf_st_signals", 0)),
+            # supporting context
+            "stage":           _safe(r.get("stage")),
+            "rs_spy_20d":      _safe(r.get("rs_spy_20d")),
+            "rs_sector_20d":   _safe(r.get("rs_sector_20d")),
+            "triple_rs":       bool(r.get("triple_rs", 0) == 1.0),
+            "rsi":             _safe(r.get("rsi")),
+            "vol_surge":       _safe(r.get("vol_surge")),
+            "ma50_dist":       _safe(r.get("ma50_dist")),
+            "ma200_dist":      _safe(r.get("ma200_dist")),
+            "dist_52w_high":   _safe(r.get("dist_52w_high")),
+            "confluence_score":_safe(r.get("confluence_score")),
+            "setup":           str(r.get("setup", "No Setup")),
+        })
+
+    def sort_key(r):
+        v = r.get(sort_by)
+        return v if v is not None else (-9999 if desc else 9999)
+    rows.sort(key=sort_key, reverse=desc)
+
+    total     = len(rows)
+    offset    = (page - 1) * page_size
+    page_rows = rows[offset: offset + page_size]
+
+    return {
+        "total":         total,
+        "page":          page,
+        "page_size":     page_size,
+        "pages":         max(1, -(-total // page_size)),
+        "universe_size": len(tickers),
+        "as_of":         prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
+        "results":       page_rows,
+    }
+
+
 # ── /regime ───────────────────────────────────────────────────────────────────
 
 @router.get("/regime")

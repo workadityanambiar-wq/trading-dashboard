@@ -13,6 +13,7 @@ import {
   Zap,
   RotateCcw,
   Crosshair,
+  AlignCenter,
 } from "lucide-react";
 
 const NAV = [
@@ -20,6 +21,7 @@ const NAV = [
   { href: "/setups",    label: "Setups",    icon: Zap },
   { href: "/rotation",  label: "Rotation",  icon: RotateCcw },
   { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
+  { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
   { href: "/screener",  label: "Screener",  icon: ScanSearch },
   { href: "/factors",   label: "Factors",   icon: TrendingUp },
   { href: "/intraday",  label: "ST Signals",icon: Activity },

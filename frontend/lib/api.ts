@@ -351,6 +351,16 @@ export const api = {
     return apiFetch<SetupsResponse>(`/technical/setups?${q.toString()}`);
   },
   getRegime: () => apiFetch<RegimeResponse>("/technical/regime"),
+  getMTFAlignment: (params?: MTFParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)          q.set("universe",   params.universe);
+    if (params?.min_align != null) q.set("min_align",  String(params.min_align));
+    if (params?.sort_by)           q.set("sort_by",    params.sort_by);
+    if (params?.desc != null)      q.set("desc",       String(params.desc));
+    if (params?.page)              q.set("page",       String(params.page));
+    if (params?.page_size)         q.set("page_size",  String(params.page_size));
+    return apiFetch<MTFResponse>(`/technical/mtf?${q.toString()}`);
+  },
   getPreBreakout: (params?: PreBreakoutParams) => {
     const q = new URLSearchParams();
     if (params?.universe)    q.set("universe",   params.universe);
@@ -449,6 +459,52 @@ export interface SetupWinRateStat {
 export interface SetupWinRatesResponse {
   status: "ok" | "computing";
   results: Record<string, SetupWinRateStat> | null;
+}
+
+// ── Multi-Timeframe Alignment types ──────────────────────────────────────────
+
+export interface MTFSignal {
+  ticker: string;
+  price: number | null;
+  chg_1d: number | null;
+  mtf_score: number | null;
+  mtf_alignment: number;       // 0–3 timeframes bullish
+  mtf_weekly_bull: boolean;
+  mtf_daily_bull: boolean;
+  mtf_short_bull: boolean;
+  mtf_wk_signals: number;      // 0–3 weekly sub-signals
+  mtf_d_signals: number;       // 0–3 daily sub-signals
+  mtf_st_signals: number;      // 0–3 short-term sub-signals
+  stage: number | null;
+  rs_spy_20d: number | null;
+  rs_sector_20d: number | null;
+  triple_rs: boolean;
+  rsi: number | null;
+  vol_surge: number | null;
+  ma50_dist: number | null;
+  ma200_dist: number | null;
+  dist_52w_high: number | null;
+  confluence_score: number | null;
+  setup: string;
+}
+
+export interface MTFResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  universe_size: number;
+  as_of: string | null;
+  results: MTFSignal[];
+}
+
+export interface MTFParams {
+  universe?: string;
+  min_align?: number;
+  sort_by?: string;
+  desc?: boolean;
+  page?: number;
+  page_size?: number;
 }
 
 // ── Pre-Breakout / Coiled-Spring types ───────────────────────────────────────

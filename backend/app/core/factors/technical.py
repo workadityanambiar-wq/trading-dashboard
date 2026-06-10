@@ -611,6 +611,96 @@ def coiled_spring_score(df: pd.DataFrame) -> pd.Series:
     return score.clip(0, 100).rename("coiled_spring_score")
 
 
+# ── Multi-timeframe alignment ────────────────────────────────────────────────
+
+def multi_timeframe_alignment(
+    adj_close: pd.DataFrame,
+    volume: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """
+    Fully vectorized multi-timeframe bull/bear alignment.
+    Three timeframes: Weekly (W), Daily (D), Short-term (ST).
+    Each timeframe counts 0–3 bullish sub-signals; 2+ = that timeframe is 'bull'.
+    Returns a ticker-indexed DataFrame.
+    """
+    if adj_close.empty or len(adj_close) < 10:
+        return pd.DataFrame()
+    if not isinstance(adj_close.index, pd.DatetimeIndex):
+        return pd.DataFrame()
+
+    # ── Weekly timeframe (10-week MA, MA slope, weekly RSI 9) ─────────────────
+    weekly = adj_close.resample("W").last().ffill()
+    w_ma10 = weekly.rolling(10, min_periods=5).mean()
+
+    w_delta = weekly.diff()
+    w_gain  = w_delta.clip(lower=0).rolling(9, min_periods=4).mean()
+    w_loss  = (-w_delta.clip(upper=0)).rolling(9, min_periods=4).mean()
+    w_rsi   = 100 - 100 / (1 + w_gain / w_loss.replace(0, np.nan))
+
+    wk_above_ma  = (weekly.iloc[-1] > w_ma10.iloc[-1]).fillna(False).astype(int)
+    wk_ma_rising = (w_ma10.iloc[-1] > w_ma10.shift(4).iloc[-1]).fillna(False).astype(int)
+    wk_rsi_bull  = (w_rsi.iloc[-1] > 50).fillna(False).astype(int)
+    wk_signals   = (wk_above_ma + wk_ma_rising + wk_rsi_bull).reindex(adj_close.columns, fill_value=0)
+
+    # ── Daily timeframe (above 50D MA, above 200D MA, RS vs SPY 20d) ──────────
+    ma50  = adj_close.rolling(50,  min_periods=30).mean()
+    ma200 = adj_close.rolling(200, min_periods=100).mean()
+
+    d_above_50  = (adj_close.iloc[-1] > ma50.iloc[-1]).fillna(False).astype(int)
+    d_above_200 = (adj_close.iloc[-1] > ma200.iloc[-1]).fillna(False).astype(int)
+
+    if "SPY" in adj_close.columns and len(adj_close) >= 21:
+        spy_ret    = float(adj_close["SPY"].iloc[-1] / adj_close["SPY"].iloc[-21] - 1)
+        ticker_ret = (adj_close.iloc[-1] / adj_close.iloc[-21] - 1)
+        d_rs_bull  = (ticker_ret > spy_ret).fillna(False).astype(int)
+    else:
+        d_rs_bull = pd.Series(0, index=adj_close.columns)
+
+    d_signals = (d_above_50 + d_above_200 + d_rs_bull).fillna(0)
+
+    # ── Short-term timeframe (above 5D MA, 5-day price up, volume confirming) ─
+    ma5         = adj_close.rolling(5, min_periods=3).mean()
+    st_above_ma5 = (adj_close.iloc[-1] > ma5.iloc[-1]).fillna(False).astype(int)
+    st_5d_up     = (
+        (adj_close.iloc[-1] > adj_close.iloc[-6]).fillna(False).astype(int)
+        if len(adj_close) >= 6
+        else pd.Series(0, index=adj_close.columns)
+    )
+
+    if volume is not None and not volume.empty and len(volume) >= 10:
+        v3  = volume.iloc[-3:].mean()
+        v10 = volume.iloc[-10:].mean()
+        st_vol = (v3 > v10).fillna(False).astype(int)
+    else:
+        st_vol = pd.Series(0, index=adj_close.columns)
+
+    st_signals = (st_above_ma5 + st_5d_up + st_vol).fillna(0)
+
+    # ── Composite: 2+ sub-signals = timeframe is bullish ─────────────────────
+    weekly_bull = (wk_signals >= 2).astype(int)
+    daily_bull  = (d_signals  >= 2).astype(int)
+    short_bull  = (st_signals >= 2).astype(int)
+    alignment   = weekly_bull + daily_bull + short_bull
+
+    # Weighted score: weekly 40%, daily 35%, short-term 25%
+    score = (
+        (wk_signals.clip(0, 3) / 3) * 40 +
+        (d_signals.clip(0, 3)  / 3) * 35 +
+        (st_signals.clip(0, 3) / 3) * 25
+    ).round(1)
+
+    return pd.DataFrame({
+        "mtf_wk_signals":  wk_signals,
+        "mtf_d_signals":   d_signals,
+        "mtf_st_signals":  st_signals,
+        "mtf_weekly_bull": weekly_bull,
+        "mtf_daily_bull":  daily_bull,
+        "mtf_short_bull":  short_bull,
+        "mtf_alignment":   alignment,
+        "mtf_score":       score,
+    })
+
+
 # ── Master compute function ───────────────────────────────────────────────────
 
 def compute_all_signals(
@@ -685,6 +775,13 @@ def compute_all_signals(
         rs_sect, sect_vs_spy = relative_strength_vs_sector(adj_close, ticker_to_sector_etf)
         parts["rs_sector_20d"]    = rs_sect
         parts["sector_vs_spy_20d"] = sect_vs_spy
+
+    # ── Multi-timeframe alignment ─────────────────────────────────────────────
+    if len(adj_close) >= 50:
+        mtf = multi_timeframe_alignment(adj_close, volume)
+        if not mtf.empty:
+            for col in mtf.columns:
+                parts[col] = mtf[col].reindex(adj_close.columns)
 
     df = pd.DataFrame({k: v for k, v in parts.items() if isinstance(v, pd.Series)})
     if df.empty:
