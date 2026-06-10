@@ -7,6 +7,7 @@ import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from app.core.data import cache, fetcher, universe
+from app.core.data.cache import get_tickers_with_prices
 from app.models.schemas import (
     OverviewResponse, IndexCard, SectorReturn, BreadthData,
     PricesResponse, OHLCVBar, UniverseTicker,
@@ -389,6 +390,27 @@ async def prefetch_universe_prices(
         "enqueued": len(tickers_needed),
         "total_universe": total,
     }
+
+
+@router.post("/refresh")
+async def force_refresh(background_tasks: BackgroundTasks):
+    """
+    Force-refresh prices for the watchlist + every ticker already in the cache.
+    Runs in the background — returns immediately.
+    """
+    watchlist = universe.get_watchlist_tickers()
+    cached    = list(get_tickers_with_prices())
+    all_tickers = list(dict.fromkeys(watchlist + cached))
+    background_tasks.add_task(_bg_force_refresh, all_tickers)
+    return {"status": "started", "tickers": len(all_tickers)}
+
+
+def _bg_force_refresh(tickers: List[str]) -> None:
+    """Re-fetch all tickers, ignoring the staleness check."""
+    start = _START_2Y
+    today = datetime.today().strftime("%Y-%m-%d")
+    fetcher.ensure_prices(tickers, start, today, force_refresh=True)
+    logger.info(f"Force-refresh complete for {len(tickers)} tickers")
 
 
 def _bg_fetch_batch(tickers: List[str]) -> None:

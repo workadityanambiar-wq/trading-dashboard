@@ -1,20 +1,58 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone, timedelta
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import data, factors, backtest, portfolio, risk, technical
 from app.core.data.cache import init_db
+from app.core.data import fetcher, universe
+from app.core.data.cache import get_tickers_with_prices
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+_START_2Y = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+
+
+def _is_market_hours() -> bool:
+    """True if NYSE is currently open (or within 30 min of open/close)."""
+    now_et = datetime.now(timezone.utc) - timedelta(hours=4)  # ET = UTC-4 (EDT)
+    if now_et.weekday() >= 5:       # Saturday / Sunday
+        return False
+    h = now_et.hour + now_et.minute / 60
+    return 9.0 <= h <= 16.5         # 9:00 AM – 4:30 PM ET
+
+
+async def _auto_refresh_loop():
+    """Refresh watchlist + cached tickers every 15 min during market hours, hourly otherwise."""
+    await asyncio.sleep(10)         # wait for server to finish starting
+    while True:
+        interval = 900 if _is_market_hours() else 3600   # 15 min or 1 hour
+        try:
+            watchlist = universe.get_watchlist_tickers()
+            cached    = list(get_tickers_with_prices())
+            tickers   = list(dict.fromkeys(watchlist + cached))
+            today     = datetime.today().strftime("%Y-%m-%d")
+            await asyncio.get_event_loop().run_in_executor(
+                None, fetcher.ensure_prices, tickers, _START_2Y, today
+            )
+            logger.info(f"Auto-refresh: updated {len(tickers)} tickers "
+                        f"({'market hours' if _is_market_hours() else 'after hours'})")
+        except Exception as e:
+            logger.warning(f"Auto-refresh failed: {e}")
+        await asyncio.sleep(interval)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    task = asyncio.create_task(_auto_refresh_loop())
     yield
+    task.cancel()
 
 
 app = FastAPI(title="Quant Dashboard API", version="0.1.0", lifespan=lifespan)

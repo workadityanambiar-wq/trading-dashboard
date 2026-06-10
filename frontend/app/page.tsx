@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { IndexCard } from "@/components/IndexCard";
 import { SectorHeatmap } from "@/components/charts/SectorHeatmap";
@@ -20,6 +20,14 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 export default function OverviewPage() {
   const [activeTicker, setActiveTicker] = useState("SPY");
   const [heatPeriod, setHeatPeriod] = useState<Period>("change_1d");
+  const queryClient = useQueryClient();
+
+  const refreshMutation = useMutation({
+    mutationFn: api.forceRefresh,
+    onSuccess: () => {
+      setTimeout(() => queryClient.invalidateQueries(), 3000);
+    },
+  });
 
   const { data: overview, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["overview"],
@@ -60,14 +68,25 @@ export default function OverviewPage() {
             Indices, sector performance, and breadth
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
-        >
-          <RefreshCw size={12} className={isFetching ? "animate-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+            title="Re-fetch all prices from yfinance"
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-border bg-surface-2 text-text-muted hover:text-text-primary disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw size={11} className={refreshMutation.isPending ? "animate-spin" : ""} />
+            {refreshMutation.isPending ? "Fetching…" : "Live Update"}
+          </button>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
+          >
+            <RefreshCw size={12} className={isFetching ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Index Cards */}

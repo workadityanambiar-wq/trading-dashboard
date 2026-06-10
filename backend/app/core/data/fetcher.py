@@ -20,19 +20,18 @@ def ensure_prices(
     end: Optional[str] = None,
     force_refresh: bool = False,
 ) -> None:
-    """Fetch any missing price data from yfinance and persist to DuckDB."""
+    """Fetch any missing or stale price data from yfinance and persist to DuckDB."""
+    today = datetime.today().date()
+    # yfinance end is exclusive — pass tomorrow so today's bar is included
+    fetch_end = (datetime.today() + timedelta(days=1)).strftime("%Y-%m-%d")
     if end is None:
-        end = datetime.today().strftime("%Y-%m-%d")
+        end = fetch_end
 
     to_fetch: List[str] = []
     for t in tickers:
         last = cache.get_last_date(t)
-        if force_refresh or last is None:
+        if force_refresh or last is None or last < today:
             to_fetch.append(t)
-        else:
-            yesterday = (datetime.today() - timedelta(days=1)).date()
-            if last < yesterday:
-                to_fetch.append(t)
 
     if not to_fetch:
         return
@@ -40,7 +39,7 @@ def ensure_prices(
     logger.info(f"Fetching {len(to_fetch)} tickers from yfinance")
     for i in range(0, len(to_fetch), _BATCH_SIZE):
         batch = to_fetch[i : i + _BATCH_SIZE]
-        df = _fetch_batch(batch, start, end)
+        df = _fetch_batch(batch, start, fetch_end)
         if not df.empty:
             cache.store_prices(df)
         if i + _BATCH_SIZE < len(to_fetch):

@@ -768,6 +768,8 @@ export const api = {
   },
   getStockDetail: (ticker: string) =>
     apiFetch<StockDetailResponse>(`/technical/stock/${encodeURIComponent(ticker)}`),
+  forceRefresh: () =>
+    fetch("/api/data/refresh", { method: "POST" }).then(r => r.json()),
   getOptions: (ticker: string) =>
     apiFetch<OptionsResponse>(`/technical/options/${encodeURIComponent(ticker.toUpperCase())}`),
   hybridOptimize: (req: HybridRequest) =>
