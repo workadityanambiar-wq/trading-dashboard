@@ -1073,6 +1073,151 @@ async def get_earnings_calendar(
     }
 
 
+# ── /breadth ─────────────────────────────────────────────────────────────────
+
+@router.get("/breadth")
+async def get_market_breadth(
+    universe:      str = Query("sp500"),
+    lookback_days: int = Query(126, ge=21, le=504),
+):
+    """
+    Market breadth: % of stocks above their 20/50/200-day MAs, new highs/lows,
+    advancing stocks, sector-level breakdown, and full daily history.
+    """
+    tickers = _resolve_tickers(universe, "", "")
+    if not tickers:
+        return {"universe": universe, "n_stocks": 0, "as_of": None,
+                "snapshot": {}, "history": [], "sector_breadth": []}
+
+    ohlcv  = await _fetch_ohlcv(tickers)
+    prices = ohlcv.get("adj_close", pd.DataFrame())
+
+    if prices.empty:
+        return {"universe": universe, "n_stocks": len(tickers), "as_of": None,
+                "snapshot": {}, "history": [], "sector_breadth": []}
+
+    universe_set = set(tickers)
+    stock_cols   = [c for c in prices.columns if c in universe_set]
+    stocks       = prices[stock_cols].ffill()
+    n            = len(stock_cols)
+
+    if n == 0 or len(stocks) < 21:
+        return {"universe": universe, "n_stocks": n, "as_of": None,
+                "snapshot": {}, "history": [], "sector_breadth": []}
+
+    # ── Rolling MA matrices ───────────────────────────────────────────────────
+    ma20_mat  = stocks.rolling(20, min_periods=15).mean()
+    ma50_mat  = stocks.rolling(50, min_periods=40).mean()
+    ma200_mat = stocks.rolling(200, min_periods=150).mean()
+
+    # ── Current snapshot ─────────────────────────────────────────────────────
+    cur    = stocks.iloc[-1]
+    ma20   = ma20_mat.iloc[-1]
+    ma50   = ma50_mat.iloc[-1]
+    ma200  = ma200_mat.iloc[-1]
+
+    valid20  = cur.notna() & ma20.notna()
+    valid50  = cur.notna() & ma50.notna()
+    valid200 = cur.notna() & ma200.notna()
+
+    pct_above_20ma  = float((cur[valid20]  > ma20[valid20]).mean())  if valid20.any()  else 0.0
+    pct_above_50ma  = float((cur[valid50]  > ma50[valid50]).mean())  if valid50.any()  else 0.0
+    pct_above_200ma = float((cur[valid200] > ma200[valid200]).mean()) if valid200.any() else 0.0
+
+    # 52-week high / low proximity (within 2%)
+    if len(stocks) >= 252:
+        high252 = stocks.rolling(252).max().iloc[-1]
+        low252  = stocks.rolling(252).min().iloc[-1]
+    else:
+        high252 = stocks.max()
+        low252  = stocks.min()
+
+    valid_hl = cur.notna() & high252.notna() & low252.notna()
+    pct_52w_high = float((cur[valid_hl] >= high252[valid_hl] * 0.98).mean()) if valid_hl.any() else 0.0
+    pct_52w_low  = float((cur[valid_hl] <= low252[valid_hl]  * 1.02).mean()) if valid_hl.any() else 0.0
+    net_new_highs = round((pct_52w_high - pct_52w_low) * n)
+
+    # Advancing vs declining over 20 days
+    if len(stocks) >= 21:
+        prev20       = stocks.iloc[-21]
+        valid_adv    = cur.notna() & prev20.notna()
+        advancing_4w = float((cur[valid_adv] > prev20[valid_adv]).mean()) if valid_adv.any() else 0.5
+    else:
+        advancing_4w = 0.5
+
+    # ── Historical time series (every 5 trading days) ─────────────────────────
+    start_idx = max(0, len(stocks) - lookback_days)
+    history   = []
+    indices   = range(start_idx, len(stocks), 5)
+    # Always include the last bar
+    idx_set   = set(indices) | {len(stocks) - 1}
+
+    for i in sorted(idx_set):
+        row_date = stocks.index[i]
+        r        = stocks.iloc[i]
+        m20      = ma20_mat.iloc[i]
+        m50      = ma50_mat.iloc[i]
+        m200     = ma200_mat.iloc[i]
+
+        v20  = r.notna() & m20.notna()
+        v50  = r.notna() & m50.notna()
+        v200 = r.notna() & m200.notna()
+
+        p20  = round(float((r[v20]  > m20[v20]).mean()),  4) if v20.any()  else None
+        p50  = round(float((r[v50]  > m50[v50]).mean()),  4) if v50.any()  else None
+        p200 = round(float((r[v200] > m200[v200]).mean()), 4) if v200.any() else None
+
+        history.append({
+            "date":            row_date.strftime("%Y-%m-%d"),
+            "pct_above_20ma":  p20,
+            "pct_above_50ma":  p50,
+            "pct_above_200ma": p200,
+        })
+
+    # ── Sector breadth ────────────────────────────────────────────────────────
+    sector_info   = _get_ticker_sector_map(universe)
+    sector_groups: dict[str, list[str]] = {}
+    for t in stock_cols:
+        sec = sector_info.get(t, "")
+        if sec:
+            sector_groups.setdefault(sec, []).append(t)
+
+    sector_breadth = []
+    for sec, members in sorted(sector_groups.items()):
+        m_cur  = cur[members].dropna()
+        m_ma50 = ma50[members].dropna()
+        m_200  = ma200[members].dropna()
+        common50  = m_cur.index.intersection(m_ma50.index)
+        common200 = m_cur.index.intersection(m_200.index)
+        a50  = float((m_cur[common50]  > m_ma50[common50]).mean())  if len(common50)  else 0.0
+        a200 = float((m_cur[common200] > m_200[common200]).mean())  if len(common200) else 0.0
+        sector_breadth.append({
+            "sector":      sec,
+            "above_50ma":  round(a50, 4),
+            "above_200ma": round(a200, 4),
+            "count":       len(members),
+        })
+
+    as_of = stocks.index[-1].strftime("%Y-%m-%d") if not stocks.empty else None
+
+    return {
+        "universe":  universe,
+        "n_stocks":  n,
+        "as_of":     as_of,
+        "snapshot": {
+            "pct_above_20ma":  round(pct_above_20ma, 4),
+            "pct_above_50ma":  round(pct_above_50ma, 4),
+            "pct_above_200ma": round(pct_above_200ma, 4),
+            "pct_52w_high":    round(pct_52w_high, 4),
+            "pct_52w_low":     round(pct_52w_low, 4),
+            "net_new_highs":   net_new_highs,
+            "advancing_4w":    round(advancing_4w, 4),
+        },
+        "history":        history,
+        "sector_breadth": sector_breadth,
+    }
+
+
 # ── /regime ───────────────────────────────────────────────────────────────────
 
 @router.get("/regime")

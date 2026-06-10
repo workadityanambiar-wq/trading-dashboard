@@ -345,6 +345,46 @@ export interface BacktestResult {
   n_tickers_available: number;
 }
 
+// ── Breadth types ─────────────────────────────────────────────────────────────
+
+export interface BreadthSnapshot {
+  pct_above_20ma:  number;
+  pct_above_50ma:  number;
+  pct_above_200ma: number;
+  pct_52w_high:    number;
+  pct_52w_low:     number;
+  net_new_highs:   number;
+  advancing_4w:    number;
+}
+
+export interface BreadthHistoryPoint {
+  date:            string;
+  pct_above_20ma:  number | null;
+  pct_above_50ma:  number | null;
+  pct_above_200ma: number | null;
+}
+
+export interface BreadthSectorRow {
+  sector:      string;
+  above_50ma:  number;
+  above_200ma: number;
+  count:       number;
+}
+
+export interface BreadthResponse {
+  universe:       string;
+  n_stocks:       number;
+  as_of:          string | null;
+  snapshot:       BreadthSnapshot;
+  history:        BreadthHistoryPoint[];
+  sector_breadth: BreadthSectorRow[];
+}
+
+export interface BreadthParams {
+  universe?:      string;
+  lookback_days?: number;
+}
+
 // ── API client ────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -474,6 +514,12 @@ export const api = {
     if (params?.only_setups)           q.set("only_setups", "true");
     if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
     return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
+  },
+  getBreadth: (params?: BreadthParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)               q.set("universe",      params.universe);
+    if (params?.lookback_days != null)  q.set("lookback_days", String(params.lookback_days));
+    return apiFetch<BreadthResponse>(`/technical/breadth?${q.toString()}`);
   },
   prefetchEvents: (universe = "sp500") =>
     fetch(`/api/technical/prefetch-events?universe=${universe}`, { method: "POST" }),
