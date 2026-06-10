@@ -20,6 +20,7 @@ import {
   Gauge,
   Network,
   Waves,
+  Globe,
 } from "lucide-react";
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
   { href: "/earnings",    label: "Earnings",     icon: CalendarDays },
   { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
+  { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/correlations",  label: "Correlations", icon: Network },

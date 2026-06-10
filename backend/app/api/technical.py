@@ -26,6 +26,34 @@ logger = logging.getLogger(__name__)
 _START_1Y = (datetime.today() - timedelta(days=365)).strftime("%Y-%m-%d")
 _TODAY    = datetime.today().strftime("%Y-%m-%d")
 
+# ── Macro dashboard constants ─────────────────────────────────────────────────
+_MACRO_ASSETS: list[dict] = [
+    # Equities
+    {"ticker": "SPY",     "label": "S&P 500",      "category": "Equity"},
+    {"ticker": "QQQ",     "label": "Nasdaq 100",    "category": "Equity"},
+    {"ticker": "IWM",     "label": "Russell 2000",  "category": "Equity"},
+    {"ticker": "EFA",     "label": "Dev. Markets",  "category": "Equity"},
+    {"ticker": "EEM",     "label": "Emerging Mkt",  "category": "Equity"},
+    # Bonds
+    {"ticker": "TLT",     "label": "20Y+ Treasury", "category": "Bonds"},
+    {"ticker": "IEF",     "label": "7-10Y Treasury","category": "Bonds"},
+    {"ticker": "SHY",     "label": "1-3Y Treasury", "category": "Bonds"},
+    {"ticker": "HYG",     "label": "High Yield",    "category": "Credit"},
+    {"ticker": "LQD",     "label": "Invest. Grade", "category": "Credit"},
+    # Real Assets
+    {"ticker": "GLD",     "label": "Gold",          "category": "Commodities"},
+    {"ticker": "SLV",     "label": "Silver",        "category": "Commodities"},
+    {"ticker": "USO",     "label": "Oil",           "category": "Commodities"},
+    {"ticker": "DBA",     "label": "Agriculture",   "category": "Commodities"},
+    # Dollar & Crypto
+    {"ticker": "UUP",     "label": "US Dollar",     "category": "FX"},
+    {"ticker": "BTC-USD", "label": "Bitcoin",       "category": "Crypto"},
+]
+_MACRO_TICKERS   = [a["ticker"] for a in _MACRO_ASSETS]
+_YIELD_TICKERS   = ["^IRX", "^FVX", "^TNX", "^TYX"]  # 3M, 5Y, 10Y, 30Y
+_YIELD_MATURITIES = {"^IRX": 0.25, "^FVX": 5.0, "^TNX": 10.0, "^TYX": 30.0}
+_YIELD_LABELS     = {"^IRX": "3M", "^FVX": "5Y", "^TNX": "10Y", "^TYX": "30Y"}
+
 _SECTOR_ETF_TICKERS = list(uni_module.SECTOR_ETFS.keys())
 _SECTOR_NAME_TO_ETF = {v["sector"]: k for k, v in uni_module.SECTOR_ETFS.items()}
 
@@ -1281,6 +1309,141 @@ async def get_regime():
         "spy_vs_200d":       round(spy_vs_200d * 100, 2)  if spy_vs_200d        else None,
         "breadth_above_50d":  round(breadth_above_50d * 100, 1) if breadth_above_50d  else None,
         "breadth_above_200d": round(breadth_above_200d * 100, 1) if breadth_above_200d else None,
+    }
+
+
+# ── /macro ───────────────────────────────────────────────────────────────────
+
+@router.get("/macro")
+async def get_macro_dashboard():
+    """
+    Cross-asset returns (equity/bonds/commodities/FX/crypto) at multiple periods,
+    Treasury yield curve, risk mode, and 1Y history of 10Y yield + SPY/TLT spread.
+    """
+    all_tickers = list(dict.fromkeys(_MACRO_TICKERS + _YIELD_TICKERS))
+    start_2y    = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+
+    await asyncio.get_event_loop().run_in_executor(
+        None, fetcher.ensure_prices, all_tickers, start_2y, _TODAY
+    )
+    raw    = await asyncio.get_event_loop().run_in_executor(
+        None, cache.get_ohlcv_wide, all_tickers, start_2y, _TODAY
+    )
+    prices = raw.get("adj_close", pd.DataFrame()).ffill()
+
+    def _ret(ticker: str, days: int) -> Optional[float]:
+        if ticker not in prices.columns:
+            return None
+        s = prices[ticker].dropna()
+        if len(s) < days + 1:
+            return None
+        return round(float(s.iloc[-1] / s.iloc[-(days + 1)] - 1), 4)
+
+    def _ytd(ticker: str) -> Optional[float]:
+        if ticker not in prices.columns:
+            return None
+        s = prices[ticker].dropna()
+        if s.empty:
+            return None
+        yr_start = str(s.index[-1].year) + "-01-01"
+        ytd_s = s[s.index >= yr_start]
+        if len(ytd_s) < 2:
+            return None
+        return round(float(ytd_s.iloc[-1] / ytd_s.iloc[0] - 1), 4)
+
+    # ── Cross-asset returns ───────────────────────────────────────────────────
+    assets_out = []
+    for a in _MACRO_ASSETS:
+        t = a["ticker"]
+        assets_out.append({
+            "ticker":   t,
+            "label":    a["label"],
+            "category": a["category"],
+            "ret_1d":   _ret(t, 1),
+            "ret_1w":   _ret(t, 5),
+            "ret_1m":   _ret(t, 21),
+            "ret_3m":   _ret(t, 63),
+            "ret_ytd":  _ytd(t),
+        })
+
+    # ── Treasury yields (raw level from yfinance — values are already in %) ──
+    yield_curve = []
+    for yticker, mat in sorted(_YIELD_MATURITIES.items(), key=lambda x: x[1]):
+        if yticker not in prices.columns:
+            continue
+        s = prices[yticker].dropna()
+        if s.empty:
+            continue
+        level    = round(float(s.iloc[-1]), 3)
+        prev_1m  = round(float(s.iloc[-22]), 3) if len(s) >= 22 else None
+        prev_1y  = round(float(s.iloc[-253]), 3) if len(s) >= 253 else None
+        yield_curve.append({
+            "ticker":   yticker,
+            "label":    _YIELD_LABELS[yticker],
+            "maturity": mat,
+            "level":    level,
+            "prev_1m":  prev_1m,
+            "prev_1y":  prev_1y,
+        })
+
+    # 3M-10Y spread (inversion indicator): negative = inverted
+    spread_3m_10y = None
+    irx = prices["^IRX"].dropna() if "^IRX" in prices.columns else pd.Series(dtype=float)
+    tnx = prices["^TNX"].dropna() if "^TNX" in prices.columns else pd.Series(dtype=float)
+    if not irx.empty and not tnx.empty:
+        spread_3m_10y = round(float(tnx.iloc[-1]) - float(irx.iloc[-1]), 3)
+
+    # ── Risk mode ─────────────────────────────────────────────────────────────
+    spy_20d  = _ret("SPY", 20)
+    tlt_20d  = _ret("TLT", 20)
+    hyg_20d  = _ret("HYG", 20)
+    risk_mode = "Neutral"
+    if spy_20d is not None and tlt_20d is not None:
+        if spy_20d > 0.03 and spy_20d > tlt_20d and (hyg_20d or 0) > -0.01:
+            risk_mode = "Risk-On"
+        elif spy_20d < -0.03 or (tlt_20d is not None and tlt_20d > spy_20d + 0.03):
+            risk_mode = "Risk-Off"
+
+    # ── 10Y yield history + SPY vs TLT relative (last 252 days) ──────────────
+    history = []
+    if not tnx.empty and "SPY" in prices.columns and "TLT" in prices.columns:
+        spy_s = prices["SPY"].dropna()
+        tlt_s = prices["TLT"].dropna()
+        common_idx = tnx.index.intersection(spy_s.index).intersection(tlt_s.index)
+        common_idx = common_idx[-252:]  # last year
+
+        for d in common_idx:
+            y10 = float(tnx.loc[d])
+            if pd.isna(y10):
+                continue
+            spy_val = float(spy_s.loc[d])
+            tlt_val = float(tlt_s.loc[d])
+            # Normalise to 100 at start
+            history.append({
+                "date":  d.strftime("%Y-%m-%d"),
+                "y10":   round(y10, 3),
+                "spy":   round(spy_val, 4),
+                "tlt":   round(tlt_val, 4),
+            })
+
+        # Normalise SPY and TLT to 100
+        if history:
+            spy0 = history[0]["spy"]
+            tlt0 = history[0]["tlt"]
+            for h in history:
+                h["spy_idx"] = round(h["spy"] / spy0 * 100, 2)
+                h["tlt_idx"] = round(h["tlt"] / tlt0 * 100, 2)
+                del h["spy"], h["tlt"]
+
+    as_of = prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None
+
+    return {
+        "as_of":         as_of,
+        "risk_mode":     risk_mode,
+        "assets":        assets_out,
+        "yield_curve":   yield_curve,
+        "spread_3m_10y": spread_3m_10y,
+        "history":       history,
     }
 
 

@@ -345,6 +345,44 @@ export interface BacktestResult {
   n_tickers_available: number;
 }
 
+// ── Macro dashboard types ─────────────────────────────────────────────────────
+
+export interface MacroAsset {
+  ticker:   string;
+  label:    string;
+  category: string;
+  ret_1d:   number | null;
+  ret_1w:   number | null;
+  ret_1m:   number | null;
+  ret_3m:   number | null;
+  ret_ytd:  number | null;
+}
+
+export interface YieldPoint {
+  ticker:   string;
+  label:    string;
+  maturity: number;
+  level:    number;
+  prev_1m:  number | null;
+  prev_1y:  number | null;
+}
+
+export interface MacroHistoryPoint {
+  date:    string;
+  y10:     number;
+  spy_idx: number;
+  tlt_idx: number;
+}
+
+export interface MacroResponse {
+  as_of:         string | null;
+  risk_mode:     string;
+  assets:        MacroAsset[];
+  yield_curve:   YieldPoint[];
+  spread_3m_10y: number | null;
+  history:       MacroHistoryPoint[];
+}
+
 // ── Volatility dashboard types ────────────────────────────────────────────────
 
 export interface VolHistoryPoint {
@@ -626,6 +664,7 @@ export const api = {
     if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
     return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
   },
+  getMacro: () => apiFetch<MacroResponse>("/technical/macro"),
   getVolatility: (lookback_days = 252) =>
     apiFetch<VolatilityResponse>(`/technical/volatility?lookback_days=${lookback_days}`),
   getCorrelations: (params?: CorrelationsParams) => {
