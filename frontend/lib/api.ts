@@ -340,14 +340,14 @@ export const api = {
   },
   getSetups: (params: SetupsParams) => {
     const q = new URLSearchParams();
-    if (params.universe)      q.set("universe", params.universe);
-    if (params.setup_filter)  q.set("setup_filter", params.setup_filter);
-    if (params.stage_filter)  q.set("stage_filter", params.stage_filter);
-    if (params.min_score)     q.set("min_score", String(params.min_score));
-    if (params.sort_by)       q.set("sort_by", params.sort_by);
-    if (params.desc != null)  q.set("desc", String(params.desc));
-    if (params.page)          q.set("page", String(params.page));
-    if (params.page_size)     q.set("page_size", String(params.page_size));
+    if (params.universe)      q.set("universe",      params.universe);
+    if (params.setup_filter)  q.set("setup_filter",  params.setup_filter);
+    if (params.stage_filter)  q.set("stage_filter",  params.stage_filter);
+    if (params.min_score)     q.set("min_score",     String(params.min_score));
+    q.set("sort_by", params.sort_by ?? "regime_adjusted_score");
+    if (params.desc != null)  q.set("desc",          String(params.desc));
+    if (params.page)          q.set("page",          String(params.page));
+    if (params.page_size)     q.set("page_size",     String(params.page_size));
     return apiFetch<SetupsResponse>(`/technical/setups?${q.toString()}`);
   },
   getRegime: () => apiFetch<RegimeResponse>("/technical/regime"),
@@ -408,6 +408,9 @@ export interface SetupSignal {
   earnings_date: string | null;
   days_to_earnings: number | null;
   days_to_opex: number | null;
+  regime_alignment: number | null;
+  regime_fit: boolean | null;
+  regime_adjusted_score: number | null;
 }
 
 export interface SetupsResponse {
@@ -417,6 +420,9 @@ export interface SetupsResponse {
   pages: number;
   universe_size: number;
   as_of: string | null;
+  regime: string | null;
+  regime_score: number | null;
+  regime_strategy: string | null;
   results: SetupSignal[];
 }
 

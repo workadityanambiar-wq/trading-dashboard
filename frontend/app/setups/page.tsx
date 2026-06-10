@@ -41,13 +41,14 @@ const SETUPS: SetupName[] = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "confluence_score",  label: "Confluence" },
-  { value: "breakout_score",    label: "Breakout" },
-  { value: "rs_spy_20d",        label: "RS vs SPY" },
-  { value: "rs_sector_20d",     label: "RS vs Sector" },
-  { value: "sector_vs_spy_20d", label: "Sector vs SPY" },
-  { value: "vol_surge",         label: "Volume" },
-  { value: "rsi",               label: "RSI" },
+  { value: "regime_adjusted_score", label: "Regime Score ★" },
+  { value: "confluence_score",      label: "Confluence" },
+  { value: "breakout_score",        label: "Breakout" },
+  { value: "rs_spy_20d",            label: "RS vs SPY" },
+  { value: "rs_sector_20d",         label: "RS vs Sector" },
+  { value: "sector_vs_spy_20d",     label: "Sector vs SPY" },
+  { value: "vol_surge",             label: "Volume" },
+  { value: "rsi",                   label: "RSI" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -318,7 +319,7 @@ function RegimeCard({ data }: { data: RegimeResponse }) {
 export default function SetupsPage() {
   const [setupFilter, setSetupFilter]       = useState<string>("");
   const [stageFilter, setStageFilter]       = useState<string>("");
-  const [sortBy, setSortBy]                 = useState("confluence_score");
+  const [sortBy, setSortBy]                 = useState("regime_adjusted_score");
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
   const PAGE_SIZE = 50;
@@ -371,7 +372,7 @@ export default function SetupsPage() {
         <div>
           <h1 className="text-base font-semibold">Setup Engine</h1>
           <p className="text-xs text-text-muted mt-0.5">
-            Stocks with actionable setups — ranked by confluence
+            Stocks with actionable setups — ranked by regime-adjusted score
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -400,6 +401,17 @@ export default function SetupsPage() {
       {regimeQuery.data && <RegimeCard data={regimeQuery.data} />}
       {regimeQuery.isLoading && (
         <div className="h-24 rounded-lg border border-border bg-surface animate-pulse" />
+      )}
+
+      {/* Regime warning banner for adverse conditions */}
+      {data?.regime && (data.regime === "Bear" || data.regime === "Panic") && (
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/10 text-xs">
+          <span className="text-red-400 font-bold mt-px shrink-0">⚠</span>
+          <div>
+            <span className="text-red-400 font-semibold">{data.regime} regime</span>
+            <span className="text-text-muted ml-1.5">— momentum and breakout setups are down-weighted. Regime Score reflects this. {data.regime_strategy}</span>
+          </div>
+        </div>
       )}
 
       {/* Historical win rates */}
@@ -487,6 +499,7 @@ export default function SetupsPage() {
                 <th className="px-3 py-2.5 text-left text-text-muted font-medium">Setup</th>
                 <th className="px-3 py-2.5 text-left text-text-muted font-medium">Stage</th>
                 <th className="px-3 py-2.5 text-left text-text-muted font-medium">Confluence</th>
+                <th className="px-3 py-2.5 text-left text-text-muted font-medium" title={`Regime-adjusted score. Current regime: ${data.regime ?? "—"}`}>Regime★</th>
                 <th className="px-3 py-2.5 text-left text-text-muted font-medium">Breakout</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">Price</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">1D</th>
@@ -536,6 +549,21 @@ export default function SetupsPage() {
 
                     {/* Confluence score bar */}
                     <td className="px-3 py-2.5">{scoreBar(row.confluence_score)}</td>
+
+                    {/* Regime-adjusted score */}
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-1.5">
+                        {scoreBar(row.regime_adjusted_score)}
+                        {row.regime_fit != null && (
+                          <span
+                            className={cn("text-[11px] font-bold leading-none", row.regime_fit ? "text-emerald-400" : "text-red-400/70")}
+                            title={row.regime_fit ? "Setup fits current regime" : "Setup works against current regime"}
+                          >
+                            {row.regime_fit ? "✓" : "✗"}
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
                     {/* Breakout score bar */}
                     <td className="px-3 py-2.5">{scoreBar(row.breakout_score)}</td>
@@ -657,6 +685,7 @@ export default function SetupsPage() {
       {/* Legend */}
       {data && data.results.length > 0 && (
         <div className="flex flex-wrap gap-4 text-xs text-text-muted border border-border bg-surface rounded p-3">
+          <div><span className="font-medium text-text-primary">Regime★</span> = Confluence × 70% + setup-regime alignment × 30%. <span className="text-emerald-400">✓</span> = setup fits regime · <span className="text-red-400/80">✗</span> = headwind</div>
           <div><span className="font-medium text-text-primary">Confluence</span> = trend + RS + momentum + vol + squeeze (0–100)</div>
           <div><span className="font-medium text-text-primary">Breakout</span> = squeeze + RS + 52W proximity + vol surge (0–100)</div>
           <div><span className="font-medium text-text-primary">RS/Sect</span> = stock outperformance vs its sector ETF (20d)</div>

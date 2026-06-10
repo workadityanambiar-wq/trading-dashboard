@@ -27,6 +27,18 @@ _TODAY    = datetime.today().strftime("%Y-%m-%d")
 _SECTOR_ETF_TICKERS = list(uni_module.SECTOR_ETFS.keys())
 _SECTOR_NAME_TO_ETF = {v["sector"]: k for k, v in uni_module.SECTOR_ETFS.items()}
 
+# How well each setup type fits each market regime (0–100).
+# High score = regime is a tailwind for this setup type.
+_REGIME_SETUP_AFFINITY: dict[str, dict[str, int]] = {
+    "Early Breakout":             {"Strong Trend": 90, "Choppy": 45, "Bear": 15, "Panic": 5},
+    "Volatility Squeeze":         {"Strong Trend": 75, "Choppy": 62, "Bear": 35, "Panic": 20},
+    "Momentum Continuation":      {"Strong Trend": 90, "Choppy": 40, "Bear": 10, "Panic": 5},
+    "Institutional Accumulation": {"Strong Trend": 65, "Choppy": 65, "Bear": 55, "Panic": 40},
+    "Mean Reversion Bounce":      {"Strong Trend": 50, "Choppy": 78, "Bear": 65, "Panic": 45},
+    "Failed Breakdown Reversal":  {"Strong Trend": 40, "Choppy": 55, "Bear": 68, "Panic": 50},
+    "No Setup":                   {"Strong Trend": 50, "Choppy": 50, "Bear": 50, "Panic": 50},
+}
+
 
 def _next_monthly_opex(from_date: date) -> date:
     """Returns the next 3rd Friday of a month (standard monthly options expiry)."""
@@ -338,7 +350,7 @@ async def get_setups(
     setup_filter: str  = Query("", description="Filter by exact setup name"),
     stage_filter: str  = Query("", description="Comma-separated stages, e.g. '2' or '1,2'"),
     min_score:    float = Query(0,  description="Min confluence score 0-100"),
-    sort_by:      str  = Query("confluence_score"),
+    sort_by:      str  = Query("regime_adjusted_score"),
     desc:         bool = Query(True),
     page:         int  = Query(1, ge=1),
     page_size:    int  = Query(50, ge=1, le=200),
@@ -422,6 +434,27 @@ async def get_setups(
             "atr_dollar":        _safe(atr_dollar),
         })
 
+    # ── Regime detection (reuse SPY already in prices) ───────────────────────
+    spy_s = prices["SPY"].dropna() if "SPY" in prices.columns else pd.Series(dtype=float)
+    spy_vs_50d = spy_vs_200d = None
+    if len(spy_s) >= 200:
+        spy_vs_50d  = float(spy_s.iloc[-1] / spy_s.rolling(50).mean().iloc[-1] - 1)
+        spy_vs_200d = float(spy_s.iloc[-1] / spy_s.rolling(200).mean().iloc[-1] - 1)
+    elif len(spy_s) >= 50:
+        spy_vs_50d  = float(spy_s.iloc[-1] / spy_s.rolling(50).mean().iloc[-1] - 1)
+    regime_name, regime_desc, regime_strategy, regime_score_val = _determine_regime(
+        spy_vs_50d, spy_vs_200d, None, None
+    )
+
+    # ── Regime-adjusted scoring ───────────────────────────────────────────────
+    for r in rows:
+        setup     = r.get("setup", "No Setup")
+        affinity  = _REGIME_SETUP_AFFINITY.get(setup, {}).get(regime_name, 50)
+        cs        = r.get("confluence_score")
+        r["regime_alignment"]      = affinity
+        r["regime_fit"]            = affinity >= 60
+        r["regime_adjusted_score"] = round(cs * 0.70 + affinity * 0.30, 1) if cs is not None else None
+
     # ── Event enrichment ──────────────────────────────────────────────────────
     today_date   = datetime.today().date()
     next_opex    = _next_monthly_opex(today_date)
@@ -469,13 +502,16 @@ async def get_setups(
     page_rows = rows[offset: offset + page_size]
 
     return {
-        "total":         total,
-        "page":          page,
-        "page_size":     page_size,
-        "pages":         max(1, -(-total // page_size)),
-        "universe_size": len(tickers),
-        "as_of":         prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
-        "results":       page_rows,
+        "total":            total,
+        "page":             page,
+        "page_size":        page_size,
+        "pages":            max(1, -(-total // page_size)),
+        "universe_size":    len(tickers),
+        "as_of":            prices.index[-1].strftime("%Y-%m-%d") if not prices.empty else None,
+        "regime":           regime_name,
+        "regime_score":     regime_score_val,
+        "regime_strategy":  regime_strategy,
+        "results":          page_rows,
     }
 
 
