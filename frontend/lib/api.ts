@@ -201,6 +201,49 @@ export interface SummaryResponse {
   factors: FactorSummary[];
 }
 
+// ── Earnings Calendar types ───────────────────────────────────────────────────
+
+export interface EarningsCalendarStock {
+  ticker: string;
+  price: number | null;
+  chg_1d: number | null;
+  setup: string;
+  stage: number | null;
+  confluence_score: number | null;
+  regime_adjusted_score: number | null;
+  coiled_spring_score: number | null;
+  rs_spy_20d: number | null;
+  rs_sector_20d: number | null;
+  triple_rs: boolean;
+  rsi: number | null;
+  vol_surge: number | null;
+  dist_52w_high: number | null;
+  ma50_dist: number | null;
+  accum_score: number | null;
+  days_to_earnings: number;
+}
+
+export interface EarningsCalendarDay {
+  date: string;
+  days_from_today: number;
+  stocks: EarningsCalendarStock[];
+}
+
+export interface EarningsCalendarResponse {
+  days: EarningsCalendarDay[];
+  total_stocks: number;
+  total_with_setups: number;
+  prefetch_triggered: boolean;
+  as_of: string;
+}
+
+export interface EarningsCalendarParams {
+  universe?: string;
+  days_ahead?: number;
+  only_setups?: boolean;
+  min_score?: number;
+}
+
 // ── Backtest types ────────────────────────────────────────────────────────────
 
 export interface BacktestConfig {
@@ -370,6 +413,14 @@ export const api = {
     if (params?.page)        q.set("page",       String(params.page));
     if (params?.page_size)   q.set("page_size",  String(params.page_size));
     return apiFetch<PreBreakoutResponse>(`/technical/prebreakout?${q.toString()}`);
+  },
+  getEarningsCalendar: (params?: EarningsCalendarParams) => {
+    const q = new URLSearchParams();
+    if (params?.universe)              q.set("universe",    params.universe);
+    if (params?.days_ahead != null)    q.set("days_ahead",  String(params.days_ahead));
+    if (params?.only_setups)           q.set("only_setups", "true");
+    if (params?.min_score != null && params.min_score > 0) q.set("min_score", String(params.min_score));
+    return apiFetch<EarningsCalendarResponse>(`/technical/earnings-calendar?${q.toString()}`);
   },
   prefetchEvents: (universe = "sp500") =>
     fetch(`/api/technical/prefetch-events?universe=${universe}`, { method: "POST" }),

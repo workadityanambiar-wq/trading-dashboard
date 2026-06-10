@@ -773,6 +773,171 @@ async def get_mtf_alignment(
     }
 
 
+# ── /earnings-calendar ───────────────────────────────────────────────────────
+
+@router.get("/earnings-calendar")
+async def get_earnings_calendar(
+    background_tasks: BackgroundTasks,
+    universe:     str   = Query("sp500"),
+    days_ahead:   int   = Query(21, ge=1, le=60),
+    only_setups:  bool  = Query(False),
+    min_score:    float = Query(0),
+):
+    """
+    Upcoming earnings grouped by date, each stock enriched with its current setup context.
+    Auto-triggers a background prefetch for any uncached tickers.
+    """
+    tickers = _resolve_tickers(universe, "", "")
+    if not tickers:
+        return {"days": [], "total_stocks": 0, "total_with_setups": 0,
+                "prefetch_triggered": False, "as_of": _TODAY}
+
+    # Kick off earnings prefetch for any uncached tickers (non-blocking)
+    uncached = cache.get_uncached_earnings_tickers(tickers)
+    if uncached:
+        background_tasks.add_task(_bg_fetch_earnings, uncached)
+
+    earnings_map = cache.get_earnings_dates(tickers)
+    today_date   = datetime.today().date()
+    cutoff_date  = today_date + timedelta(days=days_ahead)
+
+    upcoming = {
+        t: d for t, d in earnings_map.items()
+        if d is not None and today_date <= d <= cutoff_date
+    }
+
+    if not upcoming:
+        return {
+            "days": [],
+            "total_stocks": 0,
+            "total_with_setups": 0,
+            "prefetch_triggered": bool(uncached),
+            "as_of": _TODAY,
+        }
+
+    # Compute signals for the upcoming-earnings subset only
+    upcoming_tickers = list(upcoming.keys())
+    ohlcv  = await _fetch_ohlcv(upcoming_tickers)
+    prices = ohlcv.get("adj_close", pd.DataFrame())
+    high   = ohlcv.get("high",      pd.DataFrame())
+    low    = ohlcv.get("low",       pd.DataFrame())
+    open_p = ohlcv.get("open",      pd.DataFrame())
+    volume = ohlcv.get("volume",    pd.DataFrame())
+
+    signals_df = pd.DataFrame()
+    regime_name = "Choppy"
+    last_prices = pd.Series(dtype=float)
+    prev_prices = pd.Series(dtype=float)
+
+    if not prices.empty and len(prices.columns) >= 2:
+        sector_map = _build_sector_etf_mapping(upcoming_tickers)
+        signals_df = await asyncio.get_event_loop().run_in_executor(
+            None, compute_all_signals,
+            prices,
+            high   if not high.empty   else None,
+            low    if not low.empty    else None,
+            open_p if not open_p.empty else None,
+            volume if not volume.empty else None,
+            sector_map or None,
+        )
+        signals_df = signals_df.drop(index="SPY", errors="ignore")
+        last_prices = prices.iloc[-1].dropna()
+        prev_prices = prices.dropna(how="all").iloc[-2] if len(prices.dropna(how="all")) >= 2 else pd.Series(dtype=float)
+
+        spy_s = prices["SPY"].dropna() if "SPY" in prices.columns else pd.Series(dtype=float)
+        spy_vs_50d = spy_vs_200d = None
+        if len(spy_s) >= 200:
+            spy_vs_50d  = float(spy_s.iloc[-1] / spy_s.rolling(50).mean().iloc[-1] - 1)
+            spy_vs_200d = float(spy_s.iloc[-1] / spy_s.rolling(200).mean().iloc[-1] - 1)
+        elif len(spy_s) >= 50:
+            spy_vs_50d = float(spy_s.iloc[-1] / spy_s.rolling(50).mean().iloc[-1] - 1)
+        regime_name, _, _, _ = _determine_regime(spy_vs_50d, spy_vs_200d, None, None)
+
+    days_grouped: dict[str, list] = {}
+    total_with_setups = 0
+
+    for ticker, earn_date in upcoming.items():
+        d_str  = str(earn_date)
+        price  = _safe(last_prices.get(ticker))
+        prev   = prev_prices.get(ticker)
+        chg_1d = _safe((last_prices.get(ticker, np.nan) / prev - 1) if prev and prev > 0 else None)
+
+        if not signals_df.empty and ticker in signals_df.index:
+            r     = signals_df.loc[ticker]
+            setup = str(r.get("setup", "No Setup"))
+            cs    = r.get("confluence_score")
+            affinity   = _REGIME_SETUP_AFFINITY.get(setup, {}).get(regime_name, 50)
+            regime_adj = round(float(cs) * 0.70 + affinity * 0.30, 1) if cs is not None else None
+            row = {
+                "ticker":                ticker,
+                "price":                 price,
+                "chg_1d":                chg_1d,
+                "setup":                 setup,
+                "stage":                 _safe(r.get("stage")),
+                "confluence_score":      _safe(cs),
+                "regime_adjusted_score": regime_adj,
+                "coiled_spring_score":   _safe(r.get("coiled_spring_score")),
+                "rs_spy_20d":            _safe(r.get("rs_spy_20d")),
+                "rs_sector_20d":         _safe(r.get("rs_sector_20d")),
+                "triple_rs":             bool(r.get("triple_rs", 0) == 1.0),
+                "rsi":                   _safe(r.get("rsi")),
+                "vol_surge":             _safe(r.get("vol_surge")),
+                "dist_52w_high":         _safe(r.get("dist_52w_high")),
+                "ma50_dist":             _safe(r.get("ma50_dist")),
+                "accum_score":           _safe(r.get("accum_score")),
+                "days_to_earnings":      (earn_date - today_date).days,
+            }
+        else:
+            row = {
+                "ticker": ticker, "price": price, "chg_1d": chg_1d,
+                "setup": "No Setup", "stage": None,
+                "confluence_score": None, "regime_adjusted_score": None,
+                "coiled_spring_score": None, "rs_spy_20d": None, "rs_sector_20d": None,
+                "triple_rs": False, "rsi": None, "vol_surge": None,
+                "dist_52w_high": None, "ma50_dist": None, "accum_score": None,
+                "days_to_earnings": (earn_date - today_date).days,
+            }
+
+        if row["setup"] != "No Setup":
+            total_with_setups += 1
+
+        days_grouped.setdefault(d_str, []).append(row)
+
+    # Filters
+    if only_setups:
+        days_grouped = {
+            d: [r for r in rows if r["setup"] != "No Setup"]
+            for d, rows in days_grouped.items()
+        }
+        days_grouped = {d: rows for d, rows in days_grouped.items() if rows}
+
+    if min_score > 0:
+        days_grouped = {
+            d: [r for r in rows if (r.get("confluence_score") or 0) >= min_score]
+            for d, rows in days_grouped.items()
+        }
+        days_grouped = {d: rows for d, rows in days_grouped.items() if rows}
+
+    # Sort within each day by regime_adjusted_score desc
+    for rows in days_grouped.values():
+        rows.sort(key=lambda r: r.get("regime_adjusted_score") or -9999, reverse=True)
+
+    return {
+        "days": [
+            {
+                "date":           d,
+                "days_from_today": (date.fromisoformat(d) - today_date).days,
+                "stocks":         stocks,
+            }
+            for d, stocks in sorted(days_grouped.items())
+        ],
+        "total_stocks":       len(upcoming),
+        "total_with_setups":  total_with_setups,
+        "prefetch_triggered": bool(uncached),
+        "as_of":              _TODAY,
+    }
+
+
 # ── /regime ───────────────────────────────────────────────────────────────────
 
 @router.get("/regime")
