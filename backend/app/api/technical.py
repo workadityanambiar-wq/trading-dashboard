@@ -1826,3 +1826,239 @@ async def get_stock_detail(ticker: str):
         "days_to_earnings": (ed - today_date).days if (ed and (ed - today_date).days >= 0) else None,
         "regime":           regime_name,
     }
+
+
+# ── /options/{ticker} ─────────────────────────────────────────────────────────
+
+def _fetch_options_data(ticker: str) -> dict:
+    """
+    Pull live options data from yfinance.  Called in executor so it doesn't block.
+    Returns IV term structure, vol skew, P/C ratios, max pain, most-active strikes.
+    """
+    import yfinance as yf
+
+    t_upper = ticker.strip().upper()
+    yf_obj  = yf.Ticker(t_upper)
+
+    # ── Current price + 30D historical vol ───────────────────────────────────
+    spot = None
+    hv30 = None
+    hv_series: Optional[pd.Series] = None
+    try:
+        hist = yf_obj.history(period="1y", auto_adjust=True)
+        if not hist.empty:
+            spot = round(float(hist["Close"].iloc[-1]), 2)
+            rets = hist["Close"].pct_change().dropna()
+            hv30_raw = float(rets.tail(30).std() * np.sqrt(252) * 100)
+            hv30     = round(hv30_raw, 2)
+            hv_series = (rets.rolling(30).std() * np.sqrt(252) * 100).dropna()
+    except Exception as e:
+        logger.warning(f"Options: price history failed for {t_upper}: {e}")
+
+    if spot is None:
+        return {"error": f"No price data for {t_upper}"}
+
+    # ── Available expiries ────────────────────────────────────────────────────
+    try:
+        expiries = list(yf_obj.options)
+    except Exception:
+        return {"error": f"No options available for {t_upper}"}
+
+    if not expiries:
+        return {"error": f"No options available for {t_upper}"}
+
+    today_dt = datetime.today()
+
+    # ── IV term structure (ATM IV per expiry, up to 10 nearest) ──────────────
+    term_structure: list[dict] = []
+    for exp_str in expiries[:10]:
+        try:
+            chain = yf_obj.option_chain(exp_str)
+            calls, puts = chain.calls, chain.puts
+
+            def _atm_iv(df: pd.DataFrame) -> Optional[float]:
+                df = df[(df["impliedVolatility"] > 0) & df["impliedVolatility"].notna()]
+                if df.empty:
+                    return None
+                idx = (df["strike"] - spot).abs().idxmin()
+                return round(float(df.loc[idx, "impliedVolatility"]) * 100, 2)
+
+            call_iv = _atm_iv(calls)
+            put_iv  = _atm_iv(puts)
+            atm_iv  = round((call_iv + put_iv) / 2, 2) if (call_iv and put_iv) else (call_iv or put_iv)
+
+            exp_dt = datetime.strptime(exp_str, "%Y-%m-%d")
+            dte    = max(0, (exp_dt - today_dt).days)
+            term_structure.append({"expiry": exp_str, "dte": dte, "atm_iv": atm_iv})
+        except Exception:
+            continue
+
+    if not term_structure:
+        return {"error": f"Could not compute IV for {t_upper}"}
+
+    atm_iv_now = term_structure[0]["atm_iv"]
+    iv_vs_hv   = round(atm_iv_now / hv30, 3) if (atm_iv_now and hv30) else None
+
+    # IV rank: fraction of rolling-30D HV observations below current ATM IV
+    iv_rank: Optional[float] = None
+    if hv_series is not None and not hv_series.empty and atm_iv_now:
+        iv_rank = round(float((hv_series.values <= atm_iv_now).mean() * 100), 1)
+
+    # ── Vol skew: IV by strike for nearest expiry ─────────────────────────────
+    skew: list[dict] = []
+    nearest_expiry = expiries[0]
+    try:
+        chain  = yf_obj.option_chain(nearest_expiry)
+        calls_df = chain.calls.copy()
+        puts_df  = chain.puts.copy()
+
+        lo, hi = spot * 0.80, spot * 1.20
+
+        def _clean_iv(iv: float) -> Optional[float]:
+            if not iv or np.isnan(iv) or iv <= 0:
+                return None
+            return round(iv * 100, 2)
+
+        # Build skew dict keyed by strike
+        skew_map: dict[float, dict] = {}
+        for _, row in puts_df[puts_df["strike"].between(lo, hi)].iterrows():
+            s = float(row["strike"])
+            skew_map[s] = {
+                "strike":    s,
+                "moneyness": round((s / spot - 1) * 100, 1),
+                "put_iv":    _clean_iv(row["impliedVolatility"]),
+                "call_iv":   None,
+                "put_vol":   int(row["volume"]) if not pd.isna(row.get("volume")) else 0,
+                "put_oi":    int(row["openInterest"]) if not pd.isna(row.get("openInterest")) else 0,
+                "call_vol":  0,
+                "call_oi":   0,
+            }
+        for _, row in calls_df[calls_df["strike"].between(lo, hi)].iterrows():
+            s = float(row["strike"])
+            iv = _clean_iv(row["impliedVolatility"])
+            if s in skew_map:
+                skew_map[s]["call_iv"]  = iv
+                skew_map[s]["call_vol"] = int(row["volume"]) if not pd.isna(row.get("volume")) else 0
+                skew_map[s]["call_oi"]  = int(row["openInterest"]) if not pd.isna(row.get("openInterest")) else 0
+            else:
+                skew_map[s] = {
+                    "strike":    s,
+                    "moneyness": round((s / spot - 1) * 100, 1),
+                    "put_iv":    None,
+                    "call_iv":   iv,
+                    "put_vol":   0,
+                    "put_oi":    0,
+                    "call_vol":  int(row["volume"]) if not pd.isna(row.get("volume")) else 0,
+                    "call_oi":   int(row["openInterest"]) if not pd.isna(row.get("openInterest")) else 0,
+                }
+        skew = sorted(skew_map.values(), key=lambda x: x["strike"])
+    except Exception as e:
+        logger.warning(f"Options skew failed for {t_upper}: {e}")
+
+    # ── P/C ratios + max pain for nearest expiry ──────────────────────────────
+    pc_volume: Optional[float] = None
+    pc_oi:     Optional[float] = None
+    max_pain:  Optional[float] = None
+    most_active: list[dict]    = []
+
+    try:
+        chain    = yf_obj.option_chain(nearest_expiry)
+        calls_df = chain.calls.copy()
+        puts_df  = chain.puts.copy()
+
+        call_vol = float(calls_df["volume"].fillna(0).sum())
+        put_vol  = float(puts_df["volume"].fillna(0).sum())
+        call_oi  = float(calls_df["openInterest"].fillna(0).sum())
+        put_oi   = float(puts_df["openInterest"].fillna(0).sum())
+
+        pc_volume = round(put_vol  / max(call_vol, 1), 3)
+        pc_oi     = round(put_oi   / max(call_oi, 1),  3)
+
+        # Vectorised max pain
+        c_strikes = calls_df["strike"].values
+        c_oi_vals = calls_df["openInterest"].fillna(0).values
+        p_strikes = puts_df["strike"].values
+        p_oi_vals = puts_df["openInterest"].fillna(0).values
+        all_strikes_arr = np.unique(np.concatenate([c_strikes, p_strikes]))
+
+        if len(all_strikes_arr) > 0:
+            call_pain = np.array([
+                np.sum(np.maximum(0, s - c_strikes) * c_oi_vals)
+                for s in all_strikes_arr
+            ])
+            put_pain = np.array([
+                np.sum(np.maximum(0, p_strikes - s) * p_oi_vals)
+                for s in all_strikes_arr
+            ])
+            max_pain = float(all_strikes_arr[np.argmin(call_pain + put_pain)])
+
+        # Most active (combined calls + puts, sorted by volume)
+        rows: list[dict] = []
+        for _, row in calls_df.iterrows():
+            v = int(row["volume"]) if not pd.isna(row.get("volume")) else 0
+            o = int(row["openInterest"]) if not pd.isna(row.get("openInterest")) else 0
+            iv = round(float(row["impliedVolatility"]) * 100, 2) if (
+                not pd.isna(row.get("impliedVolatility")) and row["impliedVolatility"] > 0) else None
+            rows.append({
+                "strike": float(row["strike"]),
+                "type":   "CALL",
+                "iv":     iv,
+                "volume": v,
+                "oi":     o,
+                "bid":    round(float(row["bid"]), 2) if not pd.isna(row.get("bid")) else None,
+                "ask":    round(float(row["ask"]), 2) if not pd.isna(row.get("ask")) else None,
+                "itm":    bool(row.get("inTheMoney", False)),
+            })
+        for _, row in puts_df.iterrows():
+            v = int(row["volume"]) if not pd.isna(row.get("volume")) else 0
+            o = int(row["openInterest"]) if not pd.isna(row.get("openInterest")) else 0
+            iv = round(float(row["impliedVolatility"]) * 100, 2) if (
+                not pd.isna(row.get("impliedVolatility")) and row["impliedVolatility"] > 0) else None
+            rows.append({
+                "strike": float(row["strike"]),
+                "type":   "PUT",
+                "iv":     iv,
+                "volume": v,
+                "oi":     o,
+                "bid":    round(float(row["bid"]), 2) if not pd.isna(row.get("bid")) else None,
+                "ask":    round(float(row["ask"]), 2) if not pd.isna(row.get("ask")) else None,
+                "itm":    bool(row.get("inTheMoney", False)),
+            })
+
+        most_active = sorted([r for r in rows if r["volume"] > 0],
+                             key=lambda x: x["volume"], reverse=True)[:25]
+    except Exception as e:
+        logger.warning(f"Options P/C / max pain failed for {t_upper}: {e}")
+
+    return {
+        "ticker":           t_upper,
+        "spot":             spot,
+        "as_of":            _TODAY,
+        "expiries":         expiries[:12],
+        "nearest_expiry":   nearest_expiry,
+        "hv30":             hv30,
+        "atm_iv":           atm_iv_now,
+        "iv_vs_hv":         iv_vs_hv,
+        "iv_rank":          iv_rank,
+        "pc_volume":        pc_volume,
+        "pc_oi":            pc_oi,
+        "max_pain":         max_pain,
+        "term_structure":   term_structure,
+        "skew":             skew,
+        "most_active":      most_active,
+    }
+
+
+@router.get("/options/{ticker}")
+async def get_options(ticker: str):
+    """
+    Options analytics for any optionable ticker.
+    Returns IV term structure, vol skew, put/call ratios, max pain, most-active strikes.
+    Data is fetched live from yfinance (not cached).
+    """
+    result = await asyncio.get_event_loop().run_in_executor(
+        None, _fetch_options_data, ticker
+    )
+    if "error" in result:
+        raise HTTPException(404, result["error"])
+    return result

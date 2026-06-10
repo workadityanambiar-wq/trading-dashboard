@@ -534,6 +534,54 @@ export interface BreadthParams {
   lookback_days?: number;
 }
 
+// ── Options Analytics types ───────────────────────────────────────────────────
+
+export interface OptionTermPoint {
+  expiry: string;
+  dte:    number;
+  atm_iv: number | null;
+}
+
+export interface OptionSkewPoint {
+  strike:    number;
+  moneyness: number;
+  put_iv:    number | null;
+  call_iv:   number | null;
+  put_vol:   number;
+  put_oi:    number;
+  call_vol:  number;
+  call_oi:   number;
+}
+
+export interface OptionRow {
+  strike: number;
+  type:   "CALL" | "PUT";
+  iv:     number | null;
+  volume: number;
+  oi:     number;
+  bid:    number | null;
+  ask:    number | null;
+  itm:    boolean;
+}
+
+export interface OptionsResponse {
+  ticker:          string;
+  spot:            number;
+  as_of:           string;
+  expiries:        string[];
+  nearest_expiry:  string;
+  hv30:            number | null;
+  atm_iv:          number | null;
+  iv_vs_hv:        number | null;
+  iv_rank:         number | null;
+  pc_volume:       number | null;
+  pc_oi:           number | null;
+  max_pain:        number | null;
+  term_structure:  OptionTermPoint[];
+  skew:            OptionSkewPoint[];
+  most_active:     OptionRow[];
+}
+
 // ── Hybrid Risk Engine types ──────────────────────────────────────────────────
 
 export type RegimeName = "Strong Trend" | "Choppy" | "Bear" | "Panic";
@@ -720,6 +768,8 @@ export const api = {
   },
   getStockDetail: (ticker: string) =>
     apiFetch<StockDetailResponse>(`/technical/stock/${encodeURIComponent(ticker)}`),
+  getOptions: (ticker: string) =>
+    apiFetch<OptionsResponse>(`/technical/options/${encodeURIComponent(ticker.toUpperCase())}`),
   hybridOptimize: (req: HybridRequest) =>
     apiFetch<HybridResponse>("/portfolio/hybrid", { method: "POST", body: JSON.stringify(req) }),
   getBreadth: (params?: BreadthParams) => {

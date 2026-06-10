@@ -22,6 +22,7 @@ import {
   Waves,
   Globe,
   Layers,
+  Percent,
 } from "lucide-react";
 
 const NAV = [
@@ -36,6 +37,7 @@ const NAV = [
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
+  { href: "/options",       label: "Options",      icon: Percent },
   { href: "/correlations",  label: "Correlations", icon: Network },
   { href: "/screener",  label: "Screener",  icon: ScanSearch },
   { href: "/factors",   label: "Factors",   icon: TrendingUp },
