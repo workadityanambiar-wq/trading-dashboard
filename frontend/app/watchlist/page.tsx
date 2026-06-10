@@ -112,7 +112,7 @@ export default function WatchlistPage() {
 
   const sorted = useMemo(() => {
     const withData  = rows.filter((r): r is SetupSignal => r !== null);
-    const noData    = rows.filter(r => r === null).map((_, i) => tickers[rows.findIndex((r, j) => j >= i && r === null)]);
+    const noData    = tickers.filter((_, i) => rows[i] === null);
 
     const sorted = [...withData].sort((a, b) => {
       let av: number | string | null;
@@ -288,7 +288,7 @@ export default function WatchlistPage() {
                   <th key={k}
                     className={cn("px-3 py-2.5 font-medium text-text-muted cursor-pointer hover:text-text-primary select-none", align)}
                     onClick={() => toggleSort(k)}>
-                    <span className="flex items-center gap-1 justify-inherit">
+                    <span className="flex items-center gap-1">
                       {align === "text-right" && <SortIcon k={k} />}
                       {label}
                       {align === "text-left"  && <SortIcon k={k} />}

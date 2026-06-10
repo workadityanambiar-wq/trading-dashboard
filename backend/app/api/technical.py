@@ -817,8 +817,9 @@ async def get_rs_rankings(
                 "universe_size": len(tickers), "message": "No price data cached"}
 
     spy       = prices["SPY"].dropna()
-    skip_cols = set(_SECTOR_ETF_TICKERS) | {"SPY"}
-    stocks    = prices[[c for c in prices.columns if c not in skip_cols]].copy()
+    universe_set = set(tickers)
+    stock_cols   = [c for c in prices.columns if c in universe_set]
+    stocks       = prices[stock_cols].copy()
     n         = len(stocks)
 
     def _excess(days: int) -> pd.Series:
