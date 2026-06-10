@@ -1633,9 +1633,10 @@ async def get_correlations(
     # Hierarchical clustering — reorder so correlated tickers are adjacent
     dist_mat = (1 - corr).clip(lower=0)
     dist_mat = (dist_mat + dist_mat.T) / 2
-    np.fill_diagonal(dist_mat.values, 0)
+    dist_arr = dist_mat.values.copy()
+    np.fill_diagonal(dist_arr, 0)
     try:
-        condensed = squareform(dist_mat.values, checks=False)
+        condensed = squareform(dist_arr, checks=False)
         condensed = np.clip(condensed, 0, None)
         Z     = linkage(condensed, method="ward")
         order = leaves_list(Z)
