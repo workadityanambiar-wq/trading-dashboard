@@ -727,6 +727,40 @@ export interface MT5OrderRequest {
   comment?: string;
 }
 
+export interface MT5Performance {
+  days: number;
+  total_trades: number;
+  winners: number;
+  losers: number;
+  breakeven: number;
+  win_rate: number;
+  total_pnl: number;
+  gross_profit: number;
+  gross_loss: number;
+  profit_factor: number;
+  avg_win: number;
+  avg_loss: number;
+  expectancy: number;
+  max_win: number;
+  max_loss: number;
+  avg_trade_pnl: number;
+  max_drawdown: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  sortino: number;
+  recovery_factor: number;
+  consecutive_wins: number;
+  consecutive_losses: number;
+  total_commission: number;
+  total_swap: number;
+  equity_curve: { idx: number; time: string; equity: number }[];
+  drawdown_series: { idx: number; time: string; drawdown: number }[];
+  daily_returns: { date: string; pnl: number }[];
+  per_symbol: { symbol: string; trades: number; win_rate: number; pnl: number; profit_factor: number }[];
+  weekday_pnl: { day: string; pnl: number }[];
+  monthly_pnl: { month: string; pnl: number }[];
+}
+
 // ── API client ────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -937,6 +971,7 @@ export const api = {
     apiFetch<{ success: boolean; order?: number; price?: number; volume?: number }>("/mt5/order", { method: "POST", body: JSON.stringify(req) }),
   closeMT5Position: (ticket: number) =>
     apiFetch<{ success: boolean; order?: number }>("/mt5/close", { method: "POST", body: JSON.stringify({ ticket }) }),
+  getMT5Performance: (days = 90) => apiFetch<MT5Performance>(`/mt5/performance?days=${days}`),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────

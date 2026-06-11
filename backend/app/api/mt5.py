@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.core.mt5 import client as mt5c
+from app.core.mt5.analytics import compute_performance
 
 router = APIRouter(tags=["mt5"])
 
@@ -87,3 +88,44 @@ def close_position(req: CloseRequest):
     if not result.get("success"):
         raise HTTPException(400, result.get("error") or result.get("comment") or "Close failed")
     return result
+
+
+@router.get("/performance")
+def performance(days: int = 90):
+    to_dt = datetime.utcnow()
+    from_dt = to_dt - timedelta(days=days)
+    deals = mt5c.get_deal_history(from_dt, to_dt)
+    metrics = compute_performance(deals)
+    return {
+        "days": days,
+        "total_trades":      metrics.total_trades,
+        "winners":           metrics.winners,
+        "losers":            metrics.losers,
+        "breakeven":         metrics.breakeven,
+        "win_rate":          round(metrics.win_rate * 100, 1),
+        "total_pnl":         round(metrics.total_pnl, 2),
+        "gross_profit":      round(metrics.gross_profit, 2),
+        "gross_loss":        round(metrics.gross_loss, 2),
+        "profit_factor":     round(metrics.profit_factor, 2) if metrics.profit_factor != float("inf") else 999,
+        "avg_win":           round(metrics.avg_win, 2),
+        "avg_loss":          round(metrics.avg_loss, 2),
+        "expectancy":        round(metrics.expectancy, 2),
+        "max_win":           round(metrics.max_win, 2),
+        "max_loss":          round(metrics.max_loss, 2),
+        "avg_trade_pnl":     round(metrics.avg_trade_pnl, 2),
+        "max_drawdown":      round(metrics.max_drawdown, 2),
+        "max_drawdown_pct":  round(metrics.max_drawdown_pct, 1),
+        "sharpe":            round(metrics.sharpe, 2),
+        "sortino":           round(metrics.sortino, 2),
+        "recovery_factor":   round(metrics.recovery_factor, 2),
+        "consecutive_wins":  metrics.consecutive_wins,
+        "consecutive_losses":metrics.consecutive_losses,
+        "total_commission":  round(metrics.total_commission, 2),
+        "total_swap":        round(metrics.total_swap, 2),
+        "equity_curve":      metrics.equity_curve,
+        "drawdown_series":   metrics.drawdown_series,
+        "daily_returns":     metrics.daily_returns,
+        "per_symbol":        metrics.per_symbol,
+        "weekday_pnl":       metrics.weekday_pnl,
+        "monthly_pnl":       metrics.monthly_pnl,
+    }
