@@ -13,3 +13,5 @@ python-multipart>=0.0.9
 pydantic>=2.7.0
 aiofiles>=23.2.1
 pandas-datareader>=0.10.0
+scikit-learn>=1.4.0
+MetaTrader5>=5.0.45; sys_platform == "win32"

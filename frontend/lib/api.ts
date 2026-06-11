@@ -626,6 +626,107 @@ export interface HybridResponse {
   metrics:             HybridMetrics;
 }
 
+// ── MetaTrader 5 types ────────────────────────────────────────────────────────
+
+export interface MT5AccountInfo {
+  login: number;
+  name: string;
+  server: string;
+  currency: string;
+  balance: number;
+  equity: number;
+  margin: number;
+  margin_free: number;
+  margin_level: number;
+  profit: number;
+  leverage: number;
+  company: string;
+  trade_allowed: number;
+}
+
+export interface MT5Position {
+  ticket: number;
+  symbol: string;
+  type: number;          // 0 = buy, 1 = sell
+  volume: number;
+  price_open: number;
+  price_current: number;
+  sl: number;
+  tp: number;
+  profit: number;
+  swap: number;
+  comment: string;
+  time: string;
+  time_update: string;
+  magic: number;
+}
+
+export interface MT5Order {
+  ticket: number;
+  symbol: string;
+  type: number;
+  volume_initial: number;
+  volume_current: number;
+  price_open: number;
+  sl: number;
+  tp: number;
+  price_stoplimit: number;
+  comment: string;
+  time_setup: string;
+  time_expiration: string | null;
+  magic: number;
+}
+
+export interface MT5Deal {
+  ticket: number;
+  order: number;
+  symbol: string;
+  type: number;
+  entry: number;         // 0 = in, 1 = out, 2 = in/out
+  volume: number;
+  price: number;
+  profit: number;
+  commission: number;
+  swap: number;
+  fee: number;
+  comment: string;
+  time: string;
+  magic: number;
+}
+
+export interface MT5Symbol {
+  name: string;
+  description: string;
+  currency_base: string;
+  currency_profit: string;
+  digits: number;
+  trade_contract_size: number;
+  volume_min: number;
+  volume_max: number;
+  volume_step: number;
+  bid: number;
+  ask: number;
+  spread: number;
+}
+
+export interface MT5Bar {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface MT5OrderRequest {
+  symbol: string;
+  order_type: "buy" | "sell";
+  volume: number;
+  sl?: number;
+  tp?: number;
+  comment?: string;
+}
+
 // ── API client ────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -822,6 +923,20 @@ export const api = {
     entry_threshold?: number; exit_threshold?: number; stop_threshold?: number;
     max_holding_days?: number; cost_bps?: number; notional?: number;
   }) => apiFetch<any>("/pairs/backtest", { method: "POST", body: JSON.stringify(req) }),
+
+  // ── MetaTrader 5 ────────────────────────────────────────────────────────────
+  getMT5Status: () => apiFetch<{ available: boolean; connected: boolean }>("/mt5/status"),
+  getMT5Account: () => apiFetch<MT5AccountInfo>("/mt5/account"),
+  getMT5Positions: () => apiFetch<MT5Position[]>("/mt5/positions"),
+  getMT5Orders: () => apiFetch<MT5Order[]>("/mt5/orders"),
+  getMT5History: (days = 30) => apiFetch<MT5Deal[]>(`/mt5/history?days=${days}`),
+  getMT5Symbols: (search = "") => apiFetch<MT5Symbol[]>(`/mt5/symbols${search ? "?search=" + encodeURIComponent(search) : ""}`),
+  getMT5OHLCV: (symbol: string, tf = "H1", count = 500) =>
+    apiFetch<MT5Bar[]>(`/mt5/ohlcv/${encodeURIComponent(symbol)}?tf=${tf}&count=${count}`),
+  placeMT5Order: (req: MT5OrderRequest) =>
+    apiFetch<{ success: boolean; order?: number; price?: number; volume?: number }>("/mt5/order", { method: "POST", body: JSON.stringify(req) }),
+  closeMT5Position: (ticket: number) =>
+    apiFetch<{ success: boolean; order?: number }>("/mt5/close", { method: "POST", body: JSON.stringify({ ticket }) }),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────

@@ -24,6 +24,7 @@ import {
   Layers,
   Percent,
   GitCompare,
+  MonitorDot,
 } from "lucide-react";
 
 const NAV = [
@@ -48,6 +49,7 @@ const NAV = [
   { href: "/risk",         label: "Risk",         icon: ShieldAlert },
   { href: "/risk-engine",  label: "Risk Engine",  icon: Layers },
   { href: "/pairs",        label: "Pair Trading", icon: GitCompare },
+  { href: "/mt5",          label: "MT5 Terminal", icon: MonitorDot },
 ];
 
 export function Sidebar() {
