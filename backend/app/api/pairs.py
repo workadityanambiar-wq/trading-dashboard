@@ -47,6 +47,7 @@ class DiscoverRequest(BaseModel):
     hedge_method: str = "ols"
     zscore_window: int = 30
     top_n: int = 50
+    period: str = "2y"
 
 class BacktestRequest(BaseModel):
     ticker1: str
@@ -121,9 +122,14 @@ async def discover(req: DiscoverRequest):
 
     tickers = tickers[:500]  # hard cap
 
+    # Resolve period → start date
+    _p = req.period.lower()
+    _days = int(_p[:-1]) * (365 if _p[-1] == "y" else 30)
+    _start = (datetime.today() - timedelta(days=_days)).strftime("%Y-%m-%d")
+
     # Fetch prices
     try:
-        prices = await loop.run_in_executor(None, _get_prices, tickers, _START_2Y)
+        prices = await loop.run_in_executor(None, _get_prices, tickers, _start)
     except Exception as e:
         raise HTTPException(500, f"Price fetch failed: {e}")
 

@@ -74,6 +74,7 @@ export default function PairsPage() {
   const [sortBy, setSortBy]             = useState<keyof PairSummary>("current_zscore");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
   const [topN, setTopN]                 = useState(50);
+  const [period, setPeriod]             = useState("2y");
   const [tradePair, setTradePair]       = useState<PairSummary | null>(null);
 
   // Regime
@@ -87,7 +88,7 @@ export default function PairsPage() {
   const { mutate: runScan, data: scanData, isPending: scanning, isError } = useMutation<DiscoverResponse>({
     mutationFn: () => api.discoverPairs({
       universe, min_correlation: minCorr, sector_filter: sectorFilter,
-      hedge_method: hedgeMethod, spread_type: spreadType, top_n: topN,
+      hedge_method: hedgeMethod, spread_type: spreadType, top_n: topN, period,
     }),
   });
 
@@ -142,7 +143,7 @@ export default function PairsPage() {
       </div>
 
       {/* Config panel */}
-      <div className="bg-surface border border-border rounded-lg p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="bg-surface border border-border rounded-lg p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         {/* Universe */}
         <div>
           <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Universe</label>
@@ -190,6 +191,19 @@ export default function PairsPage() {
             <option value="kalman">Kalman Filter</option>
           </select>
         </div>
+        {/* Period */}
+        <div>
+          <label className="text-[10px] text-text-muted uppercase tracking-wider block mb-1">Lookback Period</label>
+          <select value={period} onChange={e => setPeriod(e.target.value)}
+            className="w-full bg-surface-2 border border-border rounded px-2 py-1.5 text-xs text-text-primary">
+            <option value="6m">6 months</option>
+            <option value="1y">1 year</option>
+            <option value="2y">2 years (default)</option>
+            <option value="3y">3 years</option>
+            <option value="5y">5 years</option>
+          </select>
+        </div>
+
         {/* Scan button */}
         <div className="flex items-end">
           <button onClick={() => runScan()}

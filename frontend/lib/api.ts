@@ -934,6 +934,7 @@ export const api = {
     min_correlation?: number; max_pvalue?: number;
     sector_filter?: string; spread_type?: string;
     hedge_method?: string; zscore_window?: number; top_n?: number;
+    period?: string;
   }) => apiFetch<any>("/pairs/discover", { method: "POST", body: JSON.stringify(req) }),
 
   getPairsRegime: () => apiFetch<any>("/pairs/regime"),
