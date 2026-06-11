@@ -23,6 +23,7 @@ import {
   Globe,
   Layers,
   Percent,
+  GitCompare,
 } from "lucide-react";
 
 const NAV = [
@@ -46,6 +47,7 @@ const NAV = [
   { href: "/portfolio",    label: "Portfolio",    icon: PieChart },
   { href: "/risk",         label: "Risk",         icon: ShieldAlert },
   { href: "/risk-engine",  label: "Risk Engine",  icon: Layers },
+  { href: "/pairs",        label: "Pair Trading", icon: GitCompare },
 ];
 
 export function Sidebar() {

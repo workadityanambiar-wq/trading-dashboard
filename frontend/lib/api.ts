@@ -792,6 +792,36 @@ export const api = {
     fetch(`/api/technical/prefetch-events?universe=${universe}`, { method: "POST" }),
   getSetupWinRates: (recompute = false) =>
     apiFetch<SetupWinRatesResponse>(`/technical/setup-winrates${recompute ? "?recompute=true" : ""}`),
+
+  // ── Pairs Trading & Stat Arb ────────────────────────────────────────────────
+  discoverPairs: (req: {
+    universe?: string; custom_tickers?: string[];
+    min_correlation?: number; max_pvalue?: number;
+    sector_filter?: string; spread_type?: string;
+    hedge_method?: string; zscore_window?: number; top_n?: number;
+  }) => apiFetch<any>("/pairs/discover", { method: "POST", body: JSON.stringify(req) }),
+
+  getPairsRegime: () => apiFetch<any>("/pairs/regime"),
+
+  getPairDetail: (
+    ticker1: string, ticker2: string,
+    params?: { period?: string; spread_type?: string; hedge_method?: string; zscore_window?: number },
+  ) => {
+    const q = new URLSearchParams();
+    if (params?.period)        q.set("period",       params.period);
+    if (params?.spread_type)   q.set("spread_type",  params.spread_type);
+    if (params?.hedge_method)  q.set("hedge_method", params.hedge_method);
+    if (params?.zscore_window) q.set("zscore_window", String(params.zscore_window));
+    const qs = q.toString();
+    return apiFetch<any>(`/pairs/detail/${ticker1}/${ticker2}${qs ? "?" + qs : ""}`);
+  },
+
+  runPairsBacktest: (req: {
+    ticker1: string; ticker2: string; period?: string;
+    spread_type?: string; hedge_method?: string; zscore_window?: number;
+    entry_threshold?: number; exit_threshold?: number; stop_threshold?: number;
+    max_holding_days?: number; cost_bps?: number; notional?: number;
+  }) => apiFetch<any>("/pairs/backtest", { method: "POST", body: JSON.stringify(req) }),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────

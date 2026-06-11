@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import data, factors, backtest, portfolio, risk, technical
+from app.api import data, factors, backtest, portfolio, risk, technical, pairs
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -74,6 +74,7 @@ app.include_router(backtest.router, prefix="/api/backtest")
 app.include_router(portfolio.router, prefix="/api/portfolio")
 app.include_router(risk.router, prefix="/api/risk")
 app.include_router(technical.router, prefix="/api/technical")
+app.include_router(pairs.router,     prefix="/api/pairs")
 
 
 @app.get("/health")
