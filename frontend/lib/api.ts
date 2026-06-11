@@ -633,7 +633,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
-  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+  if (!res.ok) {
+    let msg = `API ${path} → ${res.status}`;
+    try { const b = await res.json(); if (b?.detail) msg = b.detail; } catch {}
+    throw new Error(msg);
+  }
   return res.json() as Promise<T>;
 }
 
@@ -659,6 +663,10 @@ export const api = {
   getPrices: (ticker: string, period = "1y") =>
     apiFetch<PricesResponse>(`/data/prices/${ticker}?period=${period}`),
   getUniverse: () => apiFetch<{ ticker: string; name: string; sector: string; sub_industry: string }[]>("/data/universe"),
+  searchUniverse: (q: string, pageSize = 8) =>
+    apiFetch<{ total: number; results: { ticker: string; name: string; is_etf: boolean; exchange: string }[] }>(
+      `/data/universe/search?q=${encodeURIComponent(q)}&page_size=${pageSize}`
+    ),
   getFactorScores: (params?: ScoresParams) => {
     const q = new URLSearchParams();
     if (params?.universe)        q.set("universe", params.universe);

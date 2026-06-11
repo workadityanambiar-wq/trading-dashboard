@@ -193,7 +193,14 @@ def run(
         cash_pct:       implicit cash after CVaR + regime scaling
         cvar_95_daily:  final portfolio daily CVaR at 95%
     """
-    prices = prices.dropna(axis=1, how="all").ffill().dropna()
+    prices = prices.dropna(axis=1, how="all")
+    # Trim to the latest first-valid date so a newly-listed ticker doesn't
+    # discard all history before its IPO via dropna().
+    first_valids = prices.apply(lambda col: col.first_valid_index())
+    common_start = first_valids.max()
+    if common_start is not None:
+        prices = prices.loc[common_start:]
+    prices = prices.ffill().dropna()
     if prices.empty or len(prices) < 60:
         return {"error": "Insufficient price history (need ≥60 trading days)"}
 

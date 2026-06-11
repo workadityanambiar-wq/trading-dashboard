@@ -6,9 +6,9 @@ import { useWatchlist } from "@/hooks/useWatchlist";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
-  Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown, LineChart,
+  Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown,
 } from "lucide-react";
-import { ChartModal } from "@/components/ChartModal";
+import { TickerChip } from "@/components/TickerChip";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -78,7 +78,6 @@ export default function WatchlistPage() {
   const [input, setInput]           = useState("");
   const [sortKey, setSortKey]       = useState<SortKey>("regime_adjusted_score");
   const [sortAsc, setSortAsc]       = useState(false);
-  const [chartTicker, setChartTicker] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const universe = tickers.join(",");
@@ -186,7 +185,6 @@ export default function WatchlistPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
-      {chartTicker && <ChartModal ticker={chartTicker} onClose={() => setChartTicker(null)} />}
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -312,19 +310,8 @@ export default function WatchlistPage() {
                 return (
                   <tr key={r.ticker}
                     className={cn("hover:bg-surface-2 transition-colors", isNoSetup && "opacity-60")}>
-                    <td className="px-3 py-2.5 font-mono font-semibold text-text-primary">
-                      <div className="flex items-center gap-1.5">
-                        <Link href={`/stock/${r.ticker}`} className="hover:text-accent transition-colors">
-                          {r.ticker}
-                        </Link>
-                        <button
-                          onClick={() => setChartTicker(r.ticker)}
-                          title="Quick chart"
-                          className="text-text-muted/30 hover:text-accent transition-colors"
-                        >
-                          <LineChart size={10} strokeWidth={1.5} />
-                        </button>
-                      </div>
+                    <td className="px-3 py-2.5">
+                      <TickerChip ticker={r.ticker} />
                     </td>
                     <td className="px-3 py-2.5">
                       <span className={cn("px-1.5 py-0.5 rounded border text-[10px] font-semibold", sm.color, sm.bg, sm.border)}

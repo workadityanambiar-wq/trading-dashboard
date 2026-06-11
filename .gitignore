@@ -23,6 +23,8 @@ node_modules/
 out/
 .turbo/
 *.tsbuildinfo
+.env.local
+.env*.local
 
 # Misc
 .DS_Store

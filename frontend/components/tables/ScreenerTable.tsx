@@ -13,6 +13,7 @@ import type { FactorScore } from "@/lib/api";
 import { EXCHANGE_LABELS } from "@/lib/api";
 import { cn, formatPct } from "@/lib/utils";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { TickerChip } from "@/components/TickerChip";
 
 function ScoreCell({ value }: { value: number | null }) {
   if (value === null || value === undefined)
@@ -52,7 +53,7 @@ const BASE_COLUMNS: ColumnDef<FactorScore>[] = [
     accessorKey: "ticker",
     header: "Ticker",
     cell: ({ getValue }) => (
-      <span className="font-semibold text-text-primary font-mono">{getValue<string>()}</span>
+      <TickerChip ticker={getValue<string>()} className="text-text-primary" />
     ),
     size: 80,
   },
