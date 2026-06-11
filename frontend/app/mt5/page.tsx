@@ -10,6 +10,10 @@ import {
 } from "recharts";
 import { AlertTriangle, Activity, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RiskTab } from "@/components/mt5/RiskTab";
+import { JournalTab } from "@/components/mt5/JournalTab";
+import { DrawdownTab } from "@/components/mt5/DrawdownTab";
+import { MonteCarloTab } from "@/components/mt5/MonteCarloTab";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 const fmt = (n: number, d = 2) =>
@@ -271,7 +275,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
 
   return (
     <div className="space-y-6">
-      {/* Period selector */}
       <div className="flex items-center gap-2">
         <span className="text-xs text-text-muted">Period:</span>
         {[7, 30, 90, 180, 365].map(d => (
@@ -284,7 +287,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         <span className="ml-auto text-xs text-text-muted">{perf.total_trades} closed trades</span>
       </div>
 
-      {/* Summary stat cards — row 1 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-surface-2 rounded-lg p-4 border border-border">
           <div className="text-xs text-text-muted mb-1">Total P&L</div>
@@ -323,7 +325,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         </div>
       </div>
 
-      {/* Row 2 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <StatCard label="Sharpe"          value={fmt(perf.sharpe)}         accent={perf.sharpe >= 1 ? "green" : perf.sharpe >= 0 ? "neutral" : "red"} />
         <StatCard label="Sortino"         value={fmt(perf.sortino)}        accent={perf.sortino >= 1 ? "green" : "neutral"} />
@@ -335,7 +336,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         <StatCard label="Avg Trade"       value={fmt(perf.avg_trade_pnl)}  accent={perf.avg_trade_pnl >= 0 ? "green" : "red"} />
       </div>
 
-      {/* Row 3: streaks & costs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Max Win Streak"  value={String(perf.consecutive_wins)}   accent="green" />
         <StatCard label="Max Loss Streak" value={String(perf.consecutive_losses)} accent="red" />
@@ -343,9 +343,7 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         <StatCard label="Swap"            value={fmt(perf.total_swap)}            accent={perf.total_swap >= 0 ? "green" : "red"} />
       </div>
 
-      {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Equity curve */}
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">Equity Curve (cumulative P&L)</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -361,7 +359,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Drawdown */}
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">Drawdown per Trade</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -377,7 +374,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Daily P&L bars */}
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">Daily P&L</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -397,7 +393,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
           </ResponsiveContainer>
         </div>
 
-        {/* Weekday P&L */}
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">P&L by Day of Week</div>
           <ResponsiveContainer width="100%" height={200}>
@@ -418,7 +413,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         </div>
       </div>
 
-      {/* Monthly P&L */}
       {perf.monthly_pnl.length > 1 && (
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">Monthly P&L</div>
@@ -440,7 +434,6 @@ function PerformanceTab({ connected }: { connected: boolean }) {
         </div>
       )}
 
-      {/* Per-symbol breakdown */}
       {perf.per_symbol.length > 0 && (
         <div className="bg-surface-2 rounded-lg border border-border p-4">
           <div className="text-xs font-medium text-text-muted mb-3">Per-Symbol Breakdown</div>
@@ -480,10 +473,24 @@ function PerformanceTab({ connected }: { connected: boolean }) {
   );
 }
 
+// ── Tab definitions ────────────────────────────────────────────────────────────
+type MainTab = "positions" | "history" | "chart" | "performance" | "risk" | "journal" | "drawdown" | "montecarlo";
+
+const MAIN_TABS: { id: MainTab; label: string }[] = [
+  { id: "positions",   label: "Positions" },
+  { id: "history",     label: "Deal History" },
+  { id: "chart",       label: "P&L Chart" },
+  { id: "performance", label: "Performance" },
+  { id: "risk",        label: "Live Risk" },
+  { id: "journal",     label: "Journal" },
+  { id: "drawdown",    label: "Drawdown" },
+  { id: "montecarlo",  label: "Monte Carlo" },
+];
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function MT5Page() {
   const [histDays, setHistDays] = useState(30);
-  const [activeTab, setActiveTab] = useState<"positions" | "history" | "chart" | "performance">("positions");
+  const [activeTab, setActiveTab] = useState<MainTab>("positions");
 
   const { data: status } = useQuery({
     queryKey: ["mt5-status"],
@@ -604,18 +611,17 @@ export default function MT5Page() {
 
         {/* Right column — tabs */}
         <div className="lg:col-span-2 bg-surface-2 rounded-lg border border-border p-4">
-          <div className="flex items-center gap-1 mb-4 border-b border-border pb-3 flex-wrap">
-            {(["positions","history","chart","performance"] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={cn("px-3 py-1.5 rounded text-xs font-medium capitalize transition-colors",
-                  activeTab === tab ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}>
-                {tab === "positions"   ? `Positions (${positions.length})` :
-                 tab === "history"     ? "Deal History" :
-                 tab === "chart"       ? "P&L Chart" : "Performance"}
+          {/* Tab bar — scrollable on mobile */}
+          <div className="flex items-center gap-1 mb-4 border-b border-border pb-3 overflow-x-auto">
+            {MAIN_TABS.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={cn("px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0",
+                  activeTab === tab.id ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}>
+                {tab.id === "positions" ? `Positions (${positions.length})` : tab.label}
               </button>
             ))}
             {activeTab === "history" && (
-              <div className="ml-auto flex items-center gap-1 text-xs text-text-muted">
+              <div className="ml-auto flex items-center gap-1 text-xs text-text-muted flex-shrink-0">
                 {[7,30,90].map(d => (
                   <button key={d} onClick={() => setHistDays(d)}
                     className={cn("px-2 py-0.5 rounded", histDays === d ? "bg-surface text-text-primary" : "hover:text-text-primary")}>
@@ -651,6 +657,10 @@ export default function MT5Page() {
             </div>
           )}
           {activeTab === "performance" && <PerformanceTab connected={connected} />}
+          {activeTab === "risk"        && <RiskTab connected={connected} />}
+          {activeTab === "journal"     && <JournalTab connected={connected} />}
+          {activeTab === "drawdown"    && <DrawdownTab connected={connected} />}
+          {activeTab === "montecarlo"  && <MonteCarloTab connected={connected} />}
         </div>
       </div>
     </div>

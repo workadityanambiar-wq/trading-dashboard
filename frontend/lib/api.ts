@@ -972,6 +972,11 @@ export const api = {
   closeMT5Position: (ticket: number) =>
     apiFetch<{ success: boolean; order?: number }>("/mt5/close", { method: "POST", body: JSON.stringify({ ticket }) }),
   getMT5Performance: (days = 90) => apiFetch<MT5Performance>(`/mt5/performance?days=${days}`),
+  getMT5Risk: () => apiFetch<any>("/mt5/risk"),
+  getMT5Journal: (days = 90) => apiFetch<any>(`/mt5/journal?days=${days}`),
+  getMT5Drawdown: (days = 180) => apiFetch<any>(`/mt5/drawdown?days=${days}`),
+  getMT5MonteCarlo: (days = 180, paths = 500, forward = 100) =>
+    apiFetch<any>(`/mt5/montecarlo?days=${days}&paths=${paths}&forward=${forward}`),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────

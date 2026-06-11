@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.core.mt5 import client as mt5c
-from app.core.mt5.analytics import compute_performance
+from app.core.mt5.analytics import compute_performance, compute_journal_analytics, compute_drawdown_periods
+from app.core.mt5.risk import compute_position_risk
+from app.core.mt5.montecarlo import run_montecarlo
 
 router = APIRouter(tags=["mt5"])
 
@@ -129,3 +131,43 @@ def performance(days: int = 90):
         "weekday_pnl":       metrics.weekday_pnl,
         "monthly_pnl":       metrics.monthly_pnl,
     }
+
+
+@router.get("/risk")
+def live_risk():
+    account = mt5c.get_account_info()
+    if account is None:
+        raise HTTPException(503, "MT5 not connected")
+    positions = mt5c.get_positions()
+    return compute_position_risk(positions, account)
+
+
+@router.get("/journal")
+def journal_analytics(days: int = 90):
+    to_dt = datetime.utcnow()
+    from_dt = to_dt - timedelta(days=days)
+    deals = mt5c.get_deal_history(from_dt, to_dt)
+    return {"days": days, **compute_journal_analytics(deals)}
+
+
+@router.get("/drawdown")
+def drawdown_analysis(days: int = 180):
+    to_dt = datetime.utcnow()
+    from_dt = to_dt - timedelta(days=days)
+    deals = mt5c.get_deal_history(from_dt, to_dt)
+    closed = [d for d in deals if d.get("entry") in (1, 2) and d.get("symbol")]
+    if not closed:
+        closed = [d for d in deals if d.get("symbol") and d.get("profit") is not None]
+    return {"days": days, **compute_drawdown_periods(closed)}
+
+
+@router.get("/montecarlo")
+def montecarlo(days: int = 180, paths: int = 500, forward: int = 100):
+    to_dt = datetime.utcnow()
+    from_dt = to_dt - timedelta(days=days)
+    deals = mt5c.get_deal_history(from_dt, to_dt)
+    closed = [d for d in deals if d.get("entry") in (1, 2) and d.get("symbol")]
+    if not closed:
+        closed = [d for d in deals if d.get("symbol") and d.get("profit") is not None]
+    trade_pnls = [d["profit"] for d in closed]
+    return run_montecarlo(trade_pnls, starting_equity=0.0, n_paths=min(paths, 1000), forward_trades=min(forward, 200))

@@ -1,10 +1,16 @@
-"""MetaTrader 5 connection manager — Windows-only, requires MT5 terminal running."""
+"""MetaTrader 5 connection manager — Windows-only, auto-login via env vars."""
 from __future__ import annotations
+import os
 import sys
 import threading
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+
+# Load .env from backend root if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
+except ImportError:
+    pass
 
 MT5_AVAILABLE = sys.platform == "win32"
 if MT5_AVAILABLE:
@@ -17,6 +23,10 @@ if MT5_AVAILABLE:
 _lock = threading.Lock()
 _connected = False
 
+_LOGIN  = int(os.environ.get("MT5_LOGIN", "0") or "0")
+_PASS   = os.environ.get("MT5_PASSWORD", "")
+_SERVER = os.environ.get("MT5_SERVER", "")
+
 
 def _ensure_connected() -> bool:
     global _connected
@@ -24,11 +34,15 @@ def _ensure_connected() -> bool:
         return False
     with _lock:
         if _connected:
-            info = mt5.account_info()
-            if info is not None:
+            if mt5.account_info() is not None:
                 return True
             _connected = False
-        if mt5.initialize():
+        # Try auto-login with credentials if provided
+        if _LOGIN and _PASS and _SERVER:
+            ok = mt5.initialize(login=_LOGIN, password=_PASS, server=_SERVER)
+        else:
+            ok = mt5.initialize()
+        if ok:
             _connected = True
             return True
         return False
@@ -210,6 +224,21 @@ def get_ohlcv(symbol: str, timeframe_str: str, count: int = 500) -> list[dict]:
         }
         for r in rates
     ]
+
+
+def get_symbol_info_dict(symbol: str) -> dict | None:
+    if not _ensure_connected():
+        return None
+    info = mt5.symbol_info(symbol)
+    if info is None:
+        return None
+    return {
+        "trade_contract_size": float(info.trade_contract_size),
+        "point":               float(info.point),
+        "digits":              int(info.digits),
+        "bid":                 float(info.bid),
+        "ask":                 float(info.ask),
+    }
 
 
 def shutdown():

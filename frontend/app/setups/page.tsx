@@ -1,11 +1,12 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api, type SetupName, type RegimeResponse, type SetupWinRateStat } from "@/lib/api";
+import { api, type SetupName, type RegimeResponse, type SetupWinRateStat, type SetupSignal } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
 import { TickerChip } from "@/components/TickerChip";
+import { TradeModal } from "@/components/mt5/TradeModal";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -325,6 +326,7 @@ export default function SetupsPage() {
   const [universe, setUniverse]             = useState("sp500");
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
+  const [tradeSetup, setTradeSetup] = useState<SetupSignal | null>(null);
   const { has: wlHas, add: wlAdd, remove: wlRemove } = useWatchlist();
   const PAGE_SIZE = 50;
 
@@ -533,6 +535,7 @@ export default function SetupsPage() {
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">Stop</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">Target</th>
                 <th className="px-3 py-2.5 text-right text-text-muted font-medium">R:R</th>
+                <th className="px-3 py-2.5 text-center text-text-muted font-medium">Trade</th>
               </tr>
             </thead>
             <tbody>
@@ -697,6 +700,14 @@ export default function SetupsPage() {
                     )}>
                       {row.rr != null ? `${row.rr.toFixed(1)}×` : "—"}
                     </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <button
+                        onClick={() => setTradeSetup(row)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 transition-colors"
+                      >
+                        Trade
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -750,6 +761,22 @@ export default function SetupsPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Trade modal */}
+      {tradeSetup && (
+        <TradeModal
+          isOpen
+          onClose={() => setTradeSetup(null)}
+          title={`Trade ${tradeSetup.ticker}`}
+          legs={[{
+            symbol: tradeSetup.ticker,
+            direction: "buy",
+            entryPrice: tradeSetup.entry ?? undefined,
+            stopLoss:   tradeSetup.stop   ?? undefined,
+            takeProfit: tradeSetup.target  ?? undefined,
+          }]}
+        />
       )}
     </div>
   );

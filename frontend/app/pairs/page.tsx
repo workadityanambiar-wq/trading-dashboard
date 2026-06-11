@@ -8,6 +8,7 @@ import {
   Activity, Shield, Zap, ChevronUp, ChevronDown, ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import { TradeModal } from "@/components/mt5/TradeModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface PairSummary {
@@ -73,6 +74,7 @@ export default function PairsPage() {
   const [sortBy, setSortBy]             = useState<keyof PairSummary>("current_zscore");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
   const [topN, setTopN]                 = useState(50);
+  const [tradePair, setTradePair]       = useState<PairSummary | null>(null);
 
   // Regime
   const { data: regime } = useQuery<RegimeResponse>({
@@ -281,6 +283,7 @@ export default function PairsPage() {
                     { key: "signal",         label: "Signal",       align: "center" },
                     { key: "hedge_ratio",    label: "β",            align: "right" },
                     { key: "n_obs",          label: "Detail",       align: "center" },
+                    { key: "_trade",         label: "Trade",        align: "center" },
                   ].map(({ key, label, align }) => (
                     <th key={key}
                       onClick={() => key !== "n_obs" && toggleSort(key as keyof PairSummary)}
@@ -354,12 +357,42 @@ export default function PairsPage() {
                         <ExternalLink size={11} /> Open
                       </Link>
                     </td>
+                    <td className="px-3 py-2.5 text-center">
+                      {(p.signal === "long_spread" || p.signal === "short_spread") && (
+                        <button
+                          onClick={() => setTradePair(p)}
+                          className="px-2 py-1 rounded text-[10px] font-semibold bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 transition-colors"
+                        >
+                          Trade
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {/* Pair trade modal — 2 legs */}
+      {tradePair && (
+        <TradeModal
+          isOpen
+          onClose={() => setTradePair(null)}
+          title={`Pair Trade: ${tradePair.ticker1} / ${tradePair.ticker2}`}
+          legs={
+            tradePair.signal === "long_spread"
+              ? [
+                  { symbol: tradePair.ticker1, direction: "buy"  },
+                  { symbol: tradePair.ticker2, direction: "sell" },
+                ]
+              : [
+                  { symbol: tradePair.ticker1, direction: "sell" },
+                  { symbol: tradePair.ticker2, direction: "buy"  },
+                ]
+          }
+        />
       )}
     </div>
   );
