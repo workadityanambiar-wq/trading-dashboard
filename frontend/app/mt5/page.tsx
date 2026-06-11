@@ -524,11 +524,23 @@ export default function MT5Page() {
   if (!status?.available) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3 max-w-md">
+        <div className="text-center space-y-4 max-w-lg">
           <AlertTriangle size={40} className="mx-auto text-yellow-500" />
-          <div className="text-text-primary font-semibold text-lg">MetaTrader 5 Not Available</div>
-          <div className="text-text-muted text-sm">The MT5 Python library only runs on Windows. Run the backend locally and ensure MT5 is installed.</div>
-          <div className="bg-surface-2 rounded p-2 text-xs font-mono text-text-muted border border-border">pip install MetaTrader5</div>
+          <div className="text-text-primary font-semibold text-lg">MT5 Requires Local Backend</div>
+          <div className="text-text-muted text-sm leading-relaxed">
+            The MetaTrader 5 Python library is <strong className="text-text-primary">Windows-only</strong> and cannot run on the cloud server (Railway/Linux).
+            MT5 only works when you access the dashboard via your local machine.
+          </div>
+          <div className="bg-surface-2 rounded-lg border border-border p-4 text-left space-y-3">
+            <div className="text-xs font-semibold text-text-primary uppercase tracking-wider">To use MT5 Terminal:</div>
+            <ol className="space-y-2 text-xs text-text-muted list-decimal list-inside">
+              <li>Open <strong className="text-text-primary">MetaTrader 5</strong> and log into your demo account</li>
+              <li>Enable algo trading: <span className="font-mono text-accent">Tools → Options → Expert Advisors → Allow algorithmic trading</span></li>
+              <li>Start the local backend: <span className="font-mono text-accent">python -m uvicorn app.main:app --port 8000</span></li>
+              <li>Open the dashboard at <a href="http://localhost:3000/mt5" className="text-accent underline hover:text-accent/80">localhost:3000/mt5</a> instead of the Vercel URL</li>
+            </ol>
+          </div>
+          <div className="text-xs text-text-muted opacity-60">All other pages (Pairs, Screener, Setups, etc.) work normally on the Vercel URL.</div>
         </div>
       </div>
     );
