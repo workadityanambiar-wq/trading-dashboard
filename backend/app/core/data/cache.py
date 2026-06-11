@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 from typing import List, Optional
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -12,15 +13,24 @@ import os as _os
 _DATA_DIR = Path(_os.environ.get("DATA_DIR", str(Path(__file__).resolve().parents[4] / "data")))
 _DB_PATH = _DATA_DIR / "market_data.duckdb"
 
+# Single shared connection + lock to avoid DuckDB exclusive-file conflicts
+# under concurrent uvicorn requests.
+_db_lock = threading.Lock()
+_db_conn: duckdb.DuckDBPyConnection | None = None
+
+
+def _get_shared_conn() -> duckdb.DuckDBPyConnection:
+    global _db_conn
+    if _db_conn is None:
+        _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _db_conn = duckdb.connect(str(_DB_PATH))
+    return _db_conn
+
 
 @contextmanager
 def _conn():
-    _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect(str(_DB_PATH))
-    try:
-        yield con
-    finally:
-        con.close()
+    with _db_lock:
+        yield _get_shared_conn()
 
 
 def init_db() -> None:
