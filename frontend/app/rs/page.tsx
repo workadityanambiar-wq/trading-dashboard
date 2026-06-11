@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, LineChart } from "lucide-react";
 import Link from "next/link";
 import { ChartModal } from "@/components/ChartModal";
+import { useChart } from "@/contexts/ChartContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ export default function RSPage() {
   const [trendFlt,      setTrendFlt]     = useState<"all" | "rising" | "falling">("all");
   const [sortBy,        setSortBy]       = useState("rs_composite");
   const [page,          setPage]         = useState(1);
-  const [chartTicker,   setChartTicker]  = useState<string | null>(null);
+  const { openChart } = useChart();
   const PAGE_SIZE = 100;
 
   const queryKey = ["rs-rankings", universe, minRsRank, sectorFlt, trendFlt, sortBy, page];
@@ -158,7 +159,7 @@ export default function RSPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
-      {chartTicker && <ChartModal ticker={chartTicker} onClose={() => setChartTicker(null)} />}
+      <ChartModal />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -339,7 +340,7 @@ export default function RSPage() {
                         {r.ticker}
                       </Link>
                       <button
-                        onClick={() => setChartTicker(r.ticker)}
+                        onClick={() => openChart(r.ticker)}
                         title="Quick chart"
                         className="text-text-muted/30 hover:text-accent transition-colors"
                       >

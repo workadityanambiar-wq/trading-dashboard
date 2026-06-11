@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quant Desk – Team Reference Guide</title>
+<style>
+  :root {
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --code-bg: #f8fafc;
+    --section-bg: #f1f5f9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+    background: #fff;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 40px;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    text-align: center;
+    padding: 60px 0 50px;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .cover h1 { font-size: 38px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+  .cover .subtitle { font-size: 18px; color: var(--muted); margin-top: 8px; }
+  .cover .meta { margin-top: 28px; display: flex; justify-content: center; gap: 40px; }
+  .cover .meta-item { font-size: 12px; color: var(--muted); }
+  .cover .meta-item strong { display: block; font-size: 14px; color: var(--text); }
+  .cover .badge {
+    display: inline-block;
+    margin-top: 24px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid #bfdbfe;
+    border-radius: 9999px;
+    padding: 4px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── TABLE OF CONTENTS ── */
+  .toc {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .toc h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent); }
+  .toc ol { padding-left: 20px; }
+  .toc li { padding: 4px 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .sub { font-size: 12px; color: var(--muted); margin-left: 16px; list-style-type: disc; }
+
+  /* ── HEADINGS ── */
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+  h2 {
+    font-size: 20px; font-weight: 700; margin: 40px 0 14px;
+    color: var(--accent);
+    padding-bottom: 6px;
+    border-bottom: 2px solid #bfdbfe;
+  }
+  h3 { font-size: 15px; font-weight: 700; margin: 24px 0 8px; color: var(--text); }
+  h4 { font-size: 13.5px; font-weight: 600; margin: 16px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* ── PARAGRAPHS & LISTS ── */
+  p { margin-bottom: 10px; }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+
+  /* ── FORMULA BLOCKS ── */
+  .formula-block {
+    background: var(--code-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 12px 0 18px;
+    font-family: 'Cascadia Code', 'Consolas', 'Fira Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #1e293b;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .formula-block .comment { color: var(--muted); }
+
+  code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: #be185d;
+  }
+
+  /* ── TABLES ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 22px;
+    font-size: 12.5px;
+  }
+  thead th {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  tbody tr:nth-child(even) { background: var(--section-bg); }
+  tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  /* ── CALLOUT BOXES ── */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout.info    { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .callout.warning { background: #fffbeb; border: 1px solid #fde68a; }
+  .callout.tip     { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .callout strong  { display: block; margin-bottom: 4px; }
+  .callout.info strong    { color: var(--accent); }
+  .callout.warning strong { color: var(--yellow); }
+  .callout.tip strong     { color: var(--green); }
+
+  /* ── METRIC CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 16px 0 24px;
+  }
+  .metric-card {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .metric-card .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-card .value { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .metric-card .desc  { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  /* ── PAGE SECTION HEADERS ── */
+  .page-section {
+    background: linear-gradient(135deg, var(--accent-light), #fff);
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 36px 0 18px;
+  }
+  .page-section h2 {
+    border: none;
+    padding: 0;
+    margin: 0 0 4px;
+    font-size: 17px;
+  }
+  .page-section .url {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: monospace;
+  }
+  .page-section .desc {
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 6px;
+  }
+
+  /* ── PILL TAGS ── */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .tag {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .tag.blue   { background: #eff6ff; color: var(--accent);  border-color: #bfdbfe; }
+  .tag.green  { background: #f0fdf4; color: var(--green);   border-color: #bbf7d0; }
+  .tag.yellow { background: #fffbeb; color: var(--yellow);  border-color: #fde68a; }
+  .tag.red    { background: #fef2f2; color: var(--red);     border-color: #fecaca; }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ── PAGE BREAKS ── */
+  .page-break { page-break-before: always; padding-top: 20px; }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body { padding: 20px 28px; }
+    .cover { page-break-after: always; }
+    .toc   { page-break-after: always; }
+    h2 { page-break-before: auto; }
+    .page-break { page-break-before: always; }
+    a { color: var(--accent); text-decoration: none; }
+    @page { margin: 18mm 16mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ COVER ════════════════ -->
+<div class="cover">
+  <div class="badge">Internal — Team Reference</div>
+  <h1>Quant Desk</h1>
+  <p class="subtitle">Quantitative Trading Research Platform — Complete User Guide</p>
+  <div class="meta">
+    <div class="meta-item"><strong>Stack</strong>FastAPI · Next.js 14 · DuckDB · yfinance</div>
+    <div class="meta-item"><strong>Version</strong>1.0</div>
+    <div class="meta-item"><strong>Date</strong>June 2026</div>
+  </div>
+  <p style="margin-top:36px;color:#64748b;font-size:12.5px;max-width:480px;margin-left:auto;margin-right:auto;">
+    This guide covers every screen in the platform — what each formula computes, how to read the results,
+    and how to combine the tools for a full research workflow.
+  </p>
+</div>
+
+<!-- ════════════════ TABLE OF CONTENTS ════════════════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#overview">Platform Overview</a></li>
+    <li><a href="#data">Data Sources &amp; Caching</a></li>
+    <li>
+      <a href="#pages">Module Reference</a>
+      <ul class="sub">
+        <li><a href="#market-overview">Market Overview</a></li>
+        <li><a href="#screener">Universe Screener</a></li>
+        <li><a href="#factors">Factor Explorer</a></li>
+        <li><a href="#technical">Technical Signals Screener</a></li>
+        <li><a href="#backtest">Strategy Backtester</a></li>
+        <li><a href="#portfolio">Portfolio Optimizer</a></li>
+        <li><a href="#risk">Risk Dashboard</a></li>
+      </ul>
+    </li>
+    <li><a href="#formulas-fundamental">Fundamental Factor Formulas</a></li>
+    <li><a href="#formulas-technical">Technical Indicator Formulas</a></li>
+    <li><a href="#formulas-portfolio">Portfolio &amp; Risk Formulas</a></li>
+    <li><a href="#workflow">Recommended Research Workflow</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+</div>
+
+
+<!-- ════════════════ 1. PLATFORM OVERVIEW ════════════════ -->
+<h1 id="overview">1 · Platform Overview</h1>
+
+<p>
+  <strong>Quant Desk</strong> is a full-stack quantitative research platform designed for systematic, factor-driven stock selection, portfolio construction, and risk analysis. It combines academic factor-investing research with practical technical analysis, all served through a fast browser-based interface.
+</p>
+
+<div class="card-grid">
+  <div class="metric-card">
+    <div class="label">Universes Covered</div>
+    <div class="value">~12,000</div>
+    <div class="desc">US-listed tickers across NYSE, NASDAQ, and exchanges</div>
+  </div>
+  <div class="metric-card">
+    <div class="label">Factor Models</div>
+    <div class="value">13 Factors</div>
+    <div class="desc">Price-based + fundamental + macro</div>
+  </div>
+  <div class="metric-card">
+    <div class="label">Analysis Modules</div>
+    <div class="value">7 Screens</div>
+    <div class="desc">Overview, Screener, Factor Explorer, Technical, Backtest, Portfolio, Risk</div>
+  </div>
+</div>
+
+<div class="callout info">
+  <strong>Architecture at a glance</strong>
+  Backend: FastAPI (Python) running on <code>localhost:8000</code> — fetches market data from Yahoo Finance, caches in DuckDB, computes all analytics server-side.<br/>
+  Frontend: Next.js 14 App Router on <code>localhost:3000</code> — React UI with interactive charts (Lightweight Charts, Recharts).
+</div>
+
+<h3>Core Design Philosophy</h3>
+<ul>
+  <li><strong>Factor-first:</strong> Every stock is scored on multiple dimensions (momentum, quality, value, etc.) that have documented predictive power in academic literature.</li>
+  <li><strong>Cross-sectional z-scores:</strong> All factor scores are standardized to mean 0 / std 1 within the chosen universe, so you compare stocks <em>relative to their peers</em>, not on raw numbers.</li>
+  <li><strong>Backtested evidence:</strong> The Factor Explorer lets you verify whether a factor has historically added value (IC &gt; 0) before trusting it in live screening.</li>
+  <li><strong>Integrated workflow:</strong> Screen → Explore factor quality → Backtest → Optimize → Risk-check — all in one platform without leaving the browser.</li>
+</ul>
+
+
+<!-- ════════════════ 2. DATA SOURCES ════════════════ -->
+<h1 id="data" class="page-break">2 · Data Sources &amp; Caching</h1>
+
+<table>
+  <thead><tr><th>Source</th><th>Data Provided</th><th>Refresh Policy</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Yahoo Finance (yfinance)</strong></td>
+      <td>Daily OHLCV prices, fundamental ratios (P/E, P/B, ROE…), analyst ratings, earnings calendar</td>
+      <td>Delta fetch on demand; background refresh every 15 min during market hours (9 AM–4:30 PM ET), every 1 hour after-hours</td>
+    </tr>
+    <tr>
+      <td><strong>Kenneth French Data Library</strong></td>
+      <td>Fama-French 3-factor daily returns (Mkt-RF, SMB, HML, RF)</td>
+      <td>Cached as <code>ff3_daily.csv.gz</code>; refreshed every 5 days</td>
+    </tr>
+    <tr>
+      <td><strong>NASDAQ Trader FTP</strong></td>
+      <td>Full US-listed universe (~12,000 securities), exchange, ETF flag</td>
+      <td>Fetched on first use, stored in DuckDB <code>us_universe</code> table</td>
+    </tr>
+    <tr>
+      <td><strong>DuckDB (local cache)</strong></td>
+      <td>All fetched prices (<code>prices</code> table), fundamentals (<code>fundamentals</code>, 24-hr TTL), constituents</td>
+      <td>Read-through cache; stale data is refreshed transparently</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout warning">
+  <strong>First-run latency</strong>
+  When analyzing a large universe for the first time (e.g., All US ~12,000 tickers), the platform queues price downloads in the background. Factor scores become available progressively as each batch is cached. Subsequent loads are fast (milliseconds from DuckDB).
+</div>
+
+
+<!-- ════════════════ 3. MODULE REFERENCE ════════════════ -->
+<h1 id="pages" class="page-break">3 · Module Reference</h1>
+
+<!-- ── 3.1 Market Overview ── -->
+<div class="page-section" id="market-overview">
+  <h2>3.1 Market Overview</h2>
+  <div class="url">localhost:3000 &nbsp;/&nbsp; Home page</div>
+  <div class="desc">Daily health check — where is the broad market and which sectors are leading?</div>
+</div>
+
+<h3>What's on screen</h3>
+<table>
+  <thead><tr><th>Panel</th><th>What it shows</th><th>How to use it</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Index Cards</td>
+      <td>SPY, QQQ, IWM, VIX · 1D / WTD / MTD / YTD / 1Y returns</td>
+      <td>Quick pulse check — is the sell-off broad or narrow? IWM lagging SPY = risk-off / small-cap weakness</td>
+    </tr>
+    <tr>
+      <td>Candlestick Chart</td>
+      <td>1-year daily OHLCV for the selected index</td>
+      <td>Click an index card to switch. Identify trend, support/resistance, and recent price action structure</td>
+    </tr>
+    <tr>
+      <td>Market Breadth Panel</td>
+      <td>% of S&amp;P 500 stocks above their 50-day and 200-day moving averages</td>
+      <td>&gt;70% above 50 MA = healthy bull trend. &lt;30% = oversold, possible bounce. Divergence from index (index up, breadth down) = distribution warning</td>
+    </tr>
+    <tr>
+      <td>Sector Heatmap</td>
+      <td>11 GICS sectors colour-coded by return · 1D / 1W / 1M / 3M / YTD toggle</td>
+      <td>Identify sector rotation: which sectors are accumulating money vs being distributed. Green + high = institutional flow; red + persistent = avoid longs there</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <strong>Tip: Breadth divergence</strong>
+  If SPY makes a new high but fewer than 60% of stocks are above their 50 MA, the rally is being carried by a small group of mega-caps. This is a risk signal — consider reducing position size or tightening stops on new longs.
+</div>
+
+
+<!-- ── 3.2 Universe Screener ── -->
+<div class="page-section" id="screener">
+  <h2>3.2 Universe Screener</h2>
+  <div class="url">localhost:3000/screener</div>
+  <div class="desc">Rank every stock in a universe across all factor dimensions simultaneously.</div>
+</div>
+
+<h3>Universe Options</h3>
+<div class="tags">
+  <span class="tag blue">S&amp;P 500 (~503 stocks)</span>
+  <span class="tag blue">All US Listed (~12,000)</span>
+  <span class="tag green">Themes (9 baskets)</span>
+</div>
+
+<table>
+  <thead><tr><th>Universe</th><th>Best for</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>S&amp;P 500</td>
+      <td>Institutional-grade screening; liquid names only</td>
+      <td>Scores refresh every 5 min. Use for most daily workflows</td>
+    </tr>
+    <tr>
+      <td>All US Listed</td>
+      <td>Catching small/micro-cap opportunities</td>
+      <td>First load is slow (price downloads queued). Use Exchange + Asset Type filters to narrow</td>
+    </tr>
+    <tr>
+      <td>Themes</td>
+      <td>Relative strength within a sector basket</td>
+      <td>Z-scores are computed within the theme, not vs S&amp;P 500. Best for finding the strongest stock inside e.g. "AI Infrastructure"</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Factor Score Columns</h3>
+<table>
+  <thead><tr><th>Column</th><th>Factor</th><th>High score means…</th></tr></thead>
+  <tbody>
+    <tr><td><code>Mom12-1</code></td><td>Momentum 12-1M</td><td>Strong 1-year price performance (excluding last month)</td></tr>
+    <tr><td><code>Mom6-1</code></td><td>Momentum 6-1M</td><td>Strong 6-month price performance</td></tr>
+    <tr><td><code>LowVol</code></td><td>Low Volatility</td><td>Lower-than-average realized volatility — defensive/stable</td></tr>
+    <tr><td><code>Liq</code></td><td>Liquidity</td><td>Higher average daily dollar volume — easier to trade</td></tr>
+    <tr><td><code>Macro</code></td><td>Macro Regime (Low Beta)</td><td>Low market beta — defensive in risk-off environments</td></tr>
+    <tr><td><code>Value</code></td><td>Value</td><td>Cheap on P/E, P/B, P/S multiples</td></tr>
+    <tr><td><code>Quality</code></td><td>Quality</td><td>High ROE, strong margins, low debt</td></tr>
+    <tr><td><code>Prof</code></td><td>Profitability</td><td>High operating margins and ROA</td></tr>
+    <tr><td><code>ERev</code></td><td>Earnings Revisions</td><td>Positive earnings and revenue growth momentum</td></tr>
+    <tr><td><code>Sent</code></td><td>Sentiment</td><td>Analyst buy consensus, high price-target upside</td></tr>
+    <tr><td><code>Composite</code></td><td>Equal-weight average</td><td>Best overall multi-factor score — start here</td></tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <strong>How to read the Z-scores</strong>
+  +1.0 = one standard deviation above average for this universe. A composite Z-score above +1.5 puts a stock in roughly the top 7% of its peer group. Scores below −1.0 are bottom quartile. Focus on stocks with a Composite Z &gt; +0.8 across multiple individual factors (not just one outlier factor).
+</div>
+
+<h3>Buttons</h3>
+<ul>
+  <li><strong>Fetch Fundamentals</strong> — loads P/B, P/E, P/S, ROE, margins, analyst ratings for the top 100 visible tickers. Enables the Value, Quality, Profitability, Sentiment, and Earnings Revisions columns.</li>
+  <li><strong>Fetch Prices</strong> — queues background downloads for any tickers missing from the local cache.</li>
+</ul>
+
+
+<!-- ── 3.3 Factor Explorer ── -->
+<div class="page-section" id="factors" class="page-break">
+  <h2>3.3 Factor Explorer</h2>
+  <div class="url">localhost:3000/factors</div>
+  <div class="desc">Validate whether a factor has historically predicted returns before trusting it in screening.</div>
+</div>
+
+<h3>Two types of factors</h3>
+<div class="tags">
+  <span class="tag green">Price-based (solid border) — Full IC history available</span>
+  <span class="tag yellow">Fundamental (dashed border) — Latest scores only</span>
+</div>
+<p>Price-based factors (Momentum, Volatility, Liquidity, Macro) can be back-computed historically from price data — so you can see how predictive they were in each past month. Fundamental factors depend on quarterly filings, which limits historical IC calculation.</p>
+
+<h3>Key Statistics</h3>
+<table>
+  <thead><tr><th>Metric</th><th>Formula</th><th>Good threshold</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Mean IC</td>
+      <td>Average monthly Spearman rank correlation between factor scores and 21-day forward returns</td>
+      <td>0.02 – 0.08 (2–8%)</td>
+    </tr>
+    <tr>
+      <td>ICIR</td>
+      <td>Mean IC ÷ Std(IC) — signal-to-noise ratio</td>
+      <td>&gt; 0.5 indicates a reliable signal</td>
+    </tr>
+    <tr>
+      <td>% Positive IC</td>
+      <td>Fraction of months where IC &gt; 0</td>
+      <td>&gt; 55% (factor works more months than not)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Charts</h3>
+<ul>
+  <li><strong>IC Time Series</strong> — monthly IC bars + 3-month rolling average. Look for periods where IC collapsed — those are regime shifts where the factor stopped working.</li>
+  <li><strong>Quintile Returns</strong> — stocks sorted into 5 buckets by factor score at each month-end, then tracked for 21 days. A monotonic Q1 &gt; Q2 &gt; Q3 &gt; Q4 &gt; Q5 spread confirms the factor has real predictive power.</li>
+</ul>
+
+<div class="callout tip">
+  <strong>Tip: Regime-conditional factors</strong>
+  Momentum tends to have positive IC in trending markets and negative IC (reversal) after sharp sell-offs. Low Vol tends to outperform in high-VIX environments. Use the IC time series to understand when a factor works — not just whether it works on average.
+</div>
+
+
+<!-- ── 3.4 Technical Signals ── -->
+<div class="page-section" id="technical" class="page-break">
+  <h2>3.4 Technical Signals Screener</h2>
+  <div class="url">localhost:3000/intraday</div>
+  <div class="desc">Multi-indicator technical screen — find stocks at actionable setups with timing alignment.</div>
+</div>
+
+<h3>Column Glossary</h3>
+<table>
+  <thead><tr><th>Column</th><th>Formula Summary</th><th>Reading</th></tr></thead>
+  <tbody>
+    <tr><td><code>RSI</code></td><td>14-day Relative Strength Index</td><td>&lt;30 oversold (blue), &gt;70 overbought (red)</td></tr>
+    <tr><td><code>MACD Hist</code></td><td>MACD Line − Signal Line (12/26/9)</td><td>Positive &amp; rising = building momentum</td></tr>
+    <tr><td><code>BB%B</code></td><td>(Price − Lower Band) ÷ (Upper − Lower) · 20d/2σ</td><td>&gt;1 extended high; &lt;0 extended low</td></tr>
+    <tr><td><code>MA50%</code></td><td>(Price ÷ 50-day MA) − 1</td><td>Positive = above trend. Negative = below</td></tr>
+    <tr><td><code>MA200%</code></td><td>(Price ÷ 200-day MA) − 1</td><td>Long-term trend orientation</td></tr>
+    <tr><td><code>RS 20d</code></td><td>Stock 20d return − SPY 20d return</td><td>Positive = outperforming market recently</td></tr>
+    <tr><td><code>RS 5d</code></td><td>Stock 5d return − SPY 5d return</td><td>Short-term relative strength</td></tr>
+    <tr><td><code>Vol×</code></td><td>Today's volume ÷ 20-day avg volume</td><td>&gt;2× highlighted in amber — unusual activity</td></tr>
+    <tr><td><code>ATR%</code></td><td>14-day ATR ÷ Price</td><td>Volatility per share, normalised to price level</td></tr>
+    <tr><td><code>Pivot</code></td><td>Nearest monthly pivot level (PP, R1–R3, S1–S3)</td><td>Key inflection zone</td></tr>
+    <tr><td><code>Pvt Dist</code></td><td>(Price − Pivot Level) ÷ Price</td><td>How far from the nearest pivot as a % of price</td></tr>
+    <tr><td><code>Score</code></td><td>Composite z-score of all technical signals</td><td>Higher = more multi-indicator alignment</td></tr>
+  </tbody>
+</table>
+
+<h3>Setup Classifications</h3>
+<table>
+  <thead><tr><th>Setup</th><th>Criteria</th><th>Trade idea</th></tr></thead>
+  <tbody>
+    <tr><td>Early Breakout</td><td>RS strong, near pivot resistance, volume &gt;1.5×</td><td>Enter on breakout above pivot with tight stop below it</td></tr>
+    <tr><td>Volatility Squeeze</td><td>BB width compressed, drying volume, Stage 1/2</td><td>Anticipate directional move; wait for volume + range expansion</td></tr>
+    <tr><td>Momentum Continuation</td><td>Above both MAs, MACD+, RSI 50–75, Stage 2</td><td>Add on pullbacks to 50 MA while trend intact</td></tr>
+    <tr><td>Institutional Accumulation</td><td>High volume, flat intra-day range, above 50 MA</td><td>Potential large buyer absorbing supply; follow the volume</td></tr>
+    <tr><td>Mean Reversion Bounce</td><td>RSI &lt;35, near support, Stage 1/2</td><td>Counter-trend long; tighter position sizing, quicker exits</td></tr>
+    <tr><td>Failed Breakdown Reversal</td><td>Near 52W low but RS recovering, volume returning</td><td>High-risk / high-reward reversal; confirmation required</td></tr>
+  </tbody>
+</table>
+
+<h3>Near-Pivot Filter</h3>
+<p>Toggle <strong>Near Pivot</strong> to show only stocks within your chosen threshold (1–3%) of a monthly pivot level. These are the highest-priority setups — the stock is approaching a zone where big players have historically reacted.</p>
+
+<div class="callout info">
+  <strong>Multi-Timeframe Alignment Score</strong>
+  Scores alignment across weekly (40%), daily (35%), and short-term (25%) timeframes:<br/>
+  Weekly: 10-week MA position + MA slope + RSI(9)<br/>
+  Daily: Above 50 MA + Above 200 MA + RS vs SPY 20d<br/>
+  Short-term: Above 5 MA + 5-day up + confirming volume<br/>
+  A score near 100 means all three timeframes point in the same direction — the highest-conviction setups.
+</div>
+
+
+<!-- ── 3.5 Backtester ── -->
+<div class="page-section" id="backtest" class="page-break">
+  <h2>3.5 Strategy Backtester</h2>
+  <div class="url">localhost:3000/backtest</div>
+  <div class="desc">Test whether a factor-based long-only strategy would have outperformed the S&amp;P 500 historically.</div>
+</div>
+
+<h3>Strategy mechanics</h3>
+<ul>
+  <li><strong>Universe:</strong> S&amp;P 500 constituents</li>
+  <li><strong>Selection:</strong> Top N stocks by chosen factor score at each rebalance date</li>
+  <li><strong>Weighting:</strong> Equal weight within selected stocks</li>
+  <li><strong>Rebalance:</strong> Monthly (end-of-month)</li>
+  <li><strong>Benchmark:</strong> SPY total return</li>
+  <li><strong>Transaction cost:</strong> User-specified round-trip bps applied on each rebalance turnover</li>
+</ul>
+
+<h3>Input Parameters</h3>
+<table>
+  <thead><tr><th>Input</th><th>Typical range</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Factor</td><td>Any from the factor registry</td><td>Try Momentum 12-1M as a baseline; it's one of the most robust academically</td></tr>
+    <tr><td>Top N</td><td>10–50 stocks</td><td>Lower N = more concentrated / higher tracking error. 20–30 balances capacity and signal</td></tr>
+    <tr><td>Transaction Cost</td><td>5–20 bps</td><td>10 bps is realistic for institutional. Use 20–25 bps for retail or illiquid names</td></tr>
+    <tr><td>Start Date</td><td>As far back as data allows</td><td>Use full history for statistical significance; watch for survivorship bias near ends</td></tr>
+  </tbody>
+</table>
+
+<h3>Output Metrics</h3>
+<div class="card-grid">
+  <div class="metric-card"><div class="label">Total Return</div><div class="value">$-growth</div><div class="desc">Terminal value of $1 invested</div></div>
+  <div class="metric-card"><div class="label">CAGR</div><div class="value">Annualised %</div><div class="desc">Compounded annual growth rate</div></div>
+  <div class="metric-card"><div class="label">Sharpe Ratio</div><div class="value">Return / Vol</div><div class="desc">Risk-adjusted return (higher = better)</div></div>
+  <div class="metric-card"><div class="label">Sortino Ratio</div><div class="value">Return / Downside</div><div class="desc">Only penalises bad volatility</div></div>
+  <div class="metric-card"><div class="label">Max Drawdown</div><div class="value">Peak-to-trough %</div><div class="desc">Worst loss from any peak</div></div>
+  <div class="metric-card"><div class="label">Information Ratio</div><div class="value">Active return / TE</div><div class="desc">Consistency of outperformance vs SPY</div></div>
+</div>
+
+<div class="callout tip">
+  <strong>Tip: What to look for</strong>
+  A Sharpe above 0.7 and positive alpha with IR &gt; 0.5 suggests a genuine edge. Check the Rolling 12M Sharpe chart — if it's consistently positive across different market cycles (not just a single lucky bull run), the factor has more robust predictive power.
+</div>
+
+
+<!-- ── 3.6 Portfolio Optimizer ── -->
+<div class="page-section" id="portfolio" class="page-break">
+  <h2>3.6 Portfolio Optimizer</h2>
+  <div class="url">localhost:3000/portfolio</div>
+  <div class="desc">Given a set of tickers, find the scientifically optimal allocation using Modern Portfolio Theory.</div>
+</div>
+
+<h3>How to use</h3>
+<ol>
+  <li>Paste comma-separated tickers from your screener shortlist (e.g. <code>AAPL, MSFT, NVDA, JPM, XOM</code>)</li>
+  <li>Set a maximum per-position weight (default 25%) to enforce diversification</li>
+  <li>Click <strong>Optimize</strong> — four methods are computed in parallel</li>
+</ol>
+
+<h3>Optimization Methods Compared</h3>
+<table>
+  <thead><tr><th>Method</th><th>Objective</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Equal Weight</td>
+      <td>1/N allocation</td>
+      <td>Baseline comparison; surprisingly hard to beat out-of-sample</td>
+    </tr>
+    <tr>
+      <td>Max Sharpe</td>
+      <td>Maximise (Expected Return) ÷ Volatility</td>
+      <td>When you have high conviction in the return estimates</td>
+    </tr>
+    <tr>
+      <td>Min Volatility</td>
+      <td>Minimise portfolio standard deviation</td>
+      <td>Risk-averse portfolios; tends to concentrate in low-correlation assets</td>
+    </tr>
+    <tr>
+      <td>HRP (Risk Parity)</td>
+      <td>Equalise risk contribution via hierarchical clustering</td>
+      <td>Robust to estimation error; performs well out-of-sample</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Output panels</h3>
+<ul>
+  <li><strong>Efficient Frontier Scatter</strong> — every possible portfolio plotted by risk vs return; the curve shows the maximum return achievable at each volatility level. Each method's portfolio is marked on the frontier.</li>
+  <li><strong>Weight Table</strong> — side-by-side allocation for all methods. Large differences between Max Sharpe and Equal Weight signal the optimizer is making a strong tilt — verify the underlying assumptions.</li>
+  <li><strong>Correlation Heatmap</strong> — dark red = highly correlated (redundant). If two holdings are &gt;0.8 correlated, consider replacing one for a name that adds diversification.</li>
+</ul>
+
+<div class="callout warning">
+  <strong>Warning: Mean-variance sensitivity</strong>
+  Max Sharpe allocations can be unstable — small changes in input data produce very different weights. The HRP method is more robust for live portfolios. Always sanity-check the Efficient Frontier and look for corner solutions (single-stock concentration) before using the weights.
+</div>
+
+
+<!-- ── 3.7 Risk Dashboard ── -->
+<div class="page-section" id="risk" class="page-break">
+  <h2>3.7 Risk Dashboard</h2>
+  <div class="url">localhost:3000/risk</div>
+  <div class="desc">Decompose what drives your portfolio's returns and measure downside risk.</div>
+</div>
+
+<h3>How to use</h3>
+<p>Enter your current holdings in the text box as <code>TICKER: weight</code> pairs, one per line. Weights should sum to 1.0.</p>
+<div class="formula-block">AAPL: 0.25
+MSFT: 0.20
+NVDA: 0.15
+JPM: 0.10
+XOM: 0.10
+CASH: 0.20</div>
+
+<h3>Panels</h3>
+<table>
+  <thead><tr><th>Panel</th><th>What to look for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Portfolio Stats</td>
+      <td>Overall annualized return, volatility, Sharpe ratio over the look-back period</td>
+    </tr>
+    <tr>
+      <td>VaR / CVaR</td>
+      <td>At 95% confidence: on a bad day, you can expect to lose no more than this amount. CVaR is the average loss on the days that exceed VaR — the true tail risk. Compare historical vs parametric: a large gap means your return distribution has fat tails</td>
+    </tr>
+    <tr>
+      <td>Fama-French Attribution</td>
+      <td>Which factors explain your returns? High β_Mkt = you're mostly taking market risk. Positive α = you're generating alpha beyond factor exposure. See formulas section for details</td>
+    </tr>
+    <tr>
+      <td>Rolling Beta</td>
+      <td>How your portfolio sensitivity to the market changes over time. A rising beta during sell-offs is dangerous</td>
+    </tr>
+    <tr>
+      <td>Sector Exposure</td>
+      <td>Breakdown by GICS sector — check for unintended sector concentration</td>
+    </tr>
+    <tr>
+      <td>Concentration (HHI)</td>
+      <td>Herfindahl Index approaching 1.0 = single-stock portfolio. Effective N shows the equivalent number of equal-weight positions. Aim for Effective N &gt; 8 for reasonable diversification</td>
+    </tr>
+    <tr>
+      <td>Correlation Heatmap</td>
+      <td>Identify pairs that cluster together — these will all move against you simultaneously in a drawdown</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ════════════════ 4. FUNDAMENTAL FACTOR FORMULAS ════════════════ -->
+<h1 id="formulas-fundamental" class="page-break">4 · Fundamental Factor Formulas</h1>
+
+<p>All factors are computed cross-sectionally within the chosen universe and then z-scored (mean=0, std=1). Extreme values are winsorized at ±3 standard deviations to prevent outliers from dominating.</p>
+
+<div class="formula-block">Z-score normalisation:
+  Z(x) = (x − mean(x)) / std(x)
+  Then clip: Z = max(−3, min(3, Z))
+
+Composite Score:
+  Composite = mean(all available Z-scores)</div>
+
+<h3>Momentum 12-1M</h3>
+<p>Captures the tendency of recent winners to keep outperforming. Skips the most recent month to avoid short-term reversal effects.</p>
+<div class="formula-block">Momentum_12_1 = Price[today − 21 days] / Price[today − 252 days] − 1
+
+  Lookback: 252 trading days (~12 months)
+  Skip:     21 trading days  (~1 month)</div>
+
+<h3>Momentum 6-1M</h3>
+<div class="formula-block">Momentum_6_1 = Price[today − 21 days] / Price[today − 126 days] − 1
+
+  Lookback: 126 trading days (~6 months)
+  Skip:     21 trading days  (~1 month)</div>
+
+<h3>Low Volatility</h3>
+<p>Historically, low-volatility stocks have produced surprisingly competitive risk-adjusted returns — the "Low Vol anomaly".</p>
+<div class="formula-block">DailyLogReturns = log(Price[t] / Price[t−1])
+AnnualisedVol   = std(DailyLogReturns, 252) × √252
+
+LowVol_Score    = −AnnualisedVol        <span class="comment">← inverted: lower vol = higher score</span></div>
+
+<h3>Liquidity</h3>
+<div class="formula-block">DollarVolume[t] = Close[t] × Volume[t]
+AvgDolVol       = mean(DollarVolume, 63 days)   <span class="comment">← ~3 months</span>
+
+Liquidity_Score = log(1 + AvgDolVol)</div>
+
+<h3>Macro Regime (Low Beta)</h3>
+<div class="formula-block">Beta = Cov(StockReturns, SPYReturns) / Var(SPYReturns)
+       <span class="comment">← estimated over 252-day rolling window</span>
+
+MacroRegime_Score = −Beta               <span class="comment">← inverted: lower beta = higher score</span>
+<span class="comment"># Rationale: In risk-off regimes (high VIX), low-beta stocks are more defensive</span></div>
+
+<h3>Value</h3>
+<div class="formula-block">Value_Score = mean(
+  −Z(Price / Book),       <span class="comment">← inverted: lower P/B is cheaper</span>
+  −Z(Trailing P/E),       <span class="comment">← inverted</span>
+  −Z(Price / Sales)       <span class="comment">← inverted</span>
+)</div>
+
+<h3>Quality</h3>
+<div class="formula-block">Quality_Score = mean(
+   Z(Return on Equity),
+   Z(Gross Margins),
+  −Z(Debt / Equity)       <span class="comment">← inverted: lower leverage = higher quality</span>
+)</div>
+
+<h3>Profitability</h3>
+<div class="formula-block">Profitability_Score = mean(
+  Z(Operating Margins),
+  Z(Return on Assets)
+)</div>
+
+<h3>Earnings Revisions</h3>
+<div class="formula-block">EarningsRevisions_Score = mean(
+  Z(Earnings Growth),
+  Z(Revenue Growth)
+)</div>
+
+<h3>Sentiment</h3>
+<div class="formula-block">Sentiment_Score = mean(
+  Z(6 − Analyst Recommendation Mean),  <span class="comment">← analyst ratings: 1=Strong Buy, 5=Sell. Inverted so Buy = higher</span>
+  Z(Target Price / Current Price − 1)  <span class="comment">← price-target upside</span>
+)</div>
+
+<h3>Size</h3>
+<div class="formula-block">Size_Score = Z(log(Market Cap))         <span class="comment">← log to normalise skew</span></div>
+
+<h3>Information Coefficient (Factor Validation)</h3>
+<div class="formula-block">IC[month t] = Spearman_Rank_Correlation(
+  FactorScores[end of month t],
+  ForwardReturns[next 21 trading days]
+)
+
+Mean IC  = average(IC[all months])
+ICIR     = Mean IC / std(IC)             <span class="comment">← signal-to-noise; target > 0.5</span>
+%Pos IC  = count(IC > 0) / total months  <span class="comment">← target > 55%</span></div>
+
+
+<!-- ════════════════ 5. TECHNICAL INDICATOR FORMULAS ════════════════ -->
+<h1 id="formulas-technical" class="page-break">5 · Technical Indicator Formulas</h1>
+
+<h3>RSI — Relative Strength Index (14-day)</h3>
+<div class="formula-block">Gains  = mean(positive daily changes over 14 days)
+Losses = mean(|negative daily changes| over 14 days)
+RS     = Gains / Losses
+RSI    = 100 − 100 / (1 + RS)
+
+Interpretation:
+  RSI > 70  →  Overbought  (highlighted red)
+  RSI < 30  →  Oversold    (highlighted blue)
+  RSI 40–60 →  Neutral trend zone</div>
+
+<h3>MACD — Moving Average Convergence/Divergence (12/26/9)</h3>
+<div class="formula-block">MACD_Line    = EMA(price, span=12) − EMA(price, span=26)
+Signal_Line  = EMA(MACD_Line, span=9)
+MACD_Hist    = MACD_Line − Signal_Line
+
+Interpretation:
+  Histogram > 0 and rising  →  Bullish momentum building
+  Histogram > 0 and falling →  Momentum slowing (potential sell signal)
+  Histogram < 0             →  Bearish pressure</div>
+
+<h3>Bollinger Bands %B (20-day, 2σ)</h3>
+<div class="formula-block">Mid   = SMA(price, 20)
+Std   = rolling_std(price, 20)
+Upper = Mid + 2 × Std
+Lower = Mid − 2 × Std
+
+%B = (Price − Lower) / (Upper − Lower)
+
+Interpretation:
+  %B > 1    →  Price above upper band (extended)
+  %B = 0.5  →  Price at midpoint (neutral)
+  %B < 0    →  Price below lower band (extended/oversold)</div>
+
+<h3>Moving Average Distance</h3>
+<div class="formula-block">MA50_Distance  = (Price / SMA(price, 50))  − 1
+MA200_Distance = (Price / SMA(price, 200)) − 1
+
+  Positive → price above moving average (bullish)
+  Negative → price below moving average (bearish)</div>
+
+<h3>ATR — Average True Range (14-day)</h3>
+<div class="formula-block">TrueRange[t] = max(
+  High[t] − Low[t],
+  |High[t]   − Close[t−1]|,
+  |Low[t]    − Close[t−1]|
+)
+ATR  = SMA(TrueRange, 14)
+ATR% = ATR / Price               <span class="comment">← normalised for comparing across price levels</span></div>
+
+<h3>Volume Surge</h3>
+<div class="formula-block">VolSurge = Volume[today] / SMA(Volume, 20)
+
+  > 2× → unusual institutional activity (amber highlight)</div>
+
+<h3>Relative Strength vs SPY</h3>
+<div class="formula-block">RS_20d = (Price / Price[−20]) − (SPY / SPY[−20])    <span class="comment">← stock 20d ret minus SPY 20d ret</span>
+RS_5d  = (Price / Price[−5])  − (SPY / SPY[−5])     <span class="comment">← 5-day version</span>
+
+  Positive → outperforming the market over the period</div>
+
+<h3>Monthly Pivot Points</h3>
+<div class="formula-block">From prior month's High (H), Low (L), Close (C):
+
+PP = (H + L + C) / 3           <span class="comment">← Pivot Point</span>
+
+R1 = 2×PP − L                  S1 = 2×PP − H
+R2 = PP + (H − L)              S2 = PP − (H − L)
+R3 = H + 2×(PP − L)            S3 = L − 2×(H − PP)</div>
+
+<h3>Weinstein Stage Analysis</h3>
+<div class="formula-block">Based on price position relative to 150-day (30-week) moving average:
+
+Stage 1 — Base:       Below MA, MA flattening (sideways consolidation)
+Stage 2 — Uptrend:    Above MA, MA rising, making higher highs and higher lows
+Stage 3 — Topping:    Above MA but MA starting to flatten/roll over
+Stage 4 — Downtrend:  Below MA and MA declining
+
+Best entries: Stage 1 → Stage 2 breakout
+Avoid longs:  Stage 3, Stage 4</div>
+
+<h3>Coiled Spring Score (0–100)</h3>
+<div class="formula-block">Rewards (adds to score):
+  + Tight Bollinger Band width (price compression)
+  + Drying volume (sellers exhausted)
+  + Price near 52-week high
+  + Stage 2 classification
+  + Positive RS vs SPY
+
+Penalises (subtracts):
+  − Wide daily range (expanding volatility)
+  − High volume without price progress
+  − Far from 52-week high
+
+A high Coiled Spring score means: volatility compressed, momentum building,
+positioned for a potential explosive move.</div>
+
+<h3>Multi-Timeframe Alignment Score</h3>
+<div class="formula-block">Weekly signals (weight 40%):
+  - Price above 10-week MA
+  - 10-week MA slope positive
+  - Weekly RSI(9) > 50
+
+Daily signals (weight 35%):
+  - Price above 50-day MA
+  - Price above 200-day MA
+  - RS vs SPY 20d > 0
+
+Short-term signals (weight 25%):
+  - Price above 5-day MA
+  - 5-day return positive
+  - Volume confirming
+
+Score = (weekly_hits/3)×0.40 + (daily_hits/3)×0.35 + (st_hits/3)×0.25
+Final score scaled 0 → 100</div>
+
+
+<!-- ════════════════ 6. PORTFOLIO & RISK FORMULAS ════════════════ -->
+<h1 id="formulas-portfolio" class="page-break">6 · Portfolio &amp; Risk Formulas</h1>
+
+<h3>Portfolio Return &amp; Variance</h3>
+<div class="formula-block">E[R_p] = Σ w_i × μ_i                              <span class="comment">← weighted average of expected returns</span>
+
+σ²_p   = Σᵢ Σⱼ w_i × w_j × Cov(Rᵢ, Rⱼ)            <span class="comment">← full covariance matrix</span>
+
+Sharpe = (E[R_p] − Rf) / σ_p</div>
+
+<h3>Backtesting Performance Metrics</h3>
+<div class="formula-block">CAGR    = (Terminal_Value / Initial_Value) ^ (1 / Years) − 1
+
+Sharpe  = (Mean_Daily_Return − Rf) / Daily_Volatility × √252
+          <span class="comment">(Rf = 0 in most contexts)</span>
+
+Sortino = (Mean_Daily_Return − Rf) / Downside_Volatility × √252
+          where Downside_Vol = std(only negative returns)
+
+Calmar  = CAGR / |Max_Drawdown|
+
+Max DD[t] = Portfolio[t] / max(Portfolio[0..t]) − 1
+Max DD    = min(Max DD over all t)
+
+Information Ratio = mean(Portfolio Return − SPY Return) /
+                    std(Portfolio Return − SPY Return)  × √252</div>
+
+<h3>Fama-French 3-Factor Regression</h3>
+<div class="formula-block">Excess_Return[t] = α + β_Mkt × (Mkt-RF)[t]
+                       + β_SMB × SMB[t]
+                       + β_HML × HML[t]
+                       + ε[t]
+
+Where:
+  Mkt-RF  = Market excess return (SPY − risk-free rate)
+  SMB     = Small Minus Big: small-cap premium
+  HML     = High Minus Low:  value premium (high Book/Market)
+
+Outputs:
+  α         = Annualised: intercept × 252  →  unexplained alpha (skill)
+  β_Mkt     = Market beta (1.0 = same as market)
+  β_SMB     = Size tilt (positive = small-cap bias)
+  β_HML     = Value tilt (positive = value bias)
+  R²        = Fraction of return variance explained by the 3 factors
+  t-stats   = Statistical significance (|t| > 2 is roughly p < 0.05)</div>
+
+<h3>Value at Risk (VaR) &amp; Conditional VaR</h3>
+<div class="formula-block">Historical VaR(α):
+  Sort daily portfolio returns; take the (1−α) percentile
+  e.g. 95% VaR = 5th percentile of the return distribution
+
+Parametric VaR(α):
+  VaR = μ + σ × Φ⁻¹(1−α)
+  where Φ⁻¹ is the inverse normal CDF
+
+Historical CVaR(α):
+  CVaR = mean(returns ≤ VaR threshold)
+  <span class="comment"># Average loss on the worst (1−α)% of days</span>
+
+Parametric CVaR(α):
+  CVaR = μ − σ × φ(Φ⁻¹(1−α)) / (1−α)
+  where φ is the standard normal PDF</div>
+
+<h3>Concentration Metrics</h3>
+<div class="formula-block">HHI (Herfindahl-Hirschman Index) = Σ w²ᵢ
+  Range: 1/N (fully diversified equal-weight) to 1.0 (single position)
+
+Effective N = 1 / HHI
+  Interpretation: equivalent number of equal-weight positions
+  Example: HHI=0.2 → Effective N=5 (portfolio behaves like 5 equal positions)</div>
+
+
+<!-- ════════════════ 7. WORKFLOW ════════════════ -->
+<h1 id="workflow" class="page-break">7 · Recommended Research Workflow</h1>
+
+<p>This is the intended flow from market context to portfolio construction:</p>
+
+<table>
+  <thead><tr><th>#</th><th>Step</th><th>Tool</th><th>Output</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>Morning context</strong> — check macro environment, sector rotation, market breadth</td>
+      <td>Market Overview</td>
+      <td>Risk-on / risk-off decision; which sectors to favour</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Universe screening</strong> — find stocks with the strongest multi-factor composite scores</td>
+      <td>Universe Screener (S&amp;P 500 or Theme)</td>
+      <td>Top 20–50 candidate stocks by Composite Z-score</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Factor validation</strong> — verify the factors you're relying on actually work in the current regime</td>
+      <td>Factor Explorer</td>
+      <td>Mean IC &gt; 0.03 and ICIR &gt; 0.5 gives confidence in the signal</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Technical timing</strong> — from your screener shortlist, find stocks at actionable setups</td>
+      <td>Technical Signals Screener (custom list)</td>
+      <td>Stocks in Stage 2, above 50/200 MA, near pivot with volume confirmation</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Portfolio construction</strong> — allocate optimally across your final list</td>
+      <td>Portfolio Optimizer</td>
+      <td>HRP or Equal Weight allocation (more robust than Max Sharpe out-of-sample)</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Risk review</strong> — check factor loadings, concentration, and tail risk before going live</td>
+      <td>Risk Dashboard</td>
+      <td>Alpha &gt; 0, R² &lt; 0.9 (not just pure beta), CVaR within acceptable limits</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>Backtest validation</strong> — verify the strategy has historically worked</td>
+      <td>Strategy Backtester</td>
+      <td>Positive Sharpe, positive alpha, IR &gt; 0.5 across multiple market cycles</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout tip">
+  <strong>Quick daily use (3 minutes)</strong>
+  Market Overview → breadth check → Screener sorted by Composite → flag anything at a pivot on the Technical Screener. The full research workflow above is for new position initiation; daily monitoring is just steps 1 + 2 + 4.
+</div>
+
+
+<!-- ════════════════ 8. GLOSSARY ════════════════ -->
+<h1 id="glossary" class="page-break">8 · Glossary</h1>
+
+<table>
+  <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td>Alpha (α)</td><td>Return in excess of what can be explained by factor exposures (e.g. market beta). Positive alpha = genuine outperformance.</td></tr>
+    <tr><td>ATR</td><td>Average True Range — measures volatility as the average daily price range, accounting for gaps.</td></tr>
+    <tr><td>Beta</td><td>Sensitivity of a stock's returns to the market (SPY). Beta = 1.5 means the stock moves 1.5% for every 1% market move.</td></tr>
+    <tr><td>Bollinger Bands</td><td>Dynamic price channel: 20-day SMA ± 2 standard deviations. Measures whether price is extended above/below recent average.</td></tr>
+    <tr><td>CAGR</td><td>Compound Annual Growth Rate — the annual rate that would produce the same cumulative return.</td></tr>
+    <tr><td>Calmar Ratio</td><td>CAGR divided by maximum drawdown. Higher is better — measures return earned per unit of peak loss taken.</td></tr>
+    <tr><td>CVaR / Expected Shortfall</td><td>Average loss on the days that exceed the VaR threshold — the true tail risk metric.</td></tr>
+    <tr><td>DuckDB</td><td>In-process analytical SQL database used to cache all price and fundamental data locally for fast repeated access.</td></tr>
+    <tr><td>Efficient Frontier</td><td>The set of portfolios that offer the maximum return for a given level of risk (or minimum risk for a given return).</td></tr>
+    <tr><td>Fama-French 3-Factor</td><td>Academic model by Fama &amp; French decomposing stock returns into market, size (SMB), and value (HML) factor exposures.</td></tr>
+    <tr><td>HHI</td><td>Herfindahl-Hirschman Index — sum of squared weights. Measures portfolio concentration (0 = fully diversified, 1 = single position).</td></tr>
+    <tr><td>HML</td><td>High Minus Low — the value factor: return of high Book/Market stocks minus low Book/Market stocks.</td></tr>
+    <tr><td>HRP</td><td>Hierarchical Risk Parity — portfolio optimisation that clusters correlated assets and equalises risk contribution at each level of the tree.</td></tr>
+    <tr><td>IC (Information Coefficient)</td><td>Spearman rank correlation between factor scores and subsequent returns. Measures how predictive a factor is.</td></tr>
+    <tr><td>ICIR</td><td>IC Information Ratio = Mean IC / Std(IC). Measures the consistency (signal-to-noise) of a factor's predictive power.</td></tr>
+    <tr><td>MACD</td><td>Moving Average Convergence/Divergence — momentum indicator using the spread between two exponential moving averages.</td></tr>
+    <tr><td>Max Drawdown</td><td>The largest peak-to-trough decline in portfolio value. The key risk metric for measuring how bad a strategy's worst period was.</td></tr>
+    <tr><td>RSI</td><td>Relative Strength Index — oscillator (0–100) measuring the speed and magnitude of recent price changes. Used to identify overbought/oversold conditions.</td></tr>
+    <tr><td>Sharpe Ratio</td><td>Excess return per unit of total volatility. A Sharpe above 1.0 is considered good; above 2.0 is excellent.</td></tr>
+    <tr><td>SMB</td><td>Small Minus Big — the size factor: return of small-cap stocks minus large-cap stocks.</td></tr>
+    <tr><td>Sortino Ratio</td><td>Like Sharpe, but only penalises downside volatility (negative returns), not upside. Better for skewed distributions.</td></tr>
+    <tr><td>Stage Analysis</td><td>Weinstein's 4-stage model (Base / Uptrend / Top / Downtrend) based on price position relative to 30-week moving average.</td></tr>
+    <tr><td>VaR</td><td>Value at Risk — the maximum expected loss over a period at a given confidence level (e.g. 95%). Does not capture losses beyond this threshold.</td></tr>
+    <tr><td>Winsorizing</td><td>Clipping extreme factor values at ±3 standard deviations to prevent outliers from distorting the cross-sectional rankings.</td></tr>
+    <tr><td>yfinance</td><td>Open-source Python library that downloads market data from Yahoo Finance. Used as the primary data source.</td></tr>
+    <tr><td>Z-score</td><td>(Value − Mean) / Standard Deviation. Standardises a number to how many standard deviations it is above or below the average of its group.</td></tr>
+  </tbody>
+</table>
+
+<hr/>
+<p style="text-align:center;color:#94a3b8;font-size:11.5px;margin-top:24px;">
+  Quant Desk — Internal Team Guide &nbsp;·&nbsp; Generated June 2026 &nbsp;·&nbsp; FastAPI + Next.js 14 + DuckDB
+</p>
+
+</body>
+</html>
