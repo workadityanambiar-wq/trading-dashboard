@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import data, factors, backtest, portfolio, risk, technical, pairs, mt5 as mt5_api
+from app.api import data, factors, backtest, portfolio, risk, technical, pairs, mt5 as mt5_api, risk_model
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -76,6 +76,7 @@ app.include_router(risk.router, prefix="/api/risk")
 app.include_router(technical.router, prefix="/api/technical")
 app.include_router(pairs.router,     prefix="/api/pairs")
 app.include_router(mt5_api.router,   prefix="/api/mt5")
+app.include_router(risk_model.router, prefix="/api/risk-model")
 
 
 @app.get("/health")

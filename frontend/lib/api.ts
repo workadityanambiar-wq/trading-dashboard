@@ -978,6 +978,10 @@ export const api = {
   getMT5Drawdown: (days = 180) => apiFetch<any>(`/mt5/drawdown?days=${days}`),
   getMT5MonteCarlo: (days = 180, paths = 500, forward = 100) =>
     apiFetch<any>(`/mt5/montecarlo?days=${days}&paths=${paths}&forward=${forward}`),
+
+  // ── PCA Risk Model ──────────────────────────────────────────────────────────
+  estimateRiskModel: (req: { tickers: string[]; period?: string; half_life?: number; max_tickers?: number }) =>
+    apiFetch<any>("/risk-model/estimate", { method: "POST", body: JSON.stringify(req) }),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────
