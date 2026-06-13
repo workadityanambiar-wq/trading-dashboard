@@ -792,6 +792,22 @@ export const FACTOR_OPTIONS: { value: string; label: string; icHistory: boolean 
   { value: "sentiment",         label: "Sentiment",           icHistory: false },
 ];
 
+export interface OptionsFlowItem {
+  expected_move_pct:    number | null;
+  expected_move_dollar: number | null;
+  atm_iv:               number | null;
+  put_call_vol_ratio:   number | null;
+  call_volume:          number | null;
+  put_volume:           number | null;
+  expiry_used:          string | null;
+  error:                string | null;
+}
+
+export interface EarningsOptionsFlowResponse {
+  options_flow: Record<string, OptionsFlowItem>;
+  count: number;
+}
+
 export interface MarketRegimeResponse {
   as_of: string;
   regime: {
@@ -1014,6 +1030,14 @@ export const api = {
 
   // ── Market Regime ────────────────────────────────────────────────────────────
   getMarketRegime: () => apiFetch<MarketRegimeResponse>("/regime/current"),
+
+  // ── Earnings Options Flow ─────────────────────────────────────────────────────
+  getEarningsOptionsFlow: (tickers: string[], earningsDates?: string[]) => {
+    const q = new URLSearchParams();
+    q.set("tickers", tickers.join(","));
+    if (earningsDates?.length) q.set("earnings_dates", earningsDates.join(","));
+    return apiFetch<EarningsOptionsFlowResponse>(`/earnings/options-flow?${q}`);
+  },
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────
