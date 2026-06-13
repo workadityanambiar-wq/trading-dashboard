@@ -792,6 +792,35 @@ export const FACTOR_OPTIONS: { value: string; label: string; icHistory: boolean 
   { value: "sentiment",         label: "Sentiment",           icHistory: false },
 ];
 
+export interface MarketRegimeResponse {
+  as_of: string;
+  regime: {
+    risk:       string;
+    inflation:  string;
+    growth:     string;
+    trend:      string;
+    volatility: string;
+    label:      string;
+    bias:       string;
+    confidence: number;
+  };
+  scores: {
+    risk:       number;
+    inflation:  number;
+    growth:     number;
+    trend:      number;
+    volatility: number;
+  };
+  signals: Record<string, number | null>;
+  recommendations: {
+    best_factors:  string[];
+    avoid_factors: string[];
+    best_sectors:  string[];
+    avoid_sectors: string[];
+    sizing:        string;
+  };
+}
+
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
   getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
@@ -982,6 +1011,9 @@ export const api = {
   // ── PCA Risk Model ──────────────────────────────────────────────────────────
   estimateRiskModel: (req: { tickers: string[]; period?: string; half_life?: number; max_tickers?: number }) =>
     apiFetch<any>("/risk-model/estimate", { method: "POST", body: JSON.stringify(req) }),
+
+  // ── Market Regime ────────────────────────────────────────────────────────────
+  getMarketRegime: () => apiFetch<MarketRegimeResponse>("/regime/current"),
 };
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────

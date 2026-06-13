@@ -26,6 +26,7 @@ import {
   GitCompare,
   MonitorDot,
   SigmaSquare,
+  Radar,
 } from "lucide-react";
 
 const NAV = [
@@ -37,6 +38,7 @@ const NAV = [
   { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
   { href: "/earnings",    label: "Earnings",     icon: CalendarDays },
   { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
+  { href: "/regime",        label: "Regime",       icon: Radar },
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
