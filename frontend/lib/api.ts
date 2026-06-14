@@ -1031,6 +1031,9 @@ export const api = {
   // ── Market Regime ────────────────────────────────────────────────────────────
   getMarketRegime: () => apiFetch<MarketRegimeResponse>("/regime/current"),
 
+  // ── Institutional Flow ───────────────────────────────────────────────────────
+  getInstitutionalOverview: () => apiFetch<any>("/institutional/overview"),
+
   // ── Earnings Options Flow ─────────────────────────────────────────────────────
   getEarningsOptionsFlow: (tickers: string[], earningsDates?: string[]) => {
     const q = new URLSearchParams();
