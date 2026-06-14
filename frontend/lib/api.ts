@@ -837,6 +837,56 @@ export interface MarketRegimeResponse {
   };
 }
 
+// ── Expected Return Engine types ──────────────────────────────────────────────
+
+export interface ERComponents {
+  base: number;
+  momentum:  number;
+  value:     number;
+  quality:   number;
+  macro:     number;
+  sentiment: number;
+  low_vol:   number;
+}
+
+export interface ERZScores {
+  momentum:  number;
+  value:     number;
+  quality:   number;
+  macro:     number;
+  sentiment: number;
+  low_vol:   number;
+}
+
+export interface ERResult {
+  ticker:          string;
+  name:            string;
+  sector:          string;
+  price:           number | null;
+  chg_1d:          number | null;
+  expected_return: number;
+  components:      ERComponents;
+  z_scores:        ERZScores;
+  momentum_score:  number | null;
+  composite_score: number | null;
+  rank:            number;
+}
+
+export interface ERFactorSpec {
+  label:       string;
+  premium:     number;
+  description: string;
+}
+
+export interface ExpectedReturnResponse {
+  results:       ERResult[];
+  universe_size: number;
+  computed:      number;
+  factor_specs:  Record<string, ERFactorSpec>;
+  base_return:   number;
+  as_of:         string;
+}
+
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
   getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
@@ -1033,6 +1083,10 @@ export const api = {
 
   // ── Institutional Flow ───────────────────────────────────────────────────────
   getInstitutionalOverview: () => apiFetch<any>("/institutional/overview"),
+
+  // ── Expected Return Engine ────────────────────────────────────────────────────
+  getExpectedReturn: (universe = "sp500", top_n = 200) =>
+    apiFetch<ExpectedReturnResponse>(`/expected-return/compute?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
 
   // ── Earnings Options Flow ─────────────────────────────────────────────────────
   getEarningsOptionsFlow: (tickers: string[], earningsDates?: string[]) => {
