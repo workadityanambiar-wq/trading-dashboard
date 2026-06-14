@@ -29,6 +29,7 @@ import {
   SigmaSquare,
   Radar,
   Landmark,
+  Users,
 } from "lucide-react";
 
 const NAV = [
@@ -42,6 +43,7 @@ const NAV = [
   { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
   { href: "/regime",        label: "Regime",       icon: Radar },
   { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
+  { href: "/crowding",      label: "Crowding",      icon: Users },
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },

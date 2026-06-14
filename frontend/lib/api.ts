@@ -837,6 +837,54 @@ export interface MarketRegimeResponse {
   };
 }
 
+// ── Crowding Dashboard types ──────────────────────────────────────────────────
+
+export interface CrowdingResult {
+  rank:               number;
+  ticker:             string;
+  name:               string;
+  sector:             string;
+  crowding_score:     number | null;
+  crowding_label:     string;
+  // Institutional
+  inst_pct:           number | null;
+  insider_pct:        number | null;
+  // Analyst
+  num_analysts:       number;
+  buy_pct:            number | null;
+  hold_pct:           number | null;
+  sell_pct:           number | null;
+  rec_mean:           number | null;
+  target_upside:      number | null;
+  upgrades_90d:       number;
+  downgrades_90d:     number;
+  net_upgrades:       number;
+  // Short interest
+  short_pct:          number | null;
+  short_ratio:        number | null;
+  // Social / media
+  news_count:         number;
+  // Price momentum
+  mo_1m:              number | null;
+  mo_3m:              number | null;
+  // Flags
+  squeeze_candidate:  boolean;
+}
+
+export interface SectorCrowding {
+  sector:    string;
+  avg_score: number;
+  count:     number;
+}
+
+export interface CrowdingResponse {
+  results:          CrowdingResult[];
+  universe_size:    number;
+  computed:         number;
+  sector_crowding:  SectorCrowding[];
+  as_of:            string;
+}
+
 // ── Expected Return Engine types ──────────────────────────────────────────────
 
 export interface ERComponents {
@@ -1083,6 +1131,10 @@ export const api = {
 
   // ── Institutional Flow ───────────────────────────────────────────────────────
   getInstitutionalOverview: () => apiFetch<any>("/institutional/overview"),
+
+  // ── Crowding Dashboard ────────────────────────────────────────────────────────
+  getCrowding: (universe = "sp500", top_n = 100) =>
+    apiFetch<CrowdingResponse>(`/crowding/scan?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
 
   // ── Expected Return Engine ────────────────────────────────────────────────────
   getExpectedReturn: (universe = "sp500", top_n = 200) =>
