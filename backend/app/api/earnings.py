@@ -1,19 +1,30 @@
 """
+Earnings Intelligence API.
+
 GET /api/earnings/options-flow
-  params: tickers (comma-separated, up to 40)
-          earnings_dates (comma-separated YYYY-MM-DD matching tickers, optional)
   Returns per-ticker: ATM straddle expected move, IV, put/call volume ratio.
+
+GET /api/earnings/intelligence
+  Returns per-ticker deep historical analysis:
+  - Pre-earnings drift (5d, 10d avg leading into earnings)
+  - Historical move (avg absolute move on earnings day, beat rate)
+  - Post-earnings gap persistence (does the gap continue 5d / 10d?)
+  - EPS revision trend (analysts revising up or down)
+  - Full history of last 8 quarterly reactions
 """
 from __future__ import annotations
 
 import asyncio
 import concurrent.futures
 import logging
-from datetime import date
+from datetime import date, datetime, timedelta
 
 import numpy as np
+import pandas as pd
 import yfinance as yf
 from fastapi import APIRouter, Query
+
+from app.core.data import cache
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -136,3 +147,203 @@ async def get_options_flow(
             flow[r["ticker"]] = {k: v for k, v in r.items() if k != "ticker"}
 
     return {"options_flow": flow, "count": len(flow)}
+
+
+# ── Earnings Intelligence ──────────────────────────────────────────────────────
+
+_START_2Y = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+_TODAY_STR = datetime.today().strftime("%Y-%m-%d")
+
+_EMPTY_INTEL: dict = {
+    "pre_drift_5d": None, "pre_drift_10d": None,
+    "hist_avg_abs_move": None, "hist_avg_move": None,
+    "beat_rate": None,
+    "gap_persistence_5d": None, "gap_persistence_10d": None,
+    "revisions_up_30d": 0, "revisions_down_30d": 0,
+    "n_quarters": 0, "history": [],
+}
+
+
+def _ts_naive(ts) -> pd.Timestamp:
+    t = pd.Timestamp(ts)
+    return t.tz_localize(None) if t.tzinfo is not None else t
+
+
+def _compute_intel(ticker: str, prices: pd.Series | None) -> dict:
+    """
+    Compute historical earnings analysis for one ticker:
+      - Pre-earnings drift (avg return 5d and 10d leading into each past earnings date)
+      - Earnings day reaction (gap: close after vs close before)
+      - Beat / miss history from EPS Estimate vs Reported EPS
+      - Post-earnings gap persistence (does the gap direction hold 5d / 10d after?)
+      - EPS revision trend from yfinance eps_revisions
+    """
+    out = dict(_EMPTY_INTEL)
+    try:
+        t  = yf.Ticker(ticker)
+        ed = t.earnings_dates
+        if ed is None or ed.empty:
+            return out
+
+        now   = pd.Timestamp.now()
+        past  = ed[ed.index.tz_localize(None) < now].head(8)  # newest 8 quarters
+
+        if past.empty or prices is None or len(prices) < 22:
+            return out
+
+        price_idx = prices.index  # DatetimeIndex, naive
+
+        pre5, pre10, day_rets = [], [], []
+        post5_pairs, post10_pairs = [], []
+        beat_ct, total_eps = 0, 0
+        history = []
+
+        for earn_ts, row in past.iterrows():
+            earn_dt = _ts_naive(earn_ts).normalize()
+
+            # Nearest trading day on or AFTER the earnings timestamp date
+            after = price_idx[price_idx >= earn_dt]
+            if len(after) == 0:
+                continue
+            loc = price_idx.get_loc(after[0])
+
+            # Need at least 10 days before and 2 days after
+            if loc < 10 or loc + 2 >= len(prices):
+                continue
+
+            p_earn  = float(prices.iloc[loc])      # close on / just after announcement
+            p_after = float(prices.iloc[loc + 1])  # first full day after earnings
+            p_5d_b  = float(prices.iloc[loc - 5])
+            p_10d_b = float(prices.iloc[loc - 10])
+
+            if p_earn <= 0 or p_5d_b <= 0 or p_10d_b <= 0:
+                continue
+
+            # Pre-earnings drift (return into earnings)
+            pre5d  = (p_earn / p_5d_b  - 1) * 100
+            pre10d = (p_earn / p_10d_b - 1) * 100
+            pre5.append(pre5d)
+            pre10.append(pre10d)
+
+            # Earnings gap = close day-after vs close before announcement
+            day_ret = (p_after / p_earn - 1) * 100
+            day_rets.append(day_ret)
+
+            # Post gap persistence
+            post5d = post10d = None
+            if loc + 6 < len(prices):
+                post5d = (float(prices.iloc[loc + 6]) / p_after - 1) * 100
+                post5_pairs.append((day_ret, post5d))
+            if loc + 11 < len(prices):
+                post10d = (float(prices.iloc[loc + 11]) / p_after - 1) * 100
+                post10_pairs.append((day_ret, post10d))
+
+            # Beat / miss
+            beat = None
+            try:
+                eps_a = row.get("Reported EPS")
+                eps_e = row.get("EPS Estimate")
+                if pd.notna(eps_a) and pd.notna(eps_e):
+                    beat = float(eps_a) > float(eps_e)
+                    total_eps += 1
+                    if beat:
+                        beat_ct += 1
+            except Exception:
+                pass
+
+            history.append({
+                "date":     earn_dt.strftime("%Y-%m-%d"),
+                "day_ret":  round(day_ret, 1),
+                "pre_5d":   round(pre5d, 1),
+                "post_5d":  round(post5d, 1) if post5d is not None else None,
+                "post_10d": round(post10d, 1) if post10d is not None else None,
+                "beat":     beat,
+            })
+
+        # Aggregate
+        if day_rets:
+            out["hist_avg_abs_move"] = round(float(np.mean([abs(r) for r in day_rets])), 1)
+            out["hist_avg_move"]     = round(float(np.mean(day_rets)), 1)
+            out["n_quarters"]        = len(day_rets)
+        if pre5:
+            out["pre_drift_5d"]  = round(float(np.mean(pre5)), 1)
+        if pre10:
+            out["pre_drift_10d"] = round(float(np.mean(pre10)), 1)
+        if total_eps:
+            out["beat_rate"] = round(beat_ct / total_eps, 2)
+        if post5_pairs:
+            same = sum(1 for g, p in post5_pairs if (g > 0) == (p > 0))
+            out["gap_persistence_5d"] = round(same / len(post5_pairs) * 100)
+        if post10_pairs:
+            same = sum(1 for g, p in post10_pairs if (g > 0) == (p > 0))
+            out["gap_persistence_10d"] = round(same / len(post10_pairs) * 100)
+
+        out["history"] = history[:8]
+
+        # EPS revisions
+        try:
+            eps_rev = t.eps_revisions
+            if eps_rev is not None and not eps_rev.empty:
+                col = eps_rev.columns[0]  # current quarter
+                for idx_label in eps_rev.index:
+                    label = str(idx_label).lower()
+                    val   = eps_rev.loc[idx_label, col]
+                    if pd.notna(val):
+                        v = int(float(val))
+                        if "up" in label and "30" in label:
+                            out["revisions_up_30d"] = v
+                        elif "down" in label and "30" in label:
+                            out["revisions_down_30d"] = v
+        except Exception:
+            pass
+
+    except Exception as exc:
+        logger.debug("intelligence error %s: %s", ticker, exc)
+
+    return out
+
+
+def _run_intel_batch(ticker_list: list[str], prices_df: pd.DataFrame) -> dict:
+    results: dict[str, dict] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        future_map = {}
+        for t in ticker_list:
+            px = prices_df[t] if (prices_df is not None and t in prices_df.columns) else None
+            future_map[pool.submit(_compute_intel, t, px)] = t
+        for fut in concurrent.futures.as_completed(future_map):
+            tk = future_map[fut]
+            try:
+                results[tk] = fut.result()
+            except Exception:
+                results[tk] = dict(_EMPTY_INTEL)
+    return results
+
+
+@router.get("/intelligence")
+async def earnings_intelligence(
+    tickers:        str = Query(..., description="Comma-separated tickers (max 30)"),
+    earnings_dates: str = Query(""),
+):
+    """
+    Deep historical analysis for upcoming earnings stocks.
+    Fetches yfinance earnings_dates + eps_revisions per ticker,
+    combined with cached prices to compute all stats.
+    """
+    ticker_list = [t.strip().upper() for t in tickers.split(",") if t.strip()][:30]
+    if not ticker_list:
+        return {"intelligence": {}}
+
+    # Load prices from our cache (needed for drift / gap calculations)
+    try:
+        fetcher_start = (datetime.today() - timedelta(days=730)).strftime("%Y-%m-%d")
+        from app.core.data import fetcher as _fetcher
+        _fetcher.ensure_prices(ticker_list, fetcher_start, _TODAY_STR)
+        prices_df = cache.get_adj_close(ticker_list, fetcher_start, _TODAY_STR)
+    except Exception:
+        prices_df = pd.DataFrame()
+
+    loop         = asyncio.get_event_loop()
+    intelligence = await loop.run_in_executor(
+        None, _run_intel_batch, ticker_list, prices_df
+    )
+    return {"intelligence": intelligence}

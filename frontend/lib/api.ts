@@ -792,6 +792,35 @@ export const FACTOR_OPTIONS: { value: string; label: string; icHistory: boolean 
   { value: "sentiment",         label: "Sentiment",           icHistory: false },
 ];
 
+// ── Earnings Intelligence types ───────────────────────────────────────────────
+
+export interface EarningsHistoryPoint {
+  date:     string;
+  day_ret:  number;
+  pre_5d:   number | null;
+  post_5d:  number | null;
+  post_10d: number | null;
+  beat:     boolean | null;
+}
+
+export interface EarningsIntelligenceItem {
+  pre_drift_5d:        number | null;
+  pre_drift_10d:       number | null;
+  hist_avg_abs_move:   number | null;
+  hist_avg_move:       number | null;
+  beat_rate:           number | null;
+  gap_persistence_5d:  number | null;
+  gap_persistence_10d: number | null;
+  revisions_up_30d:    number;
+  revisions_down_30d:  number;
+  n_quarters:          number;
+  history:             EarningsHistoryPoint[];
+}
+
+export interface EarningsIntelligenceResponse {
+  intelligence: Record<string, EarningsIntelligenceItem>;
+}
+
 export interface OptionsFlowItem {
   expected_move_pct:    number | null;
   expected_move_dollar: number | null;
@@ -1146,6 +1175,14 @@ export const api = {
     q.set("tickers", tickers.join(","));
     if (earningsDates?.length) q.set("earnings_dates", earningsDates.join(","));
     return apiFetch<EarningsOptionsFlowResponse>(`/earnings/options-flow?${q}`);
+  },
+
+  // ── Earnings Intelligence ─────────────────────────────────────────────────────
+  getEarningsIntelligence: (tickers: string[], earningsDates?: string[]) => {
+    const q = new URLSearchParams();
+    q.set("tickers", tickers.join(","));
+    if (earningsDates?.length) q.set("earnings_dates", earningsDates.join(","));
+    return apiFetch<EarningsIntelligenceResponse>(`/earnings/intelligence?${q}`);
   },
 };
 
