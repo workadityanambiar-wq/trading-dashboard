@@ -1184,7 +1184,42 @@ export const api = {
     if (earningsDates?.length) q.set("earnings_dates", earningsDates.join(","));
     return apiFetch<EarningsIntelligenceResponse>(`/earnings/intelligence?${q}`);
   },
+
+  // ── Earnings Drift / PEAD ─────────────────────────────────────────────────────
+  getEarningsDrift: (universe = "sp500", top_n = 200) =>
+    apiFetch<EarningsDriftResponse>(`/earnings-drift/scan?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
 };
+
+// ── Earnings Drift / PEAD types ───────────────────────────────────────────────
+
+export interface DriftResult {
+  rank:             number;
+  ticker:           string;
+  name:             string;
+  sector:           string;
+  earn_date:        string;
+  days_since:       number;
+  eps_surprise_pct: number | null;
+  eps_actual:       number | null;
+  eps_estimate:     number | null;
+  rev_growth_yoy:   number | null;
+  revisions_up:     number;
+  revisions_down:   number;
+  drift_5d:         number | null;
+  drift_21d:        number | null;
+  drift_63d:        number | null;
+  drift_126d:       number | null;
+  drift_current:    number | null;
+  pead_score:       number | null;
+  sweet_spot:       boolean;
+}
+
+export interface EarningsDriftResponse {
+  results:       DriftResult[];
+  universe_size: number;
+  computed:      number;
+  as_of:         string;
+}
 
 // ── Setups / Decision Engine types ───────────────────────────────────────────
 

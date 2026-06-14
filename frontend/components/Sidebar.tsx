@@ -30,6 +30,7 @@ import {
   Radar,
   Landmark,
   Users,
+  Milestone,
 } from "lucide-react";
 
 const NAV = [
@@ -44,6 +45,7 @@ const NAV = [
   { href: "/regime",        label: "Regime",       icon: Radar },
   { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
   { href: "/crowding",      label: "Crowding",      icon: Users },
+  { href: "/earnings-drift", label: "E. Drift / PEAD", icon: Milestone },
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
