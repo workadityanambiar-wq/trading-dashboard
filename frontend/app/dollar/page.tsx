@@ -70,7 +70,7 @@ function corrColor(v:number){
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 function Spinner(){return<div className="flex items-center justify-center h-32"><RefreshCw size={20} className="animate-spin text-blue-500"/></div>;}
-function Card({children,className}:{children:React.ReactNode;className?:string}){return<div className={cn("bg-surface border border-border rounded-xl p-4",className)}>{children}</div>;}
+function Card({children,className,style}:{children:React.ReactNode;className?:string;style?:React.CSSProperties}){return<div className={cn("bg-surface border border-border rounded-xl p-4",className)} style={style}>{children}</div>;}
 function Label({children}:{children:React.ReactNode}){return<div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">{children}</div>;}
 
 function ScoreGauge({score,label,size=160}:{score:number;label:string;size?:number}){
