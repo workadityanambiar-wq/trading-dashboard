@@ -815,7 +815,7 @@ export default function AlphaEnginePage() {
         {showWeights && (
           <WeightEditor
             weights={weights}
-            onChange={setWeights}
+            onChange={(w) => setWeights(w as typeof weights)}
             meta={data?.factor_meta ?? Object.fromEntries(
               FACTOR_ORDER.map(k => [k, { label: k, color: "#4c9fff", icon: "" }])
             )}

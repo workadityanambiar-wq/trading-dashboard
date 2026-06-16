@@ -94,7 +94,7 @@ function Section({
   title, icon: Icon, children, badge, defaultOpen = true,
 }: {
   title: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ElementType;
   children: React.ReactNode;
   badge?: React.ReactNode;
   defaultOpen?: boolean;

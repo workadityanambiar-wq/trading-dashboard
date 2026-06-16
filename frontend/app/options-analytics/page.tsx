@@ -23,10 +23,12 @@ interface StrategyResult {
   payoff: number[]; s_range: number[]; breakevens: number[];
   max_profit: number; max_loss: number; net_credit: number;
   risk_reward: number | null; label: string; description: string;
+  legs?: any[];
 }
 interface ChainRow {
   strike: number; bid: number; ask: number; mid: number; volume: number;
   openInterest: number; impliedVolatility: number; inTheMoney: boolean; type: string;
+  lastPrice?: number;
 }
 interface ChainData {
   ticker: string; spot: number; expiry: string; expirations: string[];

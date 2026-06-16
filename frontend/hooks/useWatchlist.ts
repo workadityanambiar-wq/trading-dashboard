@@ -6,6 +6,7 @@ const STORAGE_KEY = "quant-watchlist-v1";
 
 async function loadFromSupabase(userId: string): Promise<string[] | null> {
   const supabase = createClient();
+  if (!supabase) return null;
   const { data } = await supabase
     .from("user_watchlists")
     .select("tickers")
@@ -16,6 +17,7 @@ async function loadFromSupabase(userId: string): Promise<string[] | null> {
 
 async function saveToSupabase(userId: string, tickers: string[]) {
   const supabase = createClient();
+  if (!supabase) return;
   await supabase.from("user_watchlists").upsert(
     { user_id: userId, tickers, updated_at: new Date().toISOString() },
     { onConflict: "user_id" }
@@ -33,6 +35,14 @@ export function useWatchlist() {
     let active = true;
     async function init() {
       const supabase = createClient();
+      if (!supabase) {
+        const local = (() => {
+          try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as string[]; }
+          catch { return []; }
+        })();
+        if (active) { setTickers(local); setMounted(true); }
+        return;
+      }
       const { data: { user } } = await supabase.auth.getUser();
 
       const local = (() => {

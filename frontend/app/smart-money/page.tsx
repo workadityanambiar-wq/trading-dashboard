@@ -51,6 +51,7 @@ interface SmartMoneyData {
   period_days: number;
   from_date: string;
   to_date: string;
+  weights?: Record<string, number>;
 }
 
 interface CompareResult {
