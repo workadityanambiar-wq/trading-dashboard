@@ -41,6 +41,7 @@ import {
   DollarSign,
   FlameKindling,
   Gem,
+  Droplets,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -60,6 +61,7 @@ const NAV = [
   { href: "/quality",        label: "Quality Factor",  icon: Gem },
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/country-macro", label: "Country Macro", icon: Globe },
+  { href: "/oil",           label: "Oil Tracker",   icon: Droplets },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },
