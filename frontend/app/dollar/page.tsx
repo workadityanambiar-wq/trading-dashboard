@@ -36,7 +36,7 @@ interface Yields {
   real_yield:number; breakeven:number; real_signal:string; as_of:string;
 }
 interface Fed { current_rate:number; target_range:string; next_meeting:string; cut_prob:number; hike_prob:number; hold_prob:number; cuts_priced_2026:number; dot_plot_eoy:number; market_rate_eoy:number; as_of:string; }
-interface Liq { fed_balance_sheet_b:number; tga_b:number; rrp_b:number; net_liquidity_b:number; net_4w_chg_b:number; liquidity_trend:string; dollar_impact:string; history:{label:string;value:number}[]; as_of:string; }
+interface Liq { fed_balance_sheet_b:number; tga_b:number; rrp_b:number; net_liquidity_b:number; net_4w_chg_b:number; fed_bs_4w_chg_b:number; tga_4w_chg_b:number; rrp_4w_chg_b:number; liquidity_trend:string; dollar_impact:string; history:{label:string;value:number}[]; as_of:string; }
 interface CurrRow { pair:string; price:number; ret_1m:number; ret_3m:number; ret_6m:number; rsi:number; usd_score_1m:number; rank:number; }
 interface Currencies { pairs:CurrRow[]; as_of:string; }
 interface CorrRow { name:string; asset_class:string; corr_30d:number; corr_90d:number; trend:string; signal:string; }
