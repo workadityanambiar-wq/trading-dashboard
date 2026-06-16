@@ -12,7 +12,6 @@ import {
   Target, Shield, ChevronUp, ChevronDown,
 } from "lucide-react";
 
-const B = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 const AMBER = "#f59e0b";
 const GREEN = "#10b981";
 const RED   = "#ef4444";
@@ -60,7 +59,7 @@ function signalBg(s: string) {
 }
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const r = await fetch(`${B}/api/oil${path}`);
+  const r = await fetch(`/api/oil${path}`);
   if (!r.ok) throw new Error(r.statusText);
   return r.json();
 }
