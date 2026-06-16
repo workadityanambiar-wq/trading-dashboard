@@ -8,8 +8,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 const ICONS: Record<string, React.ReactNode> = {
   portfolio: <BarChart3 size={14} />,
   backtest:  <FlaskConical size={14} />,
@@ -52,7 +50,7 @@ export default function ReportsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${BACKEND}/api/reports/templates`)
+    fetch(`/api/reports/templates`)
       .then(r => r.ok ? r.json() : [])
       .then(setTemplates)
       .catch(() => {});
@@ -97,7 +95,7 @@ export default function ReportsPage() {
     };
 
     try {
-      const res = await fetch(`${BACKEND}/api/reports/generate`, {
+      const res = await fetch(`/api/reports/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

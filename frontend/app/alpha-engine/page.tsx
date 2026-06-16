@@ -6,8 +6,6 @@ import {
   RefreshCw, SlidersHorizontal, X,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type FactorKey = "momentum"|"relative_strength"|"institutional"|"earnings"|"quality"|"macro"|"volatility";
@@ -632,7 +630,7 @@ export default function AlphaEnginePage() {
         Object.entries(weights).map(([k, v]) => [k, v / 100])
       );
       const res = await fetch(
-        `${API}/api/alpha-engine/score/${t}?period_days=${period}`,
+        `/api/alpha-engine/score/${t}?period_days=${period}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -658,7 +656,7 @@ export default function AlphaEnginePage() {
       const w = Object.fromEntries(
         Object.entries(weights).map(([k, v]) => [k, v / 100])
       );
-      const res = await fetch(`${API}/api/alpha-engine/rank`, {
+      const res = await fetch(`/api/alpha-engine/rank`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tickers, weights: w, period_days: period, quick: quickMode }),

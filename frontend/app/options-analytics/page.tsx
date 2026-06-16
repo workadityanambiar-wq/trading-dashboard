@@ -7,8 +7,6 @@ import {
   Target, Layers, AlertCircle,
 } from "lucide-react";
 
-const B = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface Greeks {
@@ -268,7 +266,7 @@ export default function OptionsAnalyticsPage() {
 
   // Load strategy list
   useEffect(() => {
-    fetch(`${B}/api/options/strategies`).then(r => r.ok ? r.json() : []).then(setStrategies).catch(() => {});
+    fetch(`/api/options/strategies`).then(r => r.ok ? r.json() : []).then(setStrategies).catch(() => {});
   }, []);
 
   const params = useCallback(() => ({
@@ -283,19 +281,19 @@ export default function OptionsAnalyticsPage() {
     try {
       const p = params();
       if (model === "bs") {
-        const res = await fetch(`${B}/api/options/price/bs`, {
+        const res = await fetch(`/api/options/price/bs`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(p),
         });
         setBsResult(await res.json());
       } else if (model === "binomial") {
-        const res = await fetch(`${B}/api/options/price/binomial`, {
+        const res = await fetch(`/api/options/price/binomial`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...p, N: parseInt(binoN), american }),
         });
         setBinoResult(await res.json());
       } else {
-        const res = await fetch(`${B}/api/options/price/mc`, {
+        const res = await fetch(`/api/options/price/mc`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...p, n_sims: parseInt(nSims), exotic }),
         });
@@ -310,7 +308,7 @@ export default function OptionsAnalyticsPage() {
     const t = ticker || chainTicker;
     setChainLoading(true); setError("");
     try {
-      const url = `${B}/api/options/chain/${t}${expiry ? `?expiry=${expiry}` : ""}`;
+      const url = `/api/options/chain/${t}${expiry ? `?expiry=${expiry}` : ""}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
@@ -323,7 +321,7 @@ export default function OptionsAnalyticsPage() {
   }
 
   function buildSmile(calls: ChainRow[], puts: ChainRow[], spot: number) {
-    fetch(`${B}/api/options/vol-smile`, {
+    fetch(`/api/options/vol-smile`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         S: spot, T_days: parseInt(T), r: parseFloat(r) / 100, q: parseFloat(q) / 100,
@@ -337,7 +335,7 @@ export default function OptionsAnalyticsPage() {
   async function handleStrategy() {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${B}/api/options/strategy/preset`, {
+      const res = await fetch(`/api/options/strategy/preset`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ strategy_id: stratId, S: parseFloat(S), atm_premium: parseFloat(sig) / 100 * parseFloat(S) * 0.1 }),
       });
@@ -345,7 +343,7 @@ export default function OptionsAnalyticsPage() {
       // Auto-run scenario
       const sr = await res.json().catch(() => null);
       if (sr?.legs) {
-        const scenRes = await fetch(`${B}/api/options/scenario`, {
+        const scenRes = await fetch(`/api/options/scenario`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             legs: sr.legs, S: parseFloat(S), sigma: parseFloat(sig)/100,
@@ -364,14 +362,14 @@ export default function OptionsAnalyticsPage() {
     try {
       const p = params();
       // Get ATM premium from BS first
-      const bsRes = await fetch(`${B}/api/options/price/bs`, {
+      const bsRes = await fetch(`/api/options/price/bs`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...p, K: parseFloat(S) }),
       });
       const bs = await bsRes.json();
       const atm_prem = bs.price || 5;
 
-      const res = await fetch(`${B}/api/options/strategy/preset`, {
+      const res = await fetch(`/api/options/strategy/preset`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ strategy_id: stratId, S: parseFloat(S), atm_premium: atm_prem }),
       });
@@ -380,7 +378,7 @@ export default function OptionsAnalyticsPage() {
 
       // Build scenario from those legs
       if (data.legs) {
-        const scenRes = await fetch(`${B}/api/options/scenario`, {
+        const scenRes = await fetch(`/api/options/scenario`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             legs: data.legs, S: parseFloat(S), sigma: parseFloat(sig)/100,
@@ -397,7 +395,7 @@ export default function OptionsAnalyticsPage() {
   async function handleAI() {
     setLoading(true); setError("");
     try {
-      const res = await fetch(`${B}/api/options/ai-analysis`, {
+      const res = await fetch(`/api/options/ai-analysis`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           S: parseFloat(S), K: parseFloat(K), T_days: parseInt(T),

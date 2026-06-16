@@ -4,8 +4,6 @@ import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 export function NotificationBell({ userId = "default" }: { userId?: string }) {
   const [count, setCount] = useState(0);
   const [pulse, setPulse] = useState(false);
@@ -16,7 +14,7 @@ export function NotificationBell({ userId = "default" }: { userId?: string }) {
 
     async function poll() {
       try {
-        const res = await fetch(`${BACKEND}/api/alerts/unread-count?user_id=${userId}`);
+        const res = await fetch(`/api/alerts/unread-count?user_id=${userId}`);
         if (!res.ok) return;
         const data = await res.json();
         const n = data.count ?? 0;

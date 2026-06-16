@@ -5,8 +5,6 @@ import {
   Activity, BarChart3, Layers, Eye, Zap,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface ComponentScores {
@@ -413,7 +411,7 @@ export default function SmartMoneyPage() {
   async function analyze() {
     setLoading(true); setError(""); setData(null);
     try {
-      const res = await fetch(`${API}/api/smart-money/flow/${ticker.toUpperCase()}?period_days=${period}`);
+      const res = await fetch(`/api/smart-money/flow/${ticker.toUpperCase()}?period_days=${period}`);
       if (!res.ok) throw new Error((await res.json()).detail ?? "Request failed");
       setData(await res.json());
       setActiveSection("obv");
@@ -428,7 +426,7 @@ export default function SmartMoneyPage() {
     setLoading(true); setError(""); setCompareData(null);
     try {
       const syms = compareList.trim().toUpperCase();
-      const res  = await fetch(`${API}/api/smart-money/compare?tickers=${encodeURIComponent(syms)}&period_days=${period}`);
+      const res  = await fetch(`/api/smart-money/compare?tickers=${encodeURIComponent(syms)}&period_days=${period}`);
       if (!res.ok) throw new Error((await res.json()).detail ?? "Request failed");
       const json = await res.json();
       setCompareData(json.results);

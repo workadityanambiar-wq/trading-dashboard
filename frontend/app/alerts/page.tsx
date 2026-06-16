@@ -7,8 +7,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
 // ── types ──────────────────────────────────────────────────────────────────────
 
 interface AlertDef {
@@ -119,10 +117,10 @@ export default function AlertsPage() {
     setLoading(true);
     try {
       const [a, t, c, u] = await Promise.all([
-        fetch(`${BACKEND}/api/alerts/?user_id=${USER_ID}`).then(r => r.ok ? r.json() : []),
-        fetch(`${BACKEND}/api/alerts/triggers?user_id=${USER_ID}&unread_only=${unreadOnly}&limit=200`).then(r => r.ok ? r.json() : []),
-        fetch(`${BACKEND}/api/alerts/conditions`).then(r => r.ok ? r.json() : []),
-        fetch(`${BACKEND}/api/alerts/unread-count?user_id=${USER_ID}`).then(r => r.ok ? r.json() : { count: 0 }),
+        fetch(`/api/alerts/?user_id=${USER_ID}`).then(r => r.ok ? r.json() : []),
+        fetch(`/api/alerts/triggers?user_id=${USER_ID}&unread_only=${unreadOnly}&limit=200`).then(r => r.ok ? r.json() : []),
+        fetch(`/api/alerts/conditions`).then(r => r.ok ? r.json() : []),
+        fetch(`/api/alerts/unread-count?user_id=${USER_ID}`).then(r => r.ok ? r.json() : { count: 0 }),
       ]);
       setAlerts(a);
       setTriggers(t);
@@ -140,7 +138,7 @@ export default function AlertsPage() {
   async function handleMarkAllRead() {
     const ids = triggers.filter(t => !t.is_read).map(t => t.id);
     if (!ids.length) return;
-    await fetch(`${BACKEND}/api/alerts/triggers/mark-read`, {
+    await fetch(`/api/alerts/triggers/mark-read`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trigger_ids: ids }),
@@ -149,12 +147,12 @@ export default function AlertsPage() {
   }
 
   async function handleDelete(alertId: string) {
-    await fetch(`${BACKEND}/api/alerts/${alertId}?user_id=${USER_ID}`, { method: "DELETE" });
+    await fetch(`/api/alerts/${alertId}?user_id=${USER_ID}`, { method: "DELETE" });
     fetchAll();
   }
 
   async function handleMarkRead(triggerId: string) {
-    await fetch(`${BACKEND}/api/alerts/triggers/mark-read`, {
+    await fetch(`/api/alerts/triggers/mark-read`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ trigger_ids: [triggerId] }),
@@ -169,7 +167,7 @@ export default function AlertsPage() {
     setCreating(true);
     setCreateMsg("");
     try {
-      const res = await fetch(`${BACKEND}/api/alerts/`, {
+      const res = await fetch(`/api/alerts/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
