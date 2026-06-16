@@ -1,3 +1,8 @@
+import ssl
+import certifi
+import urllib.request
+ssl._create_default_https_context = ssl._create_unverified_context
+
 import yfinance as yf
 import pandas as pd
 import numpy as np

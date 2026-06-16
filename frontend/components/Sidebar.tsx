@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   ScanSearch,
@@ -31,7 +32,16 @@ import {
   Landmark,
   Users,
   Milestone,
+  LogIn,
+  LogOut,
+  UserCircle,
+  Wand2,
+  BellRing,
+  FileDown,
+  DollarSign,
+  FlameKindling,
 } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV = [
   { href: "/watchlist",   label: "Watchlist",    icon: Star },
@@ -47,14 +57,20 @@ const NAV = [
   { href: "/crowding",      label: "Crowding",      icon: Users },
   { href: "/earnings-drift", label: "E. Drift / PEAD", icon: Milestone },
   { href: "/macro",         label: "Macro",        icon: Globe },
+  { href: "/country-macro", label: "Country Macro", icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
-  { href: "/options",       label: "Options",      icon: Percent },
+  { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },
+  { href: "/smart-money",       label: "Smart Money Flow",  icon: DollarSign },
+  { href: "/options-analytics", label: "Options Analytics", icon: Percent },
   { href: "/correlations",  label: "Correlations", icon: Network },
   { href: "/screener",  label: "Screener",  icon: ScanSearch },
   { href: "/factors",   label: "Factors",   icon: TrendingUp },
   { href: "/expected-return", label: "Exp. Return", icon: Target },
   { href: "/intraday",  label: "ST Signals",icon: Activity },
+  { href: "/alerts",        label: "Alerts",         icon: BellRing },
+  { href: "/reports",       label: "Reports",        icon: FileDown },
+  { href: "/strategy-builder", label: "Strategy Builder", icon: Wand2 },
   { href: "/backtest",  label: "Backtester",icon: FlaskConical },
   { href: "/portfolio",    label: "Portfolio",    icon: PieChart },
   { href: "/risk",         label: "Risk",         icon: ShieldAlert },
@@ -66,19 +82,30 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <aside className="w-52 shrink-0 flex flex-col border-r border-border bg-surface">
-      <div className="px-4 py-5 border-b border-border">
-        <span className="text-sm font-semibold tracking-widest text-accent uppercase">
-          Quant
-        </span>
-        <span className="text-sm font-semibold tracking-widest text-text-muted uppercase">
-          Desk
-        </span>
+      <div className="px-4 py-5 border-b border-border flex items-center justify-between">
+        <div>
+          <span className="text-sm font-semibold tracking-widest text-accent uppercase">
+            Quant
+          </span>
+          <span className="text-sm font-semibold tracking-widest text-text-muted uppercase">
+            Desk
+          </span>
+        </div>
+        <NotificationBell />
       </div>
 
-      <nav className="flex-1 py-4 space-y-0.5 px-2">
+      <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -99,8 +126,38 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-3 border-t border-border text-xs text-text-muted">
-        Data: yfinance
+      <div className="px-3 py-3 border-t border-border space-y-2">
+        {!loading && (
+          user ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <UserCircle size={14} className="text-accent shrink-0" />
+                <span
+                  className="text-xs text-text-muted truncate"
+                  title={user.email}
+                >
+                  {user.email}
+                </span>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+              >
+                <LogOut size={13} />
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+            >
+              <LogIn size={13} />
+              Sign in
+            </Link>
+          )
+        )}
+        <div className="text-xs text-text-muted px-2">Data: yfinance</div>
       </div>
     </aside>
   );

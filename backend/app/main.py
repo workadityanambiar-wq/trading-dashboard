@@ -8,9 +8,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import data, factors, backtest, portfolio, risk, technical, pairs, mt5 as mt5_api, risk_model, regime as regime_api, earnings as earnings_api, institutional as inst_api, expected_return as er_api, crowding as crowding_api, earnings_drift as drift_api
+from app.api import strategy_builder as strategy_api
+from app.api import alerts as alerts_api
+from app.api import reports as reports_api
+from app.api import options_analytics as opts_api
+from app.api import smart_money as smart_money_api
+from app.api import alpha_engine as alpha_api
+from app.api import country_macro as country_macro_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
+from app.core.alerts.models import init_alert_tables
+from app.core.alerts.scanner import scanner_loop
+from app.core.alerts.notifier import Notifier
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -50,9 +60,13 @@ async def _auto_refresh_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_alert_tables()
+    _notifier = Notifier()
     task = asyncio.create_task(_auto_refresh_loop())
+    scan_task = asyncio.create_task(scanner_loop(_notifier))
     yield
     task.cancel()
+    scan_task.cancel()
 
 
 app = FastAPI(title="Quant Dashboard API", version="0.1.0", lifespan=lifespan)
@@ -83,6 +97,13 @@ app.include_router(inst_api.router,    prefix="/api/institutional")
 app.include_router(er_api.router,      prefix="/api/expected-return")
 app.include_router(crowding_api.router, prefix="/api/crowding")
 app.include_router(drift_api.router,   prefix="/api/earnings-drift")
+app.include_router(strategy_api.router, prefix="/api/strategy")
+app.include_router(alerts_api.router,   prefix="/api/alerts")
+app.include_router(reports_api.router,  prefix="/api/reports")
+app.include_router(opts_api.router,          prefix="/api/options")
+app.include_router(smart_money_api.router,   prefix="/api/smart-money")
+app.include_router(alpha_api.router,         prefix="/api/alpha-engine")
+app.include_router(country_macro_api.router, prefix="/api/country-macro")
 
 
 @app.get("/health")

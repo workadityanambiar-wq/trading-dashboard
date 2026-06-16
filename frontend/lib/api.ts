@@ -1188,6 +1188,12 @@ export const api = {
   // ── Earnings Drift / PEAD ─────────────────────────────────────────────────────
   getEarningsDrift: (universe = "sp500", top_n = 200) =>
     apiFetch<EarningsDriftResponse>(`/earnings-drift/scan?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
+
+  // ── Country Macro Dashboard ───────────────────────────────────────────────────
+  getCountryList: () =>
+    apiFetch<CountryListItem[]>("/country-macro/countries"),
+  getCountryMacro: (code: string) =>
+    apiFetch<CountryMacroResponse>(`/country-macro/${encodeURIComponent(code)}`),
 };
 
 // ── Earnings Drift / PEAD types ───────────────────────────────────────────────
@@ -1569,4 +1575,128 @@ export interface TechnicalSignalsResponse {
   as_of: string | null;
   results: TechnicalSignal[];
   message?: string;
+}
+
+// ── Country Macro Dashboard types ─────────────────────────────────────────────
+
+export interface CountryListItem {
+  code: string;
+  name: string;
+  flag: string;
+  region: string;
+  currency: string;
+}
+
+interface HistoryPoint { year: string; value: number; }
+interface DatePoint    { date: string; value: number; }
+
+interface InvEntry { score: number; label: string; color: string; }
+
+export interface CountryMacroResponse {
+  meta: {
+    code: string; name: string; currency: string; flag: string; region: string;
+  };
+  overview: {
+    gdp_usd_bn: number | null;
+    gdp_per_capita: number | null;
+    population_mn: number | null;
+    credit_rating: { moodys: string; sp: string; fitch: string; ig: boolean; score: number };
+    political_stability: number | null;
+    trade_pct_gdp: number | null;
+  };
+  growth: {
+    gdp_growth: number | null;
+    gdp_growth_prev: number | null;
+    industrial_prod: number | null;
+    exports_growth: number | null;
+    imports_growth: number | null;
+    momentum: string;
+    score: number;
+    history: HistoryPoint[];
+  };
+  inflation: {
+    cpi: number | null;
+    cpi_prev: number | null;
+    regime: string;
+    score: number;
+    history: HistoryPoint[];
+  };
+  central_bank: {
+    policy_rate: number | null;
+    real_rate: number | null;
+    stance: string;
+    hawkish_score: number;
+  };
+  labor: {
+    unemployment: number | null;
+    unemployment_prev: number | null;
+    labor_participation: number | null;
+    score: number;
+    history: HistoryPoint[];
+  };
+  fiscal: {
+    debt_gdp: number | null;
+    gross_savings: number | null;
+    score: number;
+    risk_level: string;
+    history: HistoryPoint[];
+  };
+  external: {
+    current_account_gdp: number | null;
+    fx_reserves_usd_bn: number | null;
+    fx_reserves_months: number | null;
+    ext_debt_gni: number | null;
+    exports_growth: number | null;
+    score: number;
+    history: HistoryPoint[];
+  };
+  currency: {
+    ticker: string;
+    fx_rate: number | null;
+    fx_change_1m: number | null;
+    fx_change_1y: number | null;
+    fx_change_5y: number | null;
+    score: number;
+    history: DatePoint[];
+  };
+  equity: {
+    ticker: string;
+    price: number | null;
+    change_1m: number | null;
+    change_3m: number | null;
+    change_1y: number | null;
+    change_3y: number | null;
+    change_5y: number | null;
+    market_cap_gdp: number | null;
+    valuation_score: number;
+    momentum_score: number;
+    history: DatePoint[];
+  };
+  commodities: {
+    exposure: Record<string, number>;
+    sensitivity_score: number;
+  };
+  risk: {
+    political: number; fiscal: number; currency: number;
+    sovereign: number; inflation: number; overall: number;
+  };
+  regime: {
+    label: string; growth_dir: string; inflation_dir: string;
+    color: string; description: string;
+  };
+  scores: {
+    growth: number; inflation: number; fiscal: number;
+    external: number; monetary: number; political: number; composite: number;
+  };
+  investment: {
+    equities: InvEntry; bonds: InvEntry; currency: InvEntry;
+    real_estate: InvEntry; commodities: InvEntry;
+  };
+  insights: { type: string; category: string; text: string }[];
+  forecasts: {
+    gdp_3m: number | null; gdp_6m: number | null; gdp_12m: number | null;
+    cpi_3m: number | null; cpi_6m: number | null; cpi_12m: number | null;
+    recession_probability: number | null;
+  };
+  data_note: string;
 }
