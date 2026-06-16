@@ -1194,7 +1194,47 @@ export const api = {
     apiFetch<CountryListItem[]>("/country-macro/countries"),
   getCountryMacro: (code: string) =>
     apiFetch<CountryMacroResponse>(`/country-macro/${encodeURIComponent(code)}`),
+
+  // ── Quality Factor ────────────────────────────────────────────────────────────
+  getQuality: (universe = "sp500", top_n = 200) =>
+    apiFetch<QualityResponse>(`/quality/scan?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
 };
+
+// ── Quality Factor types ───────────────────────────────────────────────────────
+
+export interface QualityResult {
+  rank:             number;
+  ticker:           string;
+  name:             string;
+  sector:           string;
+  roic:             number | null;
+  roe:              number | null;
+  roa:              number | null;
+  gross_margin:     number | null;
+  op_margin:        number | null;
+  earnings_growth:  number | null;
+  fcf_ttm:          number | null;
+  fcf_growth:       number | null;
+  gm_trend:         number | null;
+  quality_score:    number | null;
+  momentum_pctile:  number | null;
+  combined_score:   number | null;
+  quality_momentum: boolean;
+}
+
+export interface SectorQuality {
+  sector:      string;
+  avg_quality: number;
+  count:       number;
+}
+
+export interface QualityResponse {
+  results:        QualityResult[];
+  universe_size:  number;
+  computed:       number;
+  sector_quality: SectorQuality[];
+  as_of:          string;
+}
 
 // ── Earnings Drift / PEAD types ───────────────────────────────────────────────
 

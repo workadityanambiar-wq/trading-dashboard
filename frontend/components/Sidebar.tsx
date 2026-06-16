@@ -40,6 +40,7 @@ import {
   FileDown,
   DollarSign,
   FlameKindling,
+  Gem,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -56,6 +57,7 @@ const NAV = [
   { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
   { href: "/crowding",      label: "Crowding",      icon: Users },
   { href: "/earnings-drift", label: "E. Drift / PEAD", icon: Milestone },
+  { href: "/quality",        label: "Quality Factor",  icon: Gem },
   { href: "/macro",         label: "Macro",        icon: Globe },
   { href: "/country-macro", label: "Country Macro", icon: Globe },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },

@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import data, factors, backtest, portfolio, risk, technical, pairs, mt5 as mt5_api, risk_model, regime as regime_api, earnings as earnings_api, institutional as inst_api, expected_return as er_api, crowding as crowding_api, earnings_drift as drift_api
+from app.api import data, factors, backtest, portfolio, risk, technical, pairs, mt5 as mt5_api, risk_model, regime as regime_api, earnings as earnings_api, institutional as inst_api, expected_return as er_api, crowding as crowding_api, earnings_drift as drift_api, quality as quality_api
 from app.api import strategy_builder as strategy_api
 from app.api import alerts as alerts_api
 from app.api import reports as reports_api
@@ -97,6 +97,7 @@ app.include_router(inst_api.router,    prefix="/api/institutional")
 app.include_router(er_api.router,      prefix="/api/expected-return")
 app.include_router(crowding_api.router, prefix="/api/crowding")
 app.include_router(drift_api.router,   prefix="/api/earnings-drift")
+app.include_router(quality_api.router, prefix="/api/quality")
 app.include_router(strategy_api.router, prefix="/api/strategy")
 app.include_router(alerts_api.router,   prefix="/api/alerts")
 app.include_router(reports_api.router,  prefix="/api/reports")
