@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const backendUrl = process.env.BACKEND_URL || "https://trading-dashboard-backend.onrender.com";
+const backendUrl = process.env.BACKEND_URL || "https://carefree-reverence-production.up.railway.app";
 
 const nextConfig = {
   async rewrites() {
