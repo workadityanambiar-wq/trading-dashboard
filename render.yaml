@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: trading-dashboard-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    region: oregon
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: "https://tradingdashboard.vercel.app"
+      - key: MT5_LOGIN
+        value: "5051634908"
+      - key: MT5_PASSWORD
+        value: "Q@Kv7vKc"
+      - key: MT5_SERVER
+        value: "MetaQuotes-Demo"
+      - key: PYTHON_VERSION
+        value: "3.11.0"

@@ -1,0 +1,40 @@
+app: trading-dashboard
+service:
+  name: backend
+  type: web
+  git:
+    repository: github.com/workadityanambiar-wq/tradingdashboard
+    branch: main
+    buildpack:
+      build_command: pip install -r requirements.txt
+      run_command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    root_dir: backend
+  ports:
+    - port: 8000
+      protocol: http
+  routes:
+    - path: /
+      port: 8000
+  env:
+    - key: ALLOWED_ORIGINS
+      value: "https://tradingdashboard.vercel.app"
+    - key: MT5_LOGIN
+      value: "5051634908"
+    - key: MT5_PASSWORD
+      value: "Q@Kv7vKc"
+    - key: MT5_SERVER
+      value: "MetaQuotes-Demo"
+  instance_types:
+    - type: free
+  scaling:
+    min: 0
+    max: 1
+  health_checks:
+    - path: /docs
+      port: 8000
+      interval: 60
+      timeout: 10
+      healthy_threshold: 1
+      unhealthy_threshold: 3
+  regions:
+    - was
