@@ -17,6 +17,7 @@ from app.api import alpha_engine as alpha_api
 from app.api import country_macro as country_macro_api
 from app.api import oil as oil_api
 from app.api import dollar as dollar_api
+from app.api import treasury as treasury_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -109,6 +110,7 @@ app.include_router(alpha_api.router,         prefix="/api/alpha-engine")
 app.include_router(country_macro_api.router, prefix="/api/country-macro")
 app.include_router(oil_api.router,           prefix="/api/oil")
 app.include_router(dollar_api.router,        prefix="/api/dollar")
+app.include_router(treasury_api.router,      prefix="/api/treasury")
 
 
 @app.get("/health")

@@ -64,6 +64,7 @@ const NAV = [
   { href: "/country-macro", label: "Country Macro", icon: Globe },
   { href: "/oil",           label: "Oil Tracker",   icon: Droplets },
   { href: "/dollar",        label: "Dollar Tracker", icon: CircleDollarSign },
+  { href: "/treasury",      label: "Treasury Yields", icon: Landmark },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },
