@@ -43,45 +43,145 @@ import {
   FlameKindling,
   Menu,
   X,
+  ChevronRight,
+  Droplets,
+  TrendingDown,
+  Banknote,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 
-const NAV = [
-  { href: "/watchlist",   label: "Watchlist",    icon: Star },
-  { href: "/",          label: "Overview",  icon: LayoutDashboard },
-  { href: "/setups",    label: "Setups",    icon: Zap },
-  { href: "/rotation",  label: "Rotation",  icon: RotateCcw },
-  { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
-  { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
-  { href: "/earnings",    label: "Earnings",     icon: CalendarDays },
-  { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
-  { href: "/regime",        label: "Regime",       icon: Radar },
-  { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
-  { href: "/crowding",      label: "Crowding",      icon: Users },
-  { href: "/earnings-drift", label: "E. Drift / PEAD", icon: Milestone },
-  { href: "/macro",         label: "Macro",        icon: Globe },
-  { href: "/country-macro", label: "Country Macro", icon: Globe },
-  { href: "/breadth",       label: "Breadth",      icon: Gauge },
-  { href: "/volatility",    label: "Volatility",   icon: Waves },
-  { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },
-  { href: "/smart-money",       label: "Smart Money Flow",  icon: DollarSign },
-  { href: "/options-analytics", label: "Options Analytics", icon: Percent },
-  { href: "/correlations",  label: "Correlations", icon: Network },
-  { href: "/screener",  label: "Screener",  icon: ScanSearch },
-  { href: "/factors",   label: "Factors",   icon: TrendingUp },
-  { href: "/expected-return", label: "Exp. Return", icon: Target },
-  { href: "/intraday",  label: "ST Signals",icon: Activity },
-  { href: "/alerts",        label: "Alerts",         icon: BellRing },
-  { href: "/reports",       label: "Reports",        icon: FileDown },
-  { href: "/strategy-builder", label: "Strategy Builder", icon: Wand2 },
-  { href: "/backtest",  label: "Backtester",icon: FlaskConical },
-  { href: "/portfolio",    label: "Portfolio",    icon: PieChart },
-  { href: "/risk",         label: "Risk",         icon: ShieldAlert },
-  { href: "/risk-engine",  label: "Risk Engine",  icon: Layers },
-  { href: "/pairs",        label: "Pair Trading", icon: GitCompare },
-  { href: "/risk-model",   label: "PCA Risk Model", icon: SigmaSquare },
-  { href: "/mt5",          label: "MT5 Terminal", icon: MonitorDot },
+type NavItem = { href: string; label: string; icon: React.ElementType };
+type Section = { label: string; items: NavItem[] };
+
+const SECTIONS: Section[] = [
+  {
+    label: "MACRO & GLOBAL",
+    items: [
+      { href: "/",            label: "Overview",       icon: LayoutDashboard },
+      { href: "/macro",       label: "Macro",          icon: Globe },
+      { href: "/country-macro", label: "Country Macro", icon: Globe },
+      { href: "/regime",      label: "Regime",         icon: Radar },
+      { href: "/crude-oil",   label: "Crude Oil",      icon: Droplets },
+      { href: "/dxy",         label: "US Dollar (DXY)", icon: DollarSign },
+      { href: "/treasuries",  label: "Treasuries",     icon: Banknote },
+    ],
+  },
+  {
+    label: "EQUITIES",
+    items: [
+      { href: "/watchlist",    label: "Watchlist",     icon: Star },
+      { href: "/rotation",     label: "Sector Rotation", icon: RotateCcw },
+      { href: "/breadth",      label: "Breadth",       icon: Gauge },
+      { href: "/rs",           label: "RS Rankings",   icon: BarChart3 },
+      { href: "/screener",     label: "Screener",      icon: ScanSearch },
+      { href: "/crowding",     label: "Crowding",      icon: Users },
+      { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
+      { href: "/smart-money",  label: "Smart Money",   icon: TrendingDown },
+    ],
+  },
+  {
+    label: "ANALYTICS & SIGNALS",
+    items: [
+      { href: "/setups",          label: "Setups",          icon: Zap },
+      { href: "/prebreakout",     label: "Pre-Breakout",    icon: Crosshair },
+      { href: "/mtf",             label: "Multi-TF",        icon: AlignCenter },
+      { href: "/alpha-engine",    label: "Alpha Engine",    icon: FlameKindling },
+      { href: "/factors",         label: "Factors",         icon: TrendingUp },
+      { href: "/expected-return", label: "Exp. Return",     icon: Target },
+      { href: "/intraday",        label: "ST Signals",      icon: Activity },
+      { href: "/volatility",      label: "Volatility",      icon: Waves },
+      { href: "/correlations",    label: "Correlations",    icon: Network },
+      { href: "/options-analytics", label: "Options",       icon: Percent },
+      { href: "/earnings",        label: "Earnings",        icon: CalendarDays },
+      { href: "/earnings-drift",  label: "Earnings Drift",  icon: Milestone },
+      { href: "/pairs",           label: "Pair Trading",    icon: GitCompare },
+    ],
+  },
+  {
+    label: "PORTFOLIO & RISK",
+    items: [
+      { href: "/portfolio",        label: "Portfolio",        icon: PieChart },
+      { href: "/risk",             label: "Risk",             icon: ShieldAlert },
+      { href: "/risk-engine",      label: "Risk Engine",      icon: Layers },
+      { href: "/risk-model",       label: "PCA Risk Model",   icon: SigmaSquare },
+      { href: "/backtest",         label: "Backtester",       icon: FlaskConical },
+      { href: "/strategy-builder", label: "Strategy Builder", icon: Wand2 },
+      { href: "/alerts",           label: "Alerts",           icon: BellRing },
+      { href: "/reports",          label: "Reports",          icon: FileDown },
+      { href: "/mt5",              label: "MT5 Terminal",     icon: MonitorDot },
+    ],
+  },
 ];
+
+function SidebarSection({
+  section,
+  pathname,
+  defaultOpen,
+}: {
+  section: Section;
+  pathname: string;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  // Re-open if active route is inside this section
+  useEffect(() => {
+    if (section.items.some((i) => i.href === pathname)) {
+      setOpen(true);
+    }
+  }, [pathname, section.items]);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 mt-1 group"
+      >
+        <span className="text-[10px] font-semibold tracking-widest text-text-muted/60 group-hover:text-text-muted transition-colors">
+          {section.label}
+        </span>
+        <ChevronRight
+          size={11}
+          className={cn(
+            "text-text-muted/40 transition-transform duration-200 group-hover:text-text-muted",
+            open && "rotate-90"
+          )}
+        />
+      </button>
+
+      {/* Animated collapse using CSS grid trick */}
+      <div
+        className={cn(
+          "grid transition-all duration-200 ease-in-out",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-0.5 pb-1">
+            {section.items.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-colors",
+                    active
+                      ? "bg-surface-2 text-text-primary"
+                      : "text-text-muted hover:text-text-primary hover:bg-surface-2"
+                  )}
+                >
+                  <Icon size={13} strokeWidth={active ? 2.5 : 1.8} className="shrink-0" />
+                  <span className="truncate">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -89,12 +189,10 @@ export function Sidebar() {
   const { user, loading, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Close drawer on route change
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
-  // Close drawer on Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setIsOpen(false);
@@ -103,7 +201,6 @@ export function Sidebar() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // Prevent body scroll while mobile drawer is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -123,7 +220,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Backdrop — mobile only, visible when drawer is open */}
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/60 md:hidden"
@@ -132,7 +228,6 @@ export function Sidebar() {
         />
       )}
 
-      {/* Hamburger button — mobile only, shown when drawer is closed */}
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
@@ -145,7 +240,6 @@ export function Sidebar() {
         <Menu size={18} />
       </button>
 
-      {/* Sidebar — fixed overlay on mobile, static flex-child on desktop */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 w-64 flex flex-col border-r border-border bg-surface",
@@ -155,7 +249,7 @@ export function Sidebar() {
         )}
       >
         {/* Header */}
-        <div className="px-4 py-5 border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-4 py-4 border-b border-border flex items-center justify-between shrink-0">
           <div>
             <span className="text-sm font-semibold tracking-widest text-accent uppercase">
               Quant
@@ -166,7 +260,6 @@ export function Sidebar() {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
-            {/* Close button — mobile only */}
             <button
               onClick={() => setIsOpen(false)}
               className="md:hidden p-1 rounded text-text-muted hover:text-text-primary transition-colors"
@@ -177,26 +270,16 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Nav links */}
-        <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
-                  active
-                    ? "bg-surface-2 text-text-primary"
-                    : "text-text-muted hover:text-text-primary hover:bg-surface-2"
-                )}
-              >
-                <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
-                {label}
-              </Link>
-            );
-          })}
+        {/* Sectioned nav */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
+          {SECTIONS.map((section) => (
+            <SidebarSection
+              key={section.label}
+              section={section}
+              pathname={pathname}
+              defaultOpen
+            />
+          ))}
         </nav>
 
         {/* Footer */}
@@ -206,10 +289,7 @@ export function Sidebar() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 px-2 py-1.5">
                   <UserCircle size={14} className="text-accent shrink-0" />
-                  <span
-                    className="text-xs text-text-muted truncate"
-                    title={user.email}
-                  >
+                  <span className="text-xs text-text-muted truncate" title={user.email}>
                     {user.email}
                   </span>
                 </div>
