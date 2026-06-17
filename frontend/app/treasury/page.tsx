@@ -340,8 +340,8 @@ function CurveTab({ d }: { d: Curve }) {
             <Tooltip contentStyle={{background:"#111827",border:"1px solid #1f2937",borderRadius:8}}
                      formatter={(v:number)=>[`${v?.toFixed(3)}%`]}/>
             <Legend wrapperStyle={{fontSize:11,color:MU}}/>
-            {[{label:"Today",data:d.current_curve},...(d.historical_curves||[])].map((hc,i)=>(
-              <Line key={hc.label} data={hc.data} type="monotone" dataKey="yield"
+            {[{label:"Today",curve:d.current_curve},...(d.historical_curves||[])].map((hc,i)=>(
+              <Line key={hc.label} data={hc.curve} type="monotone" dataKey="yield"
                     stroke={HIST_COLORS[i]} strokeWidth={i===0?2.5:1.5}
                     strokeDasharray={i===0?undefined:"4 3"} dot={i===0} name={hc.label}/>
             ))}
@@ -381,7 +381,9 @@ function PerformanceTab({ d }: { d: Performance }) {
   const pLabels = ["1D","1W","1M","3M","6M","YTD"];
 
   const barData = MATURITIES.filter(m=>perf[m]).map(m=>({
-    mat:m, ...Object.fromEntries(periods.map((p,i)=>[pLabels[i], perf[m][p]]))
+    mat: m,
+    "1D": perf[m].chg_1d, "1W": perf[m].chg_1w, "1M": perf[m].chg_1m,
+    "3M": perf[m].chg_3m, "6M": perf[m].chg_6m, "YTD": perf[m].chg_ytd,
   }));
 
   return (
@@ -443,7 +445,7 @@ function PerformanceTab({ d }: { d: Performance }) {
             <Tooltip contentStyle={{background:"#111827",border:"1px solid #1f2937",borderRadius:8}}
                      formatter={(v:number)=>[`${v?.toFixed(1)}bp`]}/>
             <Bar dataKey="1M" radius={[3,3,0,0]}>
-              {barData.map((e,i)=><Cell key={i} fill={e["1M"]>0?R:G}/>)}
+              {barData.map((e,i)=><Cell key={i} fill={(e["1M"] as number)>0?R:G}/>)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
