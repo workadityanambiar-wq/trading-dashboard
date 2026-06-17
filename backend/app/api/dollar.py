@@ -96,24 +96,25 @@ def _close_series(df):
 
 def _last(df):
     if df is None or df.empty: return 0.0
-    return float(df["Close"].dropna().iloc[-1])
+    c = _close_series(df)
+    return float(c.iloc[-1]) if len(c) else 0.0
 
 def _chg(df, days):
     if df is None or df.empty: return 0.0
-    c = df["Close"].dropna()
+    c = _close_series(df)
     if len(c) <= days: return 0.0
     return float((c.iloc[-1] / c.iloc[-days] - 1) * 100)
 
 def _ytd(df):
     if df is None or df.empty: return 0.0
-    c = df["Close"].dropna()
+    c = _close_series(df)
     mask = c.index.year < datetime.now().year
     if not mask.any(): return 0.0
     return float((c.iloc[-1] / float(c[mask].iloc[-1]) - 1) * 100)
 
 def _rsi(df, period=14):
     if df is None or df.empty: return 50.0
-    c = df["Close"].dropna()
+    c = _close_series(df)
     d = c.diff()
     up   = d.clip(lower=0).ewm(span=period, adjust=False).mean()
     down = (-d.clip(upper=0)).ewm(span=period, adjust=False).mean()
@@ -122,7 +123,7 @@ def _rsi(df, period=14):
 
 def _macd(df):
     if df is None or df.empty: return 0.0, 0.0, 0.0
-    c = df["Close"].dropna()
+    c = _close_series(df)
     m = c.ewm(span=12, adjust=False).mean() - c.ewm(span=26, adjust=False).mean()
     s = m.ewm(span=9, adjust=False).mean()
     return float(m.iloc[-1]), float(s.iloc[-1]), float((m - s).iloc[-1])
@@ -146,19 +147,19 @@ def _adx(df, period=14):
 
 def _bbands(df, period=20, mult=2.0):
     if df is None or df.empty: return 0.0, 0.0, 0.0
-    c = df["Close"].dropna()
+    c = _close_series(df)
     mid = c.rolling(period).mean(); std = c.rolling(period).std()
     return float((mid+mult*std).iloc[-1]), float(mid.iloc[-1]), float((mid-mult*std).iloc[-1])
 
 def _ma(df, period):
     if df is None or df.empty: return None
-    c = df["Close"].dropna()
+    c = _close_series(df)
     if len(c) < period: return None
     return float(c.rolling(period).mean().iloc[-1])
 
 def _vol30(df):
     if df is None or df.empty: return 0.0
-    return float(df["Close"].dropna().pct_change().dropna().tail(30).std() * np.sqrt(252) * 100)
+    return float(_close_series(df).pct_change().dropna().tail(30).std() * np.sqrt(252) * 100)
 
 def _corr(s1, s2, period):
     r1 = s1.pct_change().dropna(); r2 = s2.pct_change().dropna()
@@ -168,7 +169,7 @@ def _corr(s1, s2, period):
 
 # ── Composite Score ───────────────────────────────────────────────────────────
 def _strength_score(dxy_df, currency_dfs):
-    c = dxy_df["Close"].dropna()
+    c = _close_series(dxy_df)
     price = float(c.iloc[-1])
     ma20 = _ma(dxy_df, 20); ma50 = _ma(dxy_df, 50); ma200 = _ma(dxy_df, 200)
     trend_pts = (int(bool(ma20 and price > ma20)) + int(bool(ma50 and price > ma50)) + int(bool(ma200 and price > ma200))) * 10
@@ -191,7 +192,7 @@ def _strength_score(dxy_df, currency_dfs):
 
 # ── Conviction Score ──────────────────────────────────────────────────────────
 def _conviction(dxy_df, us10y, real_yield, cuts_priced, rrp_b, net_pos):
-    c = dxy_df["Close"].dropna(); price = float(c.iloc[-1])
+    c = _close_series(dxy_df); price = float(c.iloc[-1])
     ma20 = _ma(dxy_df, 20) or price; ma50 = _ma(dxy_df, 50) or price; ma200 = _ma(dxy_df, 200) or price
     trend = (int(price > ma20) + int(price > ma50) + int(price > ma200)) / 3 * 100
     ret_1m = _chg(dxy_df, 21); ret_3m = _chg(dxy_df, 63); ret_6m = _chg(dxy_df, 126)
@@ -217,7 +218,7 @@ def _conviction(dxy_df, us10y, real_yield, cuts_priced, rrp_b, net_pos):
 
 # ── Regime ────────────────────────────────────────────────────────────────────
 def _regime(dxy_df, us10y_df, spy_df):
-    c = dxy_df["Close"].dropna()
+    c = _close_series(dxy_df)
     strong = float(c.iloc[-1]) > float(c.rolling(50).mean().iloc[-1])
     rising_yields = _chg(us10y_df, 21) > 0 if us10y_df is not None else False
     rising_growth = _chg(spy_df, 63) > 0 if spy_df is not None else True
@@ -244,7 +245,7 @@ def _regime(dxy_df, us10y_df, spy_df):
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 def _signals(dxy_df, us10y, real_yield, net_pos):
-    c = dxy_df["Close"].dropna(); price = float(c.iloc[-1])
+    c = _close_series(dxy_df); price = float(c.iloc[-1])
     ma50 = float(c.rolling(50).mean().iloc[-1]); ma200 = float(c.rolling(200).mean().iloc[-1])
     rsi_v = _rsi(dxy_df); sigs = []
     prev_above_50  = float(c.iloc[-6]) > float(c.rolling(50).mean().iloc[-6])
@@ -277,7 +278,7 @@ def _signals(dxy_df, us10y, real_yield, net_pos):
 
 # ── Backtest ──────────────────────────────────────────────────────────────────
 def _backtest(dxy_df):
-    c = dxy_df["Close"].dropna()
+    c = _close_series(dxy_df)
     if len(c) < 200: return []
     ma20 = c.rolling(20).mean(); ma50 = c.rolling(50).mean(); ma200 = c.rolling(200).mean()
     ts = (c > ma20).astype(int)*33 + (c > ma50).astype(int)*33 + (c > ma200).astype(int)*34
@@ -299,7 +300,7 @@ def overview():
     if cached: return cached
     dxy = _dl(DXY_SYM, "2y")
     if dxy is None: return {"error": "DXY unavailable"}
-    c = dxy["Close"].dropna(); price = float(c.iloc[-1])
+    c = _close_series(dxy); price = float(c.iloc[-1])
     ma20 = _ma(dxy,20); ma50 = _ma(dxy,50); ma200 = _ma(dxy,200)
     rsi_v = _rsi(dxy); macd_v, macd_s, macd_h = _macd(dxy)
     adx_v, di_p, di_m = _adx(dxy); bb_u, bb_m, bb_l = _bbands(dxy)
@@ -415,14 +416,14 @@ def cross_asset():
     if cached: return cached
     dxy = _dl(DXY_SYM,"1y")
     if dxy is None: return {"error":"DXY unavailable"}
-    dxy_c = dxy["Close"].dropna(); rows = []
+    dxy_c = _close_series(dxy); rows = []
     CLASSES = {"SPY":"Equities","QQQ":"Equities","TLT":"Bonds",
                "Gold":"Commodities","Silver":"Commodities","Oil":"Commodities","Copper":"Commodities",
                "Bitcoin":"Crypto","Ethereum":"Crypto"}
     for name, sym in CROSS_ASSET_SYMS.items():
         df = _dl(sym,"1y")
         if df is None: continue
-        ac = df["Close"].dropna()
+        ac = _close_series(df)
         c30 = _corr(dxy_c,ac,30); c90 = _corr(dxy_c,ac,90); c15 = _corr(dxy_c,ac,15)
         trend = ("Strengthening" if abs(c15-c90)>0.1 and c15>c90 else
                  "Weakening" if abs(c15-c90)>0.1 and c15<c90 else "Stable")
@@ -486,7 +487,7 @@ def signals():
     try:
         dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","6mo")
         if dxy is None: return {"signals":[],"error":"DXY unavailable","count":0,"as_of":"n/a"}
-        us10y_val = _last(us10y_df) if us10y_df else 4.25
+        us10y_val = _last(us10y_df) if us10y_df is not None else 4.25
         real_yield = us10y_val - BREAKEVEN
         sigs = _signals(dxy, us10y_val, real_yield, POSITIONING_STATIC["net_contracts"])
         result = {"signals":sigs,"count":len(sigs),"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
@@ -503,13 +504,12 @@ def conviction():
     try:
         dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","2y")
         if dxy is None: return {"error":"DXY unavailable"}
-        us10y_val = _last(us10y_df) if us10y_df else 4.25
+        us10y_val = _last(us10y_df) if us10y_df is not None else 4.25
         real_yield = us10y_val - BREAKEVEN
         conv = _conviction(dxy, us10y_val, real_yield, FED_STATIC["cuts_priced_2026"],
                            LIQUIDITY_STATIC["rrp_b"], POSITIONING_STATIC["net_contracts"])
         bt = _backtest(dxy)
-        # Build weekly conviction history using positional index to avoid get_loc issues
-        close = dxy["Close"].dropna()
+        close = _close_series(dxy)
         n = len(close)
         history = []
         step = max(1, n // 13)
