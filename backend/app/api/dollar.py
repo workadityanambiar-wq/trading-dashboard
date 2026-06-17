@@ -68,11 +68,31 @@ def _dl(sym, period="2y"):
         if df.empty:
             return None
         if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
+            lvl0 = df.columns.get_level_values(0)
+            lvl1 = df.columns.get_level_values(1)
+            # Use whichever level contains standard OHLCV names
+            if "Close" in lvl0:
+                df.columns = lvl0
+            elif "Close" in lvl1:
+                df.columns = lvl1
+            else:
+                df.columns = lvl0
+        # Drop any duplicate column names
+        df = df.loc[:, ~df.columns.duplicated()]
         return df
     except Exception as e:
         logger.warning(f"Download {sym}: {e}")
         return None
+
+
+def _close_series(df):
+    """Always return a 1-D Series from a DataFrame's Close column."""
+    if df is None or df.empty:
+        return pd.Series(dtype=float)
+    c = df["Close"] if "Close" in df.columns else df.iloc[:, 0]
+    if isinstance(c, pd.DataFrame):
+        c = c.iloc[:, 0]
+    return c.dropna()
 
 def _last(df):
     if df is None or df.empty: return 0.0
