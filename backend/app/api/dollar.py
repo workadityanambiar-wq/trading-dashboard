@@ -463,35 +463,48 @@ def regime():
 def signals():
     cached = _get("dxy_signals")
     if cached: return cached
-    dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","6mo")
-    if dxy is None: return {"signals":[],"error":"DXY unavailable"}
-    us10y_val = _last(us10y_df) if us10y_df else 4.25
-    real_yield = us10y_val - BREAKEVEN
-    sigs = _signals(dxy, us10y_val, real_yield, POSITIONING_STATIC["net_contracts"])
-    result = {"signals":sigs,"count":len(sigs),"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    _set("dxy_signals",result); return result
+    try:
+        dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","6mo")
+        if dxy is None: return {"signals":[],"error":"DXY unavailable","count":0,"as_of":"n/a"}
+        us10y_val = _last(us10y_df) if us10y_df else 4.25
+        real_yield = us10y_val - BREAKEVEN
+        sigs = _signals(dxy, us10y_val, real_yield, POSITIONING_STATIC["net_contracts"])
+        result = {"signals":sigs,"count":len(sigs),"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
+        _set("dxy_signals",result); return result
+    except Exception as e:
+        logger.error(f"signals error: {e}", exc_info=True)
+        return {"signals":[{"type":"info","title":"Signal Engine Unavailable","desc":str(e),"severity":"low"}],"count":1,"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
 
 
 @router.get("/conviction")
 def conviction():
     cached = _get("dxy_conviction")
     if cached: return cached
-    dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","2y")
-    if dxy is None: return {"error":"DXY unavailable"}
-    us10y_val = _last(us10y_df) if us10y_df else 4.25
-    real_yield = us10y_val - BREAKEVEN
-    conv = _conviction(dxy, us10y_val, real_yield, FED_STATIC["cuts_priced_2026"],
-                       LIQUIDITY_STATIC["rrp_b"], POSITIONING_STATIC["net_contracts"])
-    bt = _backtest(dxy)
-    c = dxy["Close"].dropna()
-    weekly = c.iloc[::5].tail(13)
-    history = []
-    for ts, price_ in weekly.items():
-        loc = c.index.get_loc(ts)
-        if loc < 200: continue
-        sub = c.iloc[:loc+1]
-        ma20_=float(sub.rolling(20).mean().iloc[-1]); ma50_=float(sub.rolling(50).mean().iloc[-1]); ma200_=float(sub.rolling(200).mean().iloc[-1])
-        s_ = int(price_>ma20_)*33 + int(price_>ma50_)*33 + int(price_>ma200_)*34
-        history.append({"date":pd.Timestamp(ts).strftime("%m/%d"),"score":s_})
-    result = {**conv,"backtest":bt,"history":history,"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
-    _set("dxy_conviction",result); return result
+    try:
+        dxy = _dl(DXY_SYM,"2y"); us10y_df = _dl("^TNX","2y")
+        if dxy is None: return {"error":"DXY unavailable"}
+        us10y_val = _last(us10y_df) if us10y_df else 4.25
+        real_yield = us10y_val - BREAKEVEN
+        conv = _conviction(dxy, us10y_val, real_yield, FED_STATIC["cuts_priced_2026"],
+                           LIQUIDITY_STATIC["rrp_b"], POSITIONING_STATIC["net_contracts"])
+        bt = _backtest(dxy)
+        # Build weekly conviction history using positional index to avoid get_loc issues
+        close = dxy["Close"].dropna()
+        n = len(close)
+        history = []
+        step = max(1, n // 13)
+        for i in range(max(0, n - step*12), n, step):
+            if i < 200: continue
+            sub = close.iloc[:i+1]
+            ma20_ = float(sub.rolling(20).mean().iloc[-1])
+            ma50_ = float(sub.rolling(50).mean().iloc[-1])
+            ma200_ = float(sub.rolling(200).mean().iloc[-1])
+            price_ = float(sub.iloc[-1])
+            s_ = int(price_ > ma20_)*33 + int(price_ > ma50_)*33 + int(price_ > ma200_)*34
+            dt = pd.Timestamp(close.index[i])
+            history.append({"date": dt.strftime("%m/%d"), "score": s_})
+        result = {**conv,"backtest":bt,"history":history,"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
+        _set("dxy_conviction",result); return result
+    except Exception as e:
+        logger.error(f"conviction error: {e}", exc_info=True)
+        return {"conviction":50,"signal":"Neutral","components":{},"weights":{},"backtest":[],"history":[],"as_of":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),"error":str(e)}
