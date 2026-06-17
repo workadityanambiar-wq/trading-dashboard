@@ -44,11 +44,11 @@ FOREIGN_YIELDS = {"Germany 10Y": 2.42, "Japan 10Y": 1.52, "UK 10Y": 4.48, "Canad
 BREAKEVEN = 2.22
 
 FED_STATIC = {
-    "current_rate": 4.25, "target_range": "4.25–4.50",
-    "next_meeting": "2026-07-30",
-    "cut_prob": 58, "hike_prob": 4, "hold_prob": 38,
-    "cuts_priced_2026": 2.3, "hikes_priced_2026": 0.0,
-    "dot_plot_eoy": 3.875, "market_rate_eoy": 3.625,
+    "current_rate": 3.625, "target_range": "3.50–3.75",
+    "next_meeting": "2026-07-29",
+    "cut_prob": 0, "hike_prob": 8, "hold_prob": 92,
+    "cuts_priced_2026": 0.0, "hikes_priced_2026": 0.1,
+    "dot_plot_eoy": 3.375, "market_rate_eoy": 3.625,
 }
 LIQUIDITY_STATIC = {
     "fed_balance_sheet_b": 6820, "tga_b": 650, "rrp_b": 95,
