@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,8 @@ import {
   FileDown,
   DollarSign,
   FlameKindling,
+  Menu,
+  X,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -84,6 +87,33 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Close drawer on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  // Close drawer on Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Prevent body scroll while mobile drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   async function handleSignOut() {
     await signOut();
@@ -92,73 +122,118 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-52 shrink-0 flex flex-col border-r border-border bg-surface">
-      <div className="px-4 py-5 border-b border-border flex items-center justify-between">
-        <div>
-          <span className="text-sm font-semibold tracking-widest text-accent uppercase">
-            Quant
-          </span>
-          <span className="text-sm font-semibold tracking-widest text-text-muted uppercase">
-            Desk
-          </span>
-        </div>
-        <NotificationBell />
-      </div>
+    <>
+      {/* Backdrop — mobile only, visible when drawer is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 md:hidden"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
-      <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
-                active
-                  ? "bg-surface-2 text-text-primary"
-                  : "text-text-muted hover:text-text-primary hover:bg-surface-2"
-              )}
-            >
-              <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="px-3 py-3 border-t border-border space-y-2">
-        {!loading && (
-          user ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 px-2 py-1.5">
-                <UserCircle size={14} className="text-accent shrink-0" />
-                <span
-                  className="text-xs text-text-muted truncate"
-                  title={user.email}
-                >
-                  {user.email}
-                </span>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
-              >
-                <LogOut size={13} />
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
-            >
-              <LogIn size={13} />
-              Sign in
-            </Link>
-          )
+      {/* Hamburger button — mobile only, shown when drawer is closed */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          "md:hidden fixed top-3 left-3 z-50 p-2 rounded-md",
+          "bg-surface border border-border text-text-muted hover:text-text-primary transition-colors",
+          isOpen && "hidden"
         )}
-        <div className="text-xs text-text-muted px-2">Data: yfinance</div>
-      </div>
-    </aside>
+        aria-label="Open navigation"
+      >
+        <Menu size={18} />
+      </button>
+
+      {/* Sidebar — fixed overlay on mobile, static flex-child on desktop */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 w-64 flex flex-col border-r border-border bg-surface",
+          "transition-transform duration-300 ease-in-out",
+          "md:relative md:w-52 md:shrink-0 md:translate-x-0 md:transition-none",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Header */}
+        <div className="px-4 py-5 border-b border-border flex items-center justify-between shrink-0">
+          <div>
+            <span className="text-sm font-semibold tracking-widest text-accent uppercase">
+              Quant
+            </span>
+            <span className="text-sm font-semibold tracking-widest text-text-muted uppercase">
+              Desk
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            {/* Close button — mobile only */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="md:hidden p-1 rounded text-text-muted hover:text-text-primary transition-colors"
+              aria-label="Close navigation"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
+          {NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
+                  active
+                    ? "bg-surface-2 text-text-primary"
+                    : "text-text-muted hover:text-text-primary hover:bg-surface-2"
+                )}
+              >
+                <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-3 py-3 border-t border-border space-y-2 shrink-0">
+          {!loading && (
+            user ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 px-2 py-1.5">
+                  <UserCircle size={14} className="text-accent shrink-0" />
+                  <span
+                    className="text-xs text-text-muted truncate"
+                    title={user.email}
+                  >
+                    {user.email}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+                >
+                  <LogOut size={13} />
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+              >
+                <LogIn size={13} />
+                Sign in
+              </Link>
+            )
+          )}
+          <div className="text-xs text-text-muted px-2">Data: yfinance</div>
+        </div>
+      </aside>
+    </>
   );
 }

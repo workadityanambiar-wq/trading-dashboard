@@ -14,10 +14,14 @@
 
 html,
 body {
-  max-width: 100vw;
   overflow-x: hidden;
   background-color: #0a0a0f;
   color: #e8e8f0;
+}
+
+/* Prevent tap highlight flicker on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
