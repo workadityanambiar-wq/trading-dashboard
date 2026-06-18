@@ -7,6 +7,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import {
   LayoutDashboard,
   ScanSearch,
+  Cpu,
   TrendingUp,
   Target,
   FlaskConical,
@@ -72,6 +73,7 @@ const NAV = [
   { href: "/dollar",        label: "Dollar Tracker", icon: CircleDollarSign },
   { href: "/treasury",      label: "Treasury Yields", icon: Landmark },
   { href: "/metals",        label: "Metals",          icon: Gem },
+  { href: "/memory",        label: "Memory Intel",    icon: Cpu },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },
