@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import {
   Zap, Search, TrendingUp, BarChart2, Eye, FileText,
   Star, Globe, Activity, ChevronDown, ChevronUp,
@@ -510,16 +511,17 @@ function VolPanel({ d }: { d: VolDetail }) {
 
 // ── Rank table row ─────────────────────────────────────────────────────────────
 
-function RankTableRow({ row, rank, meta, onSelect }: {
+function RankTableRow({ row, rank, meta, onSelect, onOpenDrawer }: {
   row: RankRow; rank: number;
   meta: Record<string, FactorMeta>;
   onSelect: (t: string) => void;
+  onOpenDrawer: (t: string) => void;
 }) {
   const scoreCol = scoreColor(row.score);
   const factors  = FACTOR_ORDER.filter(k => k in row.factor_scores);
 
   return (
-    <tr className="border-b border-border/40 hover:bg-surface-2 group transition-colors">
+    <tr onClick={() => onOpenDrawer(row.ticker)} className="border-b border-border/40 hover:bg-surface-2 group transition-colors cursor-pointer">
       {/* Rank */}
       <td className="py-3 pl-4 pr-2">
         <span className={`text-sm font-bold ${rank <= 3 ? "text-accent" : "text-text-muted"}`}>
@@ -529,7 +531,7 @@ function RankTableRow({ row, rank, meta, onSelect }: {
       {/* Ticker + sector */}
       <td className="py-3 pr-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => onSelect(row.ticker)}
+          <button onClick={e => { e.stopPropagation(); onSelect(row.ticker); }}
             className="font-bold text-sm text-text-primary hover:text-accent transition-colors">
             {row.ticker}
           </button>
@@ -607,6 +609,7 @@ const PERIODS = [
 ];
 
 export default function AlphaEnginePage() {
+  const [drawer, setDrawer]         = useState<DrawerConfig | null>(null);
   const [tab, setTab]               = useState<"single"|"rank">("single");
   const [ticker, setTicker]         = useState("NVDA");
   const [period, setPeriod]         = useState(252);
@@ -1001,6 +1004,7 @@ export default function AlphaEnginePage() {
                       rank={i + 1}
                       meta={rankData.factor_meta}
                       onSelect={sym => { setTicker(sym); analyze(sym); }}
+                      onOpenDrawer={sym => setDrawer({ fetchUrl: `/api/chart/stock/${sym}`, color: "#6366f1" })}
                     />
                   ))}
                 </tbody>
@@ -1091,6 +1095,8 @@ export default function AlphaEnginePage() {
           </div>
         </div>
       )}
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

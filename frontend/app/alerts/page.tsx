@@ -6,6 +6,7 @@ import {
   ShieldAlert, Zap, BarChart3, Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 export default function AlertsPage() {
   const [tab, setTab] = useState<"triggers" | "manage" | "create">("triggers");
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const [alerts, setAlerts]   = useState<AlertDef[]>([]);
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [conditions, setConditions] = useState<ConditionDef[]>([]);
@@ -277,7 +279,8 @@ export default function AlertsPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-text-primary">{trig.ticker}</span>
+                      <span className="font-semibold text-text-primary cursor-pointer hover:text-accent transition-colors"
+                        onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${trig.ticker}`, color: "#6366f1" })}>{trig.ticker}</span>
                       <SignalBadge type={trig.signal_type} />
                       <span className="text-xs text-text-muted capitalize px-1.5 py-0.5 bg-surface-2 rounded">
                         {trig.category}
@@ -348,7 +351,8 @@ export default function AlertsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-text-primary text-sm">{alert.ticker}</span>
+                      <span className="font-semibold text-text-primary text-sm cursor-pointer hover:text-accent transition-colors"
+                        onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${alert.ticker}`, color: "#6366f1" })}>{alert.ticker}</span>
                       <span className="text-xs text-text-muted">—</span>
                       <span className="text-xs text-text-primary truncate">{alert.name}</span>
                       {alert.repeat && (
@@ -518,6 +522,7 @@ export default function AlertsPage() {
           </div>
         </form>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

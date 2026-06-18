@@ -10,6 +10,7 @@ import {
 import { api, QualityResult, SectorQuality } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Gem, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -270,6 +271,7 @@ function ExpandedDetail({ row }: { row: QualityResult }) {
 
 function QualityRow({ row, rank }: { row: QualityResult; rank: number }) {
   const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const gmTrendStr = row.gm_trend != null
     ? `${row.gm_trend >= 0 ? "+" : ""}${row.gm_trend.toFixed(1)}pp`
     : "—";
@@ -283,7 +285,7 @@ function QualityRow({ row, rank }: { row: QualityResult; rank: number }) {
         <td className="px-3 py-2 text-xs text-text-muted w-8">{rank}</td>
         <td className="px-3 py-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-mono font-semibold text-sm text-accent">{row.ticker}</span>
+            <span className="font-mono font-semibold text-sm text-accent" onClick={e => { e.stopPropagation(); setDrawer({ fetchUrl: `/api/chart/stock/${row.ticker}`, color: "#6366f1" }); }}>{row.ticker}</span>
             {row.quality_momentum && (
               <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 rounded font-semibold flex items-center gap-0.5">
                 <Zap size={8} /> Q+M
@@ -348,6 +350,7 @@ function QualityRow({ row, rank }: { row: QualityResult; rank: number }) {
         </td>
       </tr>
       {open && <ExpandedDetail row={row} />}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </>
   );
 }

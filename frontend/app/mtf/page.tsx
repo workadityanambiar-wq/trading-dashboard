@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type MTFSignal } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, AlignCenter } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ const SORT_OPTIONS = [
 export default function MTFPage() {
   const [page, setPage]         = useState(1);
   const [minAlign, setMinAlign] = useState(2);
+  const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
   const [sortBy, setSortBy]     = useState("mtf_score");
   const [universe, setUniverse] = useState("sp500");
 
@@ -246,8 +248,9 @@ export default function MTFPage() {
             {results.map((r: MTFSignal, i: number) => (
               <tr
                 key={r.ticker}
+                onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" })}
                 className={cn(
-                  "border-b border-border/50 hover:bg-surface-2/50 transition-colors",
+                  "border-b border-border/50 hover:bg-surface-2/50 transition-colors cursor-pointer",
                   i % 2 === 0 ? "bg-surface" : "bg-surface/50"
                 )}
               >
@@ -398,6 +401,8 @@ export default function MTFPage() {
           <span className="font-medium text-emerald-400 ml-2">3/3 full alignment</span> = highest-quality trend confirmation.
         </div>
       </div>
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

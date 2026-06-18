@@ -9,6 +9,7 @@ import {
 import { api, DriftResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Milestone, Star, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -294,6 +295,7 @@ function ExpandedDetail({ row }: { row: DriftResult }) {
 
 function DriftRow({ row, rank }: { row: DriftResult; rank: number }) {
   const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   return (
     <>
@@ -304,7 +306,7 @@ function DriftRow({ row, rank }: { row: DriftResult; rank: number }) {
         <td className="px-3 py-2 text-xs text-text-muted w-8">{rank}</td>
         <td className="px-3 py-2">
           <div className="flex items-center gap-1.5">
-            <span className="font-mono font-semibold text-sm text-accent">{row.ticker}</span>
+            <span className="font-mono font-semibold text-sm text-accent" onClick={e => { e.stopPropagation(); setDrawer({ fetchUrl: `/api/chart/stock/${row.ticker}`, color: "#6366f1" }); }}>{row.ticker}</span>
             {row.sweet_spot && (
               <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1 rounded font-semibold">
                 SWEET SPOT
@@ -345,6 +347,7 @@ function DriftRow({ row, rank }: { row: DriftResult; rank: number }) {
         </td>
       </tr>
       {open && <ExpandedDetail row={row} />}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </>
   );
 }

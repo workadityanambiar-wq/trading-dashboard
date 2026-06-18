@@ -11,6 +11,7 @@ import { EfficientFrontier } from "@/components/charts/EfficientFrontier";
 import { CorrelationHeatmap } from "@/components/charts/CorrelationHeatmap";
 import { cn, formatPct } from "@/lib/utils";
 import { Play, RefreshCw, PieChart } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 const METHODS = [
   { value: "equal_weight", label: "Equal Weight" },
@@ -95,13 +96,16 @@ function AllocationTable({
   allocations: Record<string, number>;
   method: string;
 }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const sorted = Object.entries(allocations).sort((a, b) => b[1] - a[1]);
   const color = METHOD_COLORS[method] ?? "#6366f1";
 
   return (
+    <>
     <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
       {sorted.map(([ticker, w]) => (
-        <div key={ticker} className="flex items-center gap-2 text-xs">
+        <div key={ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${ticker}`, color })}
+          className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition-opacity">
           <span className="w-12 text-right font-mono text-text-primary shrink-0">{ticker}</span>
           <div className="flex-1 bg-surface-2 rounded-full h-1.5 overflow-hidden">
             <div
@@ -115,6 +119,8 @@ function AllocationTable({
         </div>
       ))}
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 

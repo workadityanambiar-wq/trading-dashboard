@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat, type SetupSignal } from "@/lib/api";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -327,6 +328,7 @@ export default function SetupsPage() {
   const [page, setPage]                     = useState(1);
   const [fetchingEvents, setFetchingEvents] = useState(false);
   const [tradeSetup, setTradeSetup] = useState<SetupSignal | null>(null);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const { has: wlHas, add: wlAdd, remove: wlRemove } = useWatchlist();
   const PAGE_SIZE = 50;
 
@@ -552,10 +554,11 @@ export default function SetupsPage() {
                     )}
                   >
                     {/* Ticker */}
-                    <td className="px-3 py-2.5 font-medium text-text-primary">
+                    <td className="px-3 py-2.5 font-medium text-text-primary cursor-pointer"
+                      onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${row.ticker}`, color: "#6366f1" })}>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => wlHas(row.ticker) ? wlRemove(row.ticker) : wlAdd(row.ticker)}
+                          onClick={e => { e.stopPropagation(); wlHas(row.ticker) ? wlRemove(row.ticker) : wlAdd(row.ticker); }}
                           title={wlHas(row.ticker) ? "Remove from watchlist" : "Add to watchlist"}
                           className="shrink-0 transition-colors"
                         >
@@ -702,7 +705,7 @@ export default function SetupsPage() {
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       <button
-                        onClick={() => setTradeSetup(row)}
+                        onClick={e => { e.stopPropagation(); setTradeSetup(row); }}
                         className="px-2 py-1 rounded text-[10px] font-semibold bg-accent/20 text-accent border border-accent/40 hover:bg-accent/30 transition-colors"
                       >
                         Trade
@@ -778,6 +781,7 @@ export default function SetupsPage() {
           }]}
         />
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

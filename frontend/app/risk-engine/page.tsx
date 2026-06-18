@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api, type HybridResponse, type RegimeName } from "@/lib/api";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import { cn } from "@/lib/utils";
 import {
   Play, X, Plus, ChevronUp, ChevronDown, Minus,
@@ -95,11 +96,13 @@ function MetricCard({ label, value, sub, accent }: {
 // ── Waterfall table ───────────────────────────────────────────────────────────
 
 function WaterfallTable({ result }: { result: HybridResponse }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const { layers, tickers_used } = result;
   const visible = tickers_used.filter(t =>
     LAYER_LABELS.some(l => (layers[l.key][t] ?? 0) > 0.001)
   );
   return (
+    <>
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
@@ -125,7 +128,8 @@ function WaterfallTable({ result }: { result: HybridResponse }) {
             const regime = layers.regime[t] ?? 0;
             const final  = result.final_weights[t] ?? 0;
             return (
-              <tr key={t} className="hover:bg-surface-2 transition-colors">
+              <tr key={t} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${t}`, color: "#6366f1" })}
+                className="hover:bg-surface-2 transition-colors cursor-pointer">
                 <td className="py-2 font-mono font-semibold text-text-primary">{t}</td>
                 <td className="py-2 text-right font-mono text-text-muted">{pctFmt(hrp)}</td>
                 <td className={cn("py-2 text-right font-mono", deltaColor(hrp, bl))}>
@@ -159,19 +163,25 @@ function WaterfallTable({ result }: { result: HybridResponse }) {
         </tbody>
       </table>
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 
 // ── Allocation bars ───────────────────────────────────────────────────────────
 
 function AllocationBars({ result }: { result: HybridResponse }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const entries = Object.entries(result.final_weights).sort(([, a], [, b]) => b - a);
   if (result.cash_pct > 0.001) entries.push(["CASH", result.cash_pct]);
   const max = Math.max(...entries.map(([, v]) => v));
   return (
+    <>
     <div className="space-y-1.5">
       {entries.map(([t, w]) => (
-        <div key={t} className="flex items-center gap-2">
+        <div key={t}
+          onClick={() => t !== "CASH" && setDrawer({ fetchUrl: `/api/chart/stock/${t}`, color: "#6366f1" })}
+          className={cn("flex items-center gap-2", t !== "CASH" && "cursor-pointer hover:opacity-80 transition-opacity")}>
           <span className="font-mono text-xs w-12 shrink-0 text-text-primary">{t}</span>
           <div className="flex-1 bg-surface-2 rounded-full h-2 overflow-hidden">
             <div
@@ -183,6 +193,8 @@ function AllocationBars({ result }: { result: HybridResponse }) {
         </div>
       ))}
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 

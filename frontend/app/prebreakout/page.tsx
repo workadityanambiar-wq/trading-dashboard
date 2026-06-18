@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type CoiledSpringSignal } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, Crosshair, TrendingUp, Volume2 } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export default function PreBreakoutPage() {
   const [sortBy, setSortBy]     = useState("coiled_spring_score");
   const [minScore, setMinScore] = useState(55);
   const [universe, setUniverse] = useState("sp500");
+  const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
 
   const queryKey = ["prebreakout", universe, minScore, sortBy, page];
 
@@ -235,8 +237,9 @@ export default function PreBreakoutPage() {
             {results.map((r: CoiledSpringSignal, i: number) => (
               <tr
                 key={r.ticker}
+                onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" })}
                 className={cn(
-                  "border-b border-border/50 hover:bg-surface-2/50 transition-colors",
+                  "border-b border-border/50 hover:bg-surface-2/50 transition-colors cursor-pointer",
                   i % 2 === 0 ? "bg-surface" : "bg-surface/50"
                 )}
               >
@@ -376,6 +379,8 @@ export default function PreBreakoutPage() {
           <span><span className="text-amber-400 font-medium">E#d</span> / <span className="text-red-400 font-medium">E2d</span> — earnings in # days. Red = ≤ 2d (binary risk event)</span>
         </div>
       </div>
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

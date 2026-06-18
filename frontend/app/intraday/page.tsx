@@ -19,6 +19,7 @@ import {
   Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -228,6 +229,7 @@ const MODE_LABELS: Record<Mode, string> = {
 };
 
 export default function IntradayPage() {
+  const [drawer, setDrawer]                   = useState<DrawerConfig | null>(null);
   const [mode, setMode]                       = useState<Mode>("sp500");
   const [selectedTheme, setSelectedTheme]     = useState("ai_infra");
   const [selectedSegment, setSelectedSegment] = useState("");
@@ -507,8 +509,9 @@ export default function IntradayPage() {
                 return (
                   <tr
                     key={row.ticker}
+                    onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${row.ticker}`, color: "#6366f1" })}
                     className={cn(
-                      "hover:bg-surface-2/60 transition-colors",
+                      "hover:bg-surface-2/60 transition-colors cursor-pointer",
                       isPivotZone && "bg-yellow-500/5",
                       i % 2 !== 0 && !isPivotZone && "bg-surface/20"
                     )}
@@ -579,6 +582,8 @@ export default function IntradayPage() {
           </div>
         </div>
       )}
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

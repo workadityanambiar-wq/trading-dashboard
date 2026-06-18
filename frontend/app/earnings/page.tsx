@@ -13,6 +13,7 @@ import {
   RefreshCw, Calendar, AlertTriangle, ChevronDown, ChevronUp,
   TrendingUp, Activity, Brain,
 } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -275,6 +276,7 @@ function IntelligenceTable({
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"days" | "signal" | "hist_move" | "beat_rate">("days");
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   // Flatten calendar → list of rows enriched with intelligence
   const rows = useMemo(() => {
@@ -369,9 +371,9 @@ function IntelligenceTable({
                   className="border-b border-border/40 hover:bg-surface-2 cursor-pointer transition-colors"
                 >
                   {/* Ticker */}
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2" onClick={e => { e.stopPropagation(); setDrawer({ fetchUrl: `/api/chart/stock/${stock.ticker}`, color: "#6366f1" }); }}>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-text-primary">{stock.ticker}</span>
+                      <span className="font-mono font-semibold text-text-primary hover:text-accent">{stock.ticker}</span>
                       <SetupBadge setup={stock.setup} />
                     </div>
                     <div className="text-text-muted text-[10px] mt-0.5">{date}</div>
@@ -429,6 +431,7 @@ function IntelligenceTable({
         <div><span className="text-text-primary font-medium">Gap→5d</span> — % of time earnings gap direction persisted 5 days after</div>
         <div><span className="text-text-primary font-medium">Signal</span> — composite of beat rate + pre-drift + revisions + gap persistence</div>
       </div>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }
@@ -447,7 +450,8 @@ function DateSection({
   optionsLoading: boolean;
   viewMode: ViewMode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen]   = useState(true);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const urgency =
     daysFromToday === 0 ? "text-red-400 border-red-500/40 bg-red-500/5" :
     daysFromToday === 1 ? "text-red-300 border-red-500/30 bg-red-500/5" :
@@ -507,7 +511,7 @@ function DateSection({
               </thead>
               <tbody className="divide-y divide-border">
                 {stocks.map(s => (
-                  <tr key={s.ticker} className="hover:bg-surface-2 transition-colors">
+                  <tr key={s.ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${s.ticker}`, color: "#6366f1" })} className="hover:bg-surface-2 transition-colors cursor-pointer">
                     <td className="px-3 py-2 font-mono font-semibold text-text-primary">{s.ticker}</td>
                     <td className="px-3 py-2"><SetupBadge setup={s.setup} /></td>
                     <td className="px-3 py-2 font-medium text-text-muted">{s.stage != null ? `S${s.stage}` : "—"}</td>
@@ -607,6 +611,7 @@ function DateSection({
           )}
         </div>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

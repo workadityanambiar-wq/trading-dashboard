@@ -7,6 +7,7 @@ import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, 
 import Link from "next/link";
 import { ChartModal } from "@/components/ChartModal";
 import { useChart } from "@/contexts/ChartContext";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -121,6 +122,7 @@ export default function RSPage() {
   const [trendFlt,      setTrendFlt]     = useState<"all" | "rising" | "falling">("all");
   const [sortBy,        setSortBy]       = useState("rs_composite");
   const [page,          setPage]         = useState(1);
+  const [drawer,        setDrawer]       = useState<DrawerConfig | null>(null);
   const { openChart } = useChart();
   const PAGE_SIZE = 100;
 
@@ -330,7 +332,7 @@ export default function RSPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredResults.map((r, i) => (
-                <tr key={r.ticker} className="hover:bg-surface-2 transition-colors">
+                <tr key={r.ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" })} className="hover:bg-surface-2 transition-colors cursor-pointer">
                   <td className="px-2 py-2 text-text-muted tabular-nums text-[10px]">
                     {(page - 1) * PAGE_SIZE + i + 1}
                   </td>
@@ -424,6 +426,8 @@ export default function RSPage() {
         <div><span className="font-medium text-text-primary">Period columns</span> — Excess return vs benchmark over that period (stock return minus benchmark return)</div>
         <div><span className="font-medium text-text-primary">Trend ↑/→/↓</span> — Rising if 20D rank &gt; 63D rank by 10+ pts (RS accelerating), falling if deteriorating</div>
       </div>
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

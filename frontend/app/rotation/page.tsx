@@ -1,8 +1,10 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SectorRotationPoint, type RotationQuadrant } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Quadrant config ───────────────────────────────────────────────────────────
 
@@ -177,7 +179,7 @@ function momArrow(v: number) {
   return <span className="text-text-muted">→</span>;
 }
 
-function RankedTable({ sectors }: { sectors: SectorRotationPoint[] }) {
+function RankedTable({ sectors, onRowClick }: { sectors: SectorRotationPoint[]; onRowClick: (ticker: string) => void }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full text-xs">
@@ -199,7 +201,7 @@ function RankedTable({ sectors }: { sectors: SectorRotationPoint[] }) {
           {sectors.map((s, i) => {
             const qColor = Q_COLOR[s.quadrant];
             return (
-              <tr key={s.ticker} className={cn("border-b border-border/50 hover:bg-surface-2/50", i % 2 !== 0 && "bg-surface/30")}>
+              <tr key={s.ticker} onClick={() => onRowClick(s.ticker)} className={cn("border-b border-border/50 hover:bg-surface-2/50 cursor-pointer", i % 2 !== 0 && "bg-surface/30")}>
                 <td className="px-3 py-2.5 tabular-nums text-text-muted">{s.rs_rank}</td>
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
@@ -245,6 +247,7 @@ function RankedTable({ sectors }: { sectors: SectorRotationPoint[] }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function RotationPage() {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ["sector-rotation"],
     queryFn: api.getSectorRotation,
@@ -326,7 +329,7 @@ export default function RotationPage() {
                     ) : (
                       <div className="space-y-1.5">
                         {inQ.map((s) => (
-                          <div key={s.ticker} className="flex items-center justify-between">
+                          <div key={s.ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${s.ticker}`, color: "#6366f1" })} className="flex items-center justify-between cursor-pointer hover:opacity-80">
                             <span className="text-xs font-medium" style={{ color }}>{s.ticker}</span>
                             <span className={cn("text-xs tabular-nums",
                               s.rs_momentum >= 0 ? "text-emerald-400" : "text-red-400"
@@ -351,9 +354,11 @@ export default function RotationPage() {
           </div>
 
           {/* Ranked table */}
-          <RankedTable sectors={data.sectors} />
+          <RankedTable sectors={data.sectors} onRowClick={(ticker) => setDrawer({ fetchUrl: `/api/chart/stock/${ticker}`, color: "#6366f1" })} />
         </>
       )}
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

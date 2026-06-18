@@ -9,6 +9,7 @@ import {
   Gauge, Waves, RotateCcw, Globe, Activity, Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -32,13 +33,17 @@ function LiveDot() {
 function MarketCard({ ticker, name, price, change }: {
   ticker: string; name: string; price: number; change: number;
 }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const isPos = change >= 0;
   return (
-    <Link href={`/stock/${ticker}`}>
-      <div className={cn(
-        "flex flex-col gap-1 p-3 rounded-2xl border min-w-[110px] snap-start",
-        isPos ? "border-positive/20 bg-positive/5" : "border-negative/20 bg-negative/5"
-      )}>
+    <>
+      <div
+        onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${ticker}`, color: "#6366f1" })}
+        className={cn(
+          "flex flex-col gap-1 p-3 rounded-2xl border min-w-[110px] snap-start cursor-pointer",
+          isPos ? "border-positive/20 bg-positive/5" : "border-negative/20 bg-negative/5"
+        )}
+      >
         <span className="text-[11px] text-text-muted font-medium tracking-wider uppercase">{ticker}</span>
         <span className="text-[15px] font-semibold tabular-nums text-text-primary">
           {price >= 1000 ? price.toLocaleString("en-US", { maximumFractionDigits: 1 }) : price.toFixed(2)}
@@ -48,15 +53,16 @@ function MarketCard({ ticker, name, price, change }: {
         </span>
         <span className="text-[9px] text-text-muted/60 truncate max-w-[90px]">{name}</span>
       </div>
-    </Link>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 
-function SectorRow({ name, chg }: { name: string; chg: number }) {
+function SectorRow({ name, ticker, chg, onClick }: { name: string; ticker: string; chg: number; onClick?: () => void }) {
   const isPos = chg >= 0;
   const barPct = Math.min(Math.abs(chg) * 10, 100);
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-surface-2 last:border-0">
+    <div onClick={onClick} className={cn("flex items-center gap-3 py-2.5 border-b border-surface-2 last:border-0", onClick && "cursor-pointer hover:bg-surface-2/30")}>
       <span className="text-[12px] text-text-muted flex-1 truncate">{name}</span>
       <div className="w-20 h-1 bg-surface-2 rounded-full overflow-hidden">
         <div
@@ -94,6 +100,7 @@ const QUICK_LINKS = [
 
 export default function HomePage() {
   const [period, setPeriod] = useState<"change_1d" | "change_wtd" | "change_mtd">("change_1d");
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   const { data: overview, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["overview"],
@@ -289,7 +296,7 @@ export default function HomePage() {
                 .slice()
                 .sort((a, b) => b.change_1d - a.change_1d)
                 .map((s) => (
-                  <SectorRow key={s.ticker} name={s.sector || s.name} chg={s.change_1d} />
+                  <SectorRow key={s.ticker} ticker={s.ticker} name={s.sector || s.name} chg={s.change_1d} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${s.ticker}`, color: "#6366f1" })} />
                 ))}
             </div>
           </div>
@@ -305,37 +312,33 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <div className="text-[10px] text-text-muted mb-1">Above 50-MA</div>
-                <div className="text-[22px] font-bold tabular-nums text-text-primary">
-                  {overview.breadth.above_50ma_pct.toFixed(0)}
-                  <span className="text-[14px] text-text-muted">%</span>
-                </div>
-                <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full", overview.breadth.above_50ma_pct > 50 ? "bg-positive" : "bg-negative")}
-                    style={{ width: `${overview.breadth.above_50ma_pct}%` }}
-                  />
-                </div>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <div className="text-[10px] text-text-muted mb-1">Above 200-MA</div>
-                <div className="text-[22px] font-bold tabular-nums text-text-primary">
-                  {overview.breadth.above_200ma_pct.toFixed(0)}
-                  <span className="text-[14px] text-text-muted">%</span>
-                </div>
-                <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full rounded-full", overview.breadth.above_200ma_pct > 50 ? "bg-positive" : "bg-negative")}
-                    style={{ width: `${overview.breadth.above_200ma_pct}%` }}
-                  />
-                </div>
-              </div>
+              {[
+                { label: "Above 50-MA",  raw: overview.breadth.above_50ma_pct },
+                { label: "Above 200-MA", raw: overview.breadth.above_200ma_pct },
+              ].map(({ label, raw }) => {
+                const pct = Math.round(raw * 100);
+                return (
+                  <div key={label} className="rounded-2xl border border-border bg-surface p-4">
+                    <div className="text-[10px] text-text-muted mb-1">{label}</div>
+                    <div className="text-[22px] font-bold tabular-nums text-text-primary">
+                      {pct}
+                      <span className="text-[14px] text-text-muted">%</span>
+                    </div>
+                    <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", pct > 50 ? "bg-positive" : "bg-negative")}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
       </div>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

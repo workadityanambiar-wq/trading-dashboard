@@ -5,6 +5,7 @@ import { api, type MacroAsset, type YieldPoint } from "@/lib/api";
 import { MacroHistoryChart } from "@/components/charts/MacroHistoryChart";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ function YieldCurveChart({ points }: { points: YieldPoint[] }) {
 
 export default function MacroPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey:      ["macro"],
@@ -223,7 +225,7 @@ export default function MacroPage() {
                   {data.yield_curve.map(y => {
                     const delta1m = y.prev_1m != null ? y.level - y.prev_1m : null;
                     return (
-                      <tr key={y.ticker} className="hover:bg-surface-2 transition-colors">
+                      <tr key={y.ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${y.ticker}`, color: "#6366f1" })} className="hover:bg-surface-2 transition-colors cursor-pointer">
                         <td className="py-2 text-text-primary font-medium">{y.label}</td>
                         <td className="py-2 text-right font-mono font-semibold text-text-primary">{y.level.toFixed(2)}%</td>
                         <td className="py-2 text-right font-mono text-text-muted">{y.prev_1m != null ? `${y.prev_1m.toFixed(2)}%` : "—"}</td>
@@ -278,7 +280,7 @@ export default function MacroPage() {
               </thead>
               <tbody className="divide-y divide-border/50">
                 {filteredAssets.map(a => (
-                  <tr key={a.ticker} className="hover:bg-surface-2 transition-colors">
+                  <tr key={a.ticker} onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${a.ticker}`, color: "#6366f1" })} className="hover:bg-surface-2 transition-colors cursor-pointer">
                     <td className="py-2">
                       <div className="font-mono font-semibold text-text-primary">{a.ticker}</div>
                       <div className="text-text-muted text-[10px]">{a.label}</div>
@@ -309,6 +311,7 @@ export default function MacroPage() {
           )}
         </>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

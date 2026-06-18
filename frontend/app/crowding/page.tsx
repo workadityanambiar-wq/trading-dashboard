@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { api, CrowdingResult, SectorCrowding } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 
@@ -332,6 +333,7 @@ export default function CrowdingPage() {
 
 function Row({ r }: { r: CrowdingResult }) {
   const [open, setOpen] = useState(false);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   return (
     <>
@@ -340,7 +342,7 @@ function Row({ r }: { r: CrowdingResult }) {
         className="border-b border-border/40 hover:bg-surface-2 cursor-pointer transition-colors"
       >
         <td className="px-3 py-2 text-text-muted font-mono text-xs">{r.rank}</td>
-        <td className="px-3 py-2 font-semibold text-accent">{r.ticker}</td>
+        <td className="px-3 py-2 font-semibold text-accent" onClick={e => { e.stopPropagation(); setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" }); }}>{r.ticker}</td>
         <td className="px-3 py-2 text-text-primary truncate max-w-[180px]">{r.name}</td>
         <td className="px-3 py-2 text-text-muted text-xs truncate">{r.sector}</td>
         <td className="px-3 py-2">
@@ -474,6 +476,7 @@ function Row({ r }: { r: CrowdingResult }) {
           </td>
         </tr>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </>
   );
 }

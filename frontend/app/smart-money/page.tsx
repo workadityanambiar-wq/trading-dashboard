@@ -4,6 +4,7 @@ import {
   Search, TrendingUp, TrendingDown, Minus,
   Activity, BarChart3, Layers, Eye, Zap,
 } from "lucide-react";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -345,9 +346,9 @@ function BlockTable({ blocks }: { blocks: BlockDay[] }) {
   );
 }
 
-function CompareRow({ r, rank }: { r: CompareResult; rank: number }) {
+function CompareRow({ r, rank, onOpenDrawer }: { r: CompareResult; rank: number; onOpenDrawer: (ticker: string) => void }) {
   return (
-    <div className="flex items-center gap-3 bg-surface-2 rounded-xl p-3 border border-border hover:border-accent/30 transition-colors">
+    <div onClick={() => onOpenDrawer(r.ticker)} className="flex items-center gap-3 bg-surface-2 rounded-xl p-3 border border-border hover:border-accent/30 transition-colors cursor-pointer">
       <span className="text-lg font-bold text-text-muted w-6 text-center">{rank}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -398,6 +399,7 @@ const PERIODS = [
 const PRESETS = ["AAPL", "NVDA", "MSFT", "META", "AMZN", "TSLA", "GOOGL", "JPM", "SPY", "QQQ"];
 
 export default function SmartMoneyPage() {
+  const [drawer, setDrawer]       = useState<DrawerConfig | null>(null);
   const [tab, setTab]             = useState<"single" | "compare">("single");
   const [ticker, setTicker]       = useState("AAPL");
   const [period, setPeriod]       = useState(60);
@@ -834,7 +836,7 @@ export default function SmartMoneyPage() {
           </div>
           <div className="space-y-3">
             {compareData.map((r, i) => (
-              <CompareRow key={r.ticker} r={r} rank={i + 1} />
+              <CompareRow key={r.ticker} r={r} rank={i + 1} onOpenDrawer={sym => setDrawer({ fetchUrl: `/api/chart/stock/${sym}`, color: "#6366f1" })} />
             ))}
           </div>
           {/* Legend */}
@@ -867,6 +869,8 @@ export default function SmartMoneyPage() {
           </div>
         </div>
       )}
+
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

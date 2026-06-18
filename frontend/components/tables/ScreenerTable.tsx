@@ -14,6 +14,7 @@ import { EXCHANGE_LABELS } from "@/lib/api";
 import { cn, formatPct } from "@/lib/utils";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { TickerChip } from "@/components/TickerChip";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 function ScoreCell({ value }: { value: number | null }) {
   if (value === null || value === undefined)
@@ -192,6 +193,7 @@ export function ScreenerTable({ data, showExchange = false }: Props) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "composite", desc: true },
   ]);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
 
   const columns = useMemo(
     () => showExchange
@@ -241,8 +243,9 @@ export function ScreenerTable({ data, showExchange = false }: Props) {
           {table.getRowModel().rows.map((row, i) => (
             <tr
               key={row.id}
+              onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${row.original.ticker}`, color: "#6366f1" })}
               className={cn(
-                "border-b border-border/50 hover:bg-surface-2 transition-colors",
+                "border-b border-border/50 hover:bg-surface-2 transition-colors cursor-pointer",
                 i % 2 === 0 ? "bg-surface" : "bg-background"
               )}
             >
@@ -255,6 +258,7 @@ export function ScreenerTable({ data, showExchange = false }: Props) {
           ))}
         </tbody>
       </table>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

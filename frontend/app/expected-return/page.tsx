@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { api, ERResult, ERComponents } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Colour palette per factor ─────────────────────────────────────────────────
 
@@ -155,6 +156,7 @@ export default function ExpectedReturnPage() {
   const [sectorFilter, setSectorFilter] = useState("All Sectors");
   const [search, setSearch]     = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["expected-return", universe, topN],
@@ -268,7 +270,7 @@ export default function ExpectedReturnPage() {
                     className="border-b border-border/40 hover:bg-surface-2 cursor-pointer transition-colors"
                   >
                     <td className="px-4 py-2 text-text-muted font-mono text-xs">{r.rank}</td>
-                    <td className="px-4 py-2 font-semibold text-accent">{r.ticker}</td>
+                    <td className="px-4 py-2 font-semibold text-accent" onClick={e => { e.stopPropagation(); setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" }); }}>{r.ticker}</td>
                     <td className="px-4 py-2 text-text-primary truncate max-w-xs">{r.name}</td>
                     <td className="px-4 py-2 text-text-muted text-xs truncate">{r.sector}</td>
                     <td className="px-3 py-2 text-right font-mono text-text-primary">
@@ -316,6 +318,7 @@ export default function ExpectedReturnPage() {
           <span className="text-text-muted/50">Click any row to expand factor detail</span>
         </div>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

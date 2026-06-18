@@ -9,6 +9,7 @@ import {
   Star, Plus, X, RefreshCw, Trash2, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { TickerChip } from "@/components/TickerChip";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,7 @@ export default function WatchlistPage() {
     return sortAsc ? <ChevronUp size={10} className="text-accent" /> : <ChevronDown size={10} className="text-accent" />;
   }
 
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   const withSetup = sorted.sorted.filter(r => r.setup !== "No Setup").length;
   const avgRS = sorted.sorted.length
     ? sorted.sorted.reduce((s, r) => s + (r.rs_spy_20d ?? 0), 0) / sorted.sorted.length
@@ -309,7 +311,8 @@ export default function WatchlistPage() {
                 const isNoSetup = r.setup === "No Setup";
                 return (
                   <tr key={r.ticker}
-                    className={cn("hover:bg-surface-2 transition-colors", isNoSetup && "opacity-60")}>
+                    onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${r.ticker}`, color: "#6366f1" })}
+                    className={cn("hover:bg-surface-2 transition-colors cursor-pointer", isNoSetup && "opacity-60")}>
                     <td className="px-3 py-2.5">
                       <TickerChip ticker={r.ticker} />
                     </td>
@@ -353,7 +356,7 @@ export default function WatchlistPage() {
                       {pct(r.chg_1d)}
                     </td>
                     <td className="px-2 py-2.5">
-                      <button onClick={() => remove(r.ticker)}
+                      <button onClick={e => { e.stopPropagation(); remove(r.ticker); }}
                         className="text-text-muted/40 hover:text-red-400 transition-colors"
                         title={`Remove ${r.ticker}`}>
                         <X size={13} />
@@ -380,6 +383,7 @@ export default function WatchlistPage() {
           </table>
         </div>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

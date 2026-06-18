@@ -6,6 +6,7 @@ import {
   CartesianGrid, ComposedChart, Cell,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import {
   TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle,
   Droplets, Flame, Globe, BarChart2, Activity, Zap,
@@ -70,8 +71,8 @@ function Spinner() {
   return <div className="flex items-center justify-center h-32"><RefreshCw size={20} className="animate-spin text-amber-500" /></div>;
 }
 
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-surface border border-border rounded-xl p-4", className)}>{children}</div>;
+function Card({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+  return <div onClick={onClick} className={cn("bg-surface border border-border rounded-xl p-4", className)}>{children}</div>;
 }
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -254,12 +255,14 @@ export default function OilPage() {
 // ── Overview Tab ───────────────────────────────────────────────────────────────
 
 function OverviewTab({ data, composite }: { data: Overview; composite: Composite | null }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   return (
+    <>
     <div className="space-y-5">
       {/* Price Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {data.cards.map(c => (
-          <Card key={c.name} className="space-y-2">
+          <Card key={c.name} className="space-y-2 cursor-pointer" onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${c.symbol}`, color: "#6366f1" })}>
             <div className="flex items-center justify-between">
               <span className="text-xs text-text-muted font-medium">{c.name}</span>
               <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium border",
@@ -319,6 +322,8 @@ function OverviewTab({ data, composite }: { data: Overview; composite: Composite
         </Card>
       )}
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 
