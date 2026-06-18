@@ -8,7 +8,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 const TABS = [
   { href: "/",         label: "Home",     icon: Home,         match: (p: string) => p === "/" },
-  { href: "/markets",  label: "Markets",  icon: BarChart2,    match: (p: string) => p.startsWith("/markets") || ["/oil","/dollar","/treasury","/macro","/country-macro","/rotation","/breadth","/volatility","/regime","/correlations","/institutional","/crowding","/smart-money","/earnings","/options","/options-analytics","/intraday","/rs","/setups","/prebreakout","/mtf","/alpha-engine","/screener","/watchlist"].some(r => p.startsWith(r)) },
+  { href: "/markets",  label: "Markets",  icon: BarChart2,    match: (p: string) => p.startsWith("/markets") || ["/oil","/dollar","/treasury","/macro","/country-macro","/rotation","/breadth","/volatility","/regime","/correlations","/institutional","/crowding","/smart-money","/earnings","/options","/options-analytics","/intraday","/rs","/setups","/prebreakout","/mtf","/alpha-engine","/screener","/watchlist","/ai-compute","/memory"].some(r => p.startsWith(r)) },
   { href: "/portfolio",label: "Portfolio",icon: Briefcase,    match: (p: string) => p.startsWith("/portfolio") || p.startsWith("/risk") },
   { href: "/research", label: "Research", icon: FlaskConical, match: (p: string) => p.startsWith("/research") || ["/factors","/backtest","/pairs","/quality","/expected-return","/earnings-drift","/strategy-builder","/reports","/risk-model","/mt5"].some(r => p.startsWith(r)) },
   { href: "/alerts",   label: "Alerts",   icon: Bell,         match: (p: string) => p.startsWith("/alerts") },

@@ -74,6 +74,7 @@ const NAV = [
   { href: "/treasury",      label: "Treasury Yields", icon: Landmark },
   { href: "/metals",        label: "Metals",          icon: Gem },
   { href: "/memory",        label: "Memory Intel",    icon: Cpu },
+  { href: "/ai-compute",   label: "AI Compute Infra", icon: Cpu },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },

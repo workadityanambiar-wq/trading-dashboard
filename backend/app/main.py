@@ -22,6 +22,7 @@ from app.api import metals as metals_api
 from app.api import inst_tracker as inst_tracker_api
 from app.api import memory as memory_api
 from app.api import chart as chart_api
+from app.api import ai_compute as ai_compute_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -119,6 +120,7 @@ app.include_router(metals_api.router,        prefix="/api/metals")
 app.include_router(inst_tracker_api.router,  prefix="/api/inst-tracker")
 app.include_router(memory_api.router,        prefix="/api/memory")
 app.include_router(chart_api.router,         prefix="/api/chart")
+app.include_router(ai_compute_api.router,    prefix="/api/ai-compute")
 
 
 @app.get("/health")

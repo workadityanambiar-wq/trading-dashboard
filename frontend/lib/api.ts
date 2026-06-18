@@ -1155,6 +1155,9 @@ export const api = {
   estimateRiskModel: (req: { tickers: string[]; period?: string; half_life?: number; max_tickers?: number }) =>
     apiFetch<any>("/risk-model/estimate", { method: "POST", body: JSON.stringify(req) }),
 
+  // ── AI Compute Infrastructure ─────────────────────────────────────────────────
+  getAICompute: () => apiFetch<AIComputeData>("/ai-compute/overview"),
+
   // ── Market Regime ────────────────────────────────────────────────────────────
   getMarketRegime: () => apiFetch<MarketRegimeResponse>("/regime/current"),
 
@@ -1615,6 +1618,46 @@ export interface TechnicalSignalsResponse {
   as_of: string | null;
   results: TechnicalSignal[];
   message?: string;
+}
+
+// ── AI Compute Infrastructure types ──────────────────────────────────────────
+
+export interface AIComputeStock {
+  ticker: string; name: string; cat: string; sub: string;
+  price: number; d1: number; w1: number; m1: number; m3: number; ytd: number;
+  rsi: number; above_50: boolean; above_200: boolean; rel_3m: number;
+  signal: string; sig_color: string; conf: number; strength: number;
+  stop: number | null; target: number | null; upside: number | null;
+  ma50: number; ma200: number;
+}
+
+export interface AIComputeData {
+  score: number;
+  regime: string;
+  regime_color: string;
+  sub_scores: Record<string, number>;
+  stocks: AIComputeStock[];
+  best_longs: AIComputeStock[];
+  key_risks: string[];
+  hyperscaler_capex: Record<string, {
+    name: string; color: string;
+    quarters: string[]; capex: number[]; ai_pct: number[];
+    capex_guide_2025_bn: number; capex_guide_2026_bn: number; gpu_vendor: string;
+  }>;
+  gpu_products: Record<string, {
+    name: string; color: string; gpu_score: number; supply_tightness: number;
+    products: { name: string; status: string; asp_k: number; lead_wk: number | null; demand: string; note: string }[];
+  }>;
+  memory_tiers: { name: string; cat: string; status: string; supplier: string; util: number | null; tightness: string; price_trend: string; note: string }[];
+  foundry_nodes: Record<string, {
+    name: string; constraint_score: number;
+    nodes: { node: string; util: number; clients: string; status: string; cowos: boolean }[];
+  }>;
+  scenarios: {
+    id: string; name: string; color: string; prob: number; desc: string;
+    impacts: Record<string, { rev: number; eps: number; stk: number }>;
+  }[];
+  as_of: string;
 }
 
 // ── Country Macro Dashboard types ─────────────────────────────────────────────
