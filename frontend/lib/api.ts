@@ -1194,6 +1194,10 @@ export const api = {
     apiFetch<CountryListItem[]>("/country-macro/countries"),
   getCountryMacro: (code: string) =>
     apiFetch<CountryMacroResponse>(`/country-macro/${encodeURIComponent(code)}`),
+
+  // ── AI CapEx Intelligence ──────────────────────────────────────────────────
+  getAICapEx: () => apiFetch<AICapExDashboard>("/ai-capex/dashboard"),
+  refreshAICapEx: () => fetch("/api/ai-capex/refresh", { method: "POST" }).then(r => r.json()),
 };
 
 // ── Earnings Drift / PEAD types ───────────────────────────────────────────────
@@ -1575,6 +1579,110 @@ export interface TechnicalSignalsResponse {
   as_of: string | null;
   results: TechnicalSignal[];
   message?: string;
+}
+
+// ── AI CapEx Intelligence types ───────────────────────────────────────────────
+
+export interface AICapExComponent {
+  score: number;
+  max: number;
+  weight: string;
+  input: number;
+  label: string;
+}
+
+export interface AICapExScore {
+  composite: number;
+  regime: string;
+  cycle: string;
+  components: Record<string, AICapExComponent>;
+}
+
+export interface HyperscalerData {
+  sym: string;
+  name: string;
+  cloud: string;
+  capex_latest_bn: number | null;
+  capex_annual_bn: number | null;
+  capex_yoy: number | null;
+  rev_latest_bn: number | null;
+  rev_yoy: number | null;
+  mktcap_bn: number | null;
+  price: number | null;
+  chg_6m: number | null;
+  chg_1y: number | null;
+  capex_chart: { q: string; capex: number }[];
+  rev_chart: { q: string; rev: number }[];
+}
+
+export interface AIStockSignal {
+  sym: string;
+  name: string;
+  sector: string;
+  sub: string;
+  ai_pct: number;
+  signal: string;
+  score: number;
+  price: number | null;
+  entry: number | null;
+  stop_loss: number | null;
+  target: number | null;
+  upside_pct: number;
+  confidence: number;
+  factors: string[];
+  chg_3m: number | null;
+  chg_6m: number | null;
+  chg_1y: number | null;
+  rev_yoy: number | null;
+  mktcap_bn: number | null;
+  pe_fwd: number | null;
+  analyst_rec: string;
+}
+
+export interface HeatmapRow {
+  sym: string;
+  name: string;
+  sector: string;
+  ai_pct: number;
+  chg_3m: number | null;
+  chg_6m: number | null;
+  chg_1y: number | null;
+  rev_yoy: number | null;
+  mktcap_bn: number | null;
+  momentum: "Accelerating" | "Stable" | "Slowing";
+}
+
+export interface InfraCategory {
+  category: string;
+  pct: number;
+  bn: number;
+  label: string;
+}
+
+export interface RVPair {
+  pair: string;
+  sym_a: string; name_a: string;
+  sym_b: string; name_b: string;
+  score_a: number; score_b: number;
+  chg_6m_a: number | null; chg_6m_b: number | null;
+  rev_yoy_a: number | null; rev_yoy_b: number | null;
+  pe_fwd_a: number | null; pe_fwd_b: number | null;
+  mktcap_a: number | null; mktcap_b: number | null;
+  preferred: string;
+}
+
+export interface AICapExDashboard {
+  as_of: string;
+  capex_score: AICapExScore;
+  global_ai_capex_annual_bn: number;
+  hyperscalers: HyperscalerData[];
+  stocks: AIStockSignal[];
+  heatmap: HeatmapRow[];
+  infra_breakdown: InfraCategory[];
+  top_longs: AIStockSignal[];
+  relative_value: RVPair[];
+  cloud_data: { sym: string; label: string; rev_latest_bn: number | null; rev_yoy: number | null; rev_chart: {q: string; rev: number}[] }[];
+  gpu_data: { sym: string; name: string; sub: string; ai_pct: number; rev_latest_bn: number | null; rev_yoy: number | null; chg_6m: number | null; chg_1y: number | null; mktcap_bn: number | null; pe_fwd: number | null; rev_chart: {q: string; rev: number}[] }[];
 }
 
 // ── Country Macro Dashboard types ─────────────────────────────────────────────
