@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import Link from "next/link";
@@ -12,33 +12,21 @@ import { cn } from "@/lib/utils";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function pct(v: number | null | undefined, d = 2) {
-  if (v == null) return "—";
-  return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(d)}%`;
-}
 function raw(v: number | null | undefined, d = 2) {
   if (v == null) return "—";
   return `${v >= 0 ? "+" : ""}${v.toFixed(d)}%`;
 }
 function chgColor(v: number | null | undefined) {
-  if (v == null) return "text-[#6b6b80]";
-  if (v > 0) return "text-[#22c55e]";
-  if (v < 0) return "text-[#ef4444]";
-  return "text-[#6b6b80]";
-}
-function chgBg(v: number | null | undefined) {
-  if (v == null) return "bg-[#1a1a24]";
-  if (v > 0) return "bg-[#22c55e]/10";
-  if (v < 0) return "bg-[#ef4444]/10";
-  return "bg-[#1a1a24]";
+  if (v == null) return "text-text-muted";
+  if (v > 0) return "text-positive";
+  if (v < 0) return "text-negative";
+  return "text-text-muted";
 }
 
 // ── Subcomponents ─────────────────────────────────────────────────────────────
 
 function LiveDot() {
-  return (
-    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] live-dot" />
-  );
+  return <span className="inline-block w-1.5 h-1.5 rounded-full bg-positive live-dot" />;
 }
 
 function MarketCard({ ticker, name, price, change }: {
@@ -49,16 +37,16 @@ function MarketCard({ ticker, name, price, change }: {
     <Link href={`/stock/${ticker}`}>
       <div className={cn(
         "flex flex-col gap-1 p-3 rounded-2xl border min-w-[110px] snap-start",
-        isPos ? "border-[#22c55e]/20 bg-[#22c55e]/5" : "border-[#ef4444]/20 bg-[#ef4444]/5"
+        isPos ? "border-positive/20 bg-positive/5" : "border-negative/20 bg-negative/5"
       )}>
-        <span className="text-[11px] text-[#6b6b80] font-medium tracking-wider uppercase">{ticker}</span>
-        <span className="text-[15px] font-semibold tabular-nums text-[#e8e8f0]">
+        <span className="text-[11px] text-text-muted font-medium tracking-wider uppercase">{ticker}</span>
+        <span className="text-[15px] font-semibold tabular-nums text-text-primary">
           {price >= 1000 ? price.toLocaleString("en-US", { maximumFractionDigits: 1 }) : price.toFixed(2)}
         </span>
-        <span className={cn("text-[12px] font-semibold tabular-nums", isPos ? "text-[#22c55e]" : "text-[#ef4444]")}>
+        <span className={cn("text-[12px] font-semibold tabular-nums", isPos ? "text-positive" : "text-negative")}>
           {raw(change)}
         </span>
-        <span className="text-[9px] text-[#4a4a60] truncate max-w-[90px]">{name}</span>
+        <span className="text-[9px] text-text-muted/60 truncate max-w-[90px]">{name}</span>
       </div>
     </Link>
   );
@@ -68,22 +56,21 @@ function SectorRow({ name, chg }: { name: string; chg: number }) {
   const isPos = chg >= 0;
   const barPct = Math.min(Math.abs(chg) * 10, 100);
   return (
-    <div className="flex items-center gap-3 py-2.5 border-b border-[#1a1a24] last:border-0">
-      <span className="text-[12px] text-[#a0a0b8] flex-1 truncate">{name}</span>
-      <div className="w-20 h-1 bg-[#1a1a24] rounded-full overflow-hidden">
+    <div className="flex items-center gap-3 py-2.5 border-b border-surface-2 last:border-0">
+      <span className="text-[12px] text-text-muted flex-1 truncate">{name}</span>
+      <div className="w-20 h-1 bg-surface-2 rounded-full overflow-hidden">
         <div
-          className={cn("h-full rounded-full", isPos ? "bg-[#22c55e]" : "bg-[#ef4444]")}
+          className={cn("h-full rounded-full", isPos ? "bg-positive" : "bg-negative")}
           style={{ width: `${barPct}%` }}
         />
       </div>
-      <span className={cn("text-[12px] font-semibold tabular-nums w-14 text-right", isPos ? "text-[#22c55e]" : "text-[#ef4444]")}>
+      <span className={cn("text-[12px] font-semibold tabular-nums w-14 text-right", isPos ? "text-positive" : "text-negative")}>
         {raw(chg)}
       </span>
     </div>
   );
 }
 
-// Swipeable hero card strip data
 const HERO_CARDS = [
   { id: "regime",   icon: Radar,            label: "Market Regime",  href: "/regime",   color: "#6366f1" },
   { id: "dollar",   icon: CircleDollarSign, label: "Dollar Tracker", href: "/dollar",   color: "#3b82f6" },
@@ -93,14 +80,14 @@ const HERO_CARDS = [
 ];
 
 const QUICK_LINKS = [
-  { href: "/rotation",     label: "Rotation",    icon: RotateCcw,        color: "#6366f1" },
-  { href: "/breadth",      label: "Breadth",     icon: Gauge,             color: "#3b82f6" },
-  { href: "/volatility",   label: "VIX",         icon: Waves,             color: "#8b5cf6" },
-  { href: "/macro",        label: "Macro",       icon: Globe,             color: "#10b981" },
-  { href: "/rs",           label: "RS Ranks",    icon: TrendingUp,        color: "#f59e0b" },
-  { href: "/regime",       label: "Regime",      icon: Radar,             color: "#ef4444" },
-  { href: "/country-macro",label: "Countries",   icon: Globe,             color: "#06b6d4" },
-  { href: "/intraday",     label: "Signals",     icon: Activity,          color: "#a855f7" },
+  { href: "/rotation",     label: "Rotation",  icon: RotateCcw,  color: "#6366f1" },
+  { href: "/breadth",      label: "Breadth",   icon: Gauge,      color: "#3b82f6" },
+  { href: "/volatility",   label: "VIX",       icon: Waves,      color: "#8b5cf6" },
+  { href: "/macro",        label: "Macro",     icon: Globe,      color: "#10b981" },
+  { href: "/rs",           label: "RS Ranks",  icon: TrendingUp, color: "#f59e0b" },
+  { href: "/regime",       label: "Regime",    icon: Radar,      color: "#ef4444" },
+  { href: "/country-macro",label: "Countries", icon: Globe,      color: "#06b6d4" },
+  { href: "/intraday",     label: "Signals",   icon: Activity,   color: "#a855f7" },
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -123,7 +110,7 @@ export default function HomePage() {
 
   const regimeLabel = regime?.regime?.label ?? "—";
   const regimeBias  = regime?.regime?.bias  ?? "—";
-  const isRiskOn = regimeBias.toLowerCase().includes("risk-on") || regimeBias.toLowerCase().includes("bull");
+  const isRiskOn  = regimeBias.toLowerCase().includes("risk-on")  || regimeBias.toLowerCase().includes("bull");
   const isRiskOff = regimeBias.toLowerCase().includes("risk-off") || regimeBias.toLowerCase().includes("bear");
 
   const PERIODS = [
@@ -133,26 +120,26 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
+    <div className="min-h-screen bg-background">
       {/* ── Header ── */}
       <header
-        className="sticky top-0 z-40 px-4 pt-safe bg-[#0a0a0f]/95 backdrop-blur-xl border-b border-[#1a1a24]"
+        className="sticky top-0 z-40 px-4 bg-background/95 backdrop-blur-xl border-b border-border"
         style={{ paddingTop: `calc(env(safe-area-inset-top) + 10px)` }}
       >
         <div className="flex items-center justify-between h-11">
           <div className="flex items-center gap-2">
-            <span className="text-[15px] font-bold tracking-[0.12em] text-[#6366f1] uppercase">Quant</span>
-            <span className="text-[15px] font-bold tracking-[0.12em] text-[#4a4a60] uppercase">Desk</span>
+            <span className="text-[15px] font-bold tracking-[0.12em] text-accent uppercase">Quant</span>
+            <span className="text-[15px] font-bold tracking-[0.12em] text-text-muted uppercase">Desk</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <LiveDot />
-              <span className="text-[10px] text-[#4a4a60]">Live</span>
+              <span className="text-[10px] text-text-muted">Live</span>
             </div>
             <button
               onClick={() => refetch()}
               disabled={isFetching}
-              className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#1a1a24] text-[#6b6b80] active:bg-[#2a2a38] transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-xl bg-surface-2 text-text-muted active:bg-border transition-colors"
             >
               <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
             </button>
@@ -166,37 +153,37 @@ export default function HomePage() {
         {regime && (
           <div className={cn(
             "rounded-2xl border p-4 card-enter",
-            isRiskOn  ? "border-[#22c55e]/30 bg-[#22c55e]/5" :
-            isRiskOff ? "border-[#ef4444]/30 bg-[#ef4444]/5" :
-                        "border-[#6366f1]/30 bg-[#6366f1]/5"
+            isRiskOn  ? "border-positive/30 bg-positive/5" :
+            isRiskOff ? "border-negative/30 bg-negative/5" :
+                        "border-accent/30 bg-accent/5"
           )}>
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-[10px] text-[#6b6b80] uppercase tracking-widest mb-1">Market Regime</div>
-                <div className="text-[18px] font-bold text-[#e8e8f0] leading-tight">{regimeLabel}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-widest mb-1">Market Regime</div>
+                <div className="text-[18px] font-bold text-text-primary leading-tight">{regimeLabel}</div>
                 <div className={cn(
                   "inline-flex items-center gap-1 mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-semibold",
-                  isRiskOn  ? "bg-[#22c55e]/20 text-[#22c55e]" :
-                  isRiskOff ? "bg-[#ef4444]/20 text-[#ef4444]" :
-                              "bg-[#6366f1]/20 text-[#6366f1]"
+                  isRiskOn  ? "bg-positive/20 text-positive" :
+                  isRiskOff ? "bg-negative/20 text-negative" :
+                              "bg-accent/20 text-accent"
                 )}>
                   {isRiskOn ? <TrendingUp size={10} /> : isRiskOff ? <TrendingDown size={10} /> : <Minus size={10} />}
                   {regimeBias}
                 </div>
               </div>
-              <Link href="/regime" className="flex items-center gap-1 text-[11px] text-[#4a4a60] active:text-[#e8e8f0]">
+              <Link href="/regime" className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary">
                 Details <ChevronRight size={12} />
               </Link>
             </div>
             {regime.recommendations && (
-              <div className="mt-3 pt-3 border-t border-[#ffffff08] flex gap-3 text-[10px]">
+              <div className="mt-3 pt-3 border-t border-border/30 flex gap-3 text-[10px]">
                 <div>
-                  <div className="text-[#4a4a60] mb-1">Best Sectors</div>
-                  <div className="text-[#22c55e]">{regime.recommendations.best_sectors?.slice(0,2).join(" · ") || "—"}</div>
+                  <div className="text-text-muted mb-1">Best Sectors</div>
+                  <div className="text-positive">{regime.recommendations.best_sectors?.slice(0,2).join(" · ") || "—"}</div>
                 </div>
                 <div>
-                  <div className="text-[#4a4a60] mb-1">Avoid</div>
-                  <div className="text-[#ef4444]">{regime.recommendations.avoid_sectors?.slice(0,2).join(" · ") || "—"}</div>
+                  <div className="text-text-muted mb-1">Avoid</div>
+                  <div className="text-negative">{regime.recommendations.avoid_sectors?.slice(0,2).join(" · ") || "—"}</div>
                 </div>
               </div>
             )}
@@ -205,11 +192,11 @@ export default function HomePage() {
 
         {/* ── Hero Swipe Cards ── */}
         <div>
-          <div className="text-[10px] text-[#4a4a60] uppercase tracking-widest mb-2">Quick Access</div>
+          <div className="text-[10px] text-text-muted uppercase tracking-widest mb-2">Quick Access</div>
           <div className="flex gap-3 overflow-x-auto snap-x-mandatory -mx-4 px-4 pb-1">
             {HERO_CARDS.map(({ id, icon: Icon, label, href, color }) => (
               <Link key={id} href={href} className="snap-start shrink-0">
-                <div className="w-[130px] rounded-2xl border border-[#2a2a38] bg-[#111118] p-4 flex flex-col gap-3 active:bg-[#1a1a24] transition-colors">
+                <div className="w-[130px] rounded-2xl border border-border bg-surface p-4 flex flex-col gap-3 hover:bg-surface-2 transition-colors">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${color}20`, border: `1px solid ${color}30` }}
@@ -217,10 +204,10 @@ export default function HomePage() {
                     <Icon size={18} style={{ color }} />
                   </div>
                   <div>
-                    <div className="text-[12px] font-medium text-[#e8e8f0] leading-snug">{label}</div>
+                    <div className="text-[12px] font-medium text-text-primary leading-snug">{label}</div>
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="text-[9px] text-[#4a4a60]">View</span>
-                      <ChevronRight size={9} className="text-[#4a4a60]" />
+                      <span className="text-[9px] text-text-muted">View</span>
+                      <ChevronRight size={9} className="text-text-muted" />
                     </div>
                   </div>
                 </div>
@@ -232,15 +219,15 @@ export default function HomePage() {
         {/* ── Market Indices ── */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] text-[#4a4a60] uppercase tracking-widest">Markets</div>
-            <div className="flex items-center gap-1 bg-[#111118] rounded-full p-0.5 border border-[#2a2a38]">
+            <div className="text-[10px] text-text-muted uppercase tracking-widest">Markets</div>
+            <div className="flex items-center gap-1 bg-surface rounded-full p-0.5 border border-border">
               {PERIODS.map((p) => (
                 <button
                   key={p.value}
                   onClick={() => setPeriod(p.value)}
                   className={cn(
                     "px-2.5 py-1 rounded-full text-[10px] font-medium transition-all",
-                    period === p.value ? "bg-[#6366f1] text-white" : "text-[#6b6b80]"
+                    period === p.value ? "bg-accent text-white" : "text-text-muted"
                   )}
                 >
                   {p.label}
@@ -250,7 +237,7 @@ export default function HomePage() {
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center h-24 text-[#4a4a60] text-xs gap-2">
+            <div className="flex items-center justify-center h-24 text-text-muted text-xs gap-2">
               <RefreshCw size={13} className="animate-spin" /> Loading…
             </div>
           ) : (
@@ -270,18 +257,18 @@ export default function HomePage() {
 
         {/* ── Quick Links Grid ── */}
         <div>
-          <div className="text-[10px] text-[#4a4a60] uppercase tracking-widest mb-2">Explore</div>
+          <div className="text-[10px] text-text-muted uppercase tracking-widest mb-2">Explore</div>
           <div className="grid grid-cols-4 gap-2">
             {QUICK_LINKS.map(({ href, label, icon: Icon, color }) => (
               <Link key={href} href={href}>
-                <div className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-[#2a2a38] bg-[#111118] active:bg-[#1a1a24] transition-colors">
+                <div className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-border bg-surface hover:bg-surface-2 transition-colors">
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: `${color}15` }}
                   >
                     <Icon size={15} style={{ color }} />
                   </div>
-                  <span className="text-[9.5px] text-[#6b6b80] text-center leading-tight">{label}</span>
+                  <span className="text-[9.5px] text-text-muted text-center leading-tight">{label}</span>
                 </div>
               </Link>
             ))}
@@ -292,12 +279,12 @@ export default function HomePage() {
         {overview?.sectors && overview.sectors.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] text-[#4a4a60] uppercase tracking-widest">Sectors Today</div>
-              <Link href="/rotation" className="text-[10px] text-[#6366f1] flex items-center gap-1">
+              <div className="text-[10px] text-text-muted uppercase tracking-widest">Sectors Today</div>
+              <Link href="/rotation" className="text-[10px] text-accent flex items-center gap-1">
                 Rotation <ChevronRight size={10} />
               </Link>
             </div>
-            <div className="rounded-2xl border border-[#2a2a38] bg-[#111118] px-4 py-1">
+            <div className="rounded-2xl border border-border bg-surface px-4 py-1">
               {overview.sectors
                 .slice()
                 .sort((a, b) => b.change_1d - a.change_1d)
@@ -312,34 +299,34 @@ export default function HomePage() {
         {overview?.breadth && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] text-[#4a4a60] uppercase tracking-widest">Breadth</div>
-              <Link href="/breadth" className="text-[10px] text-[#6366f1] flex items-center gap-1">
+              <div className="text-[10px] text-text-muted uppercase tracking-widest">Breadth</div>
+              <Link href="/breadth" className="text-[10px] text-accent flex items-center gap-1">
                 Details <ChevronRight size={10} />
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-[#2a2a38] bg-[#111118] p-4">
-                <div className="text-[10px] text-[#6b6b80] mb-1">Above 50-MA</div>
-                <div className="text-[22px] font-bold tabular-nums text-[#e8e8f0]">
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <div className="text-[10px] text-text-muted mb-1">Above 50-MA</div>
+                <div className="text-[22px] font-bold tabular-nums text-text-primary">
                   {overview.breadth.above_50ma_pct.toFixed(0)}
-                  <span className="text-[14px] text-[#6b6b80]">%</span>
+                  <span className="text-[14px] text-text-muted">%</span>
                 </div>
-                <div className="mt-2 h-1.5 bg-[#1a1a24] rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full rounded-full", overview.breadth.above_50ma_pct > 50 ? "bg-[#22c55e]" : "bg-[#ef4444]")}
+                    className={cn("h-full rounded-full", overview.breadth.above_50ma_pct > 50 ? "bg-positive" : "bg-negative")}
                     style={{ width: `${overview.breadth.above_50ma_pct}%` }}
                   />
                 </div>
               </div>
-              <div className="rounded-2xl border border-[#2a2a38] bg-[#111118] p-4">
-                <div className="text-[10px] text-[#6b6b80] mb-1">Above 200-MA</div>
-                <div className="text-[22px] font-bold tabular-nums text-[#e8e8f0]">
+              <div className="rounded-2xl border border-border bg-surface p-4">
+                <div className="text-[10px] text-text-muted mb-1">Above 200-MA</div>
+                <div className="text-[22px] font-bold tabular-nums text-text-primary">
                   {overview.breadth.above_200ma_pct.toFixed(0)}
-                  <span className="text-[14px] text-[#6b6b80]">%</span>
+                  <span className="text-[14px] text-text-muted">%</span>
                 </div>
-                <div className="mt-2 h-1.5 bg-[#1a1a24] rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full rounded-full", overview.breadth.above_200ma_pct > 50 ? "bg-[#22c55e]" : "bg-[#ef4444]")}
+                    className={cn("h-full rounded-full", overview.breadth.above_200ma_pct > 50 ? "bg-positive" : "bg-negative")}
                     style={{ width: `${overview.breadth.above_200ma_pct}%` }}
                   />
                 </div>

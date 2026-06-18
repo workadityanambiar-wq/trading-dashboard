@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 import {
   LayoutDashboard,
   ScanSearch,
@@ -43,6 +44,10 @@ import {
   Gem,
   Droplets,
   CircleDollarSign,
+  Sun,
+  Moon,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -92,6 +97,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+  const { theme, toggleTheme, layoutMode, setLayoutMode } = useAppSettings();
 
   async function handleSignOut() {
     await signOut();
@@ -165,6 +171,27 @@ export function Sidebar() {
             </Link>
           )
         )}
+          {/* ── Settings row ── */}
+        <div className="flex items-center gap-1 pt-1">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+          >
+            {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+            {theme === "dark" ? "Light" : "Dark"}
+          </button>
+          {/* Layout toggle */}
+          <button
+            onClick={() => setLayoutMode(layoutMode === "desktop" ? "mobile" : "desktop")}
+            title={layoutMode === "desktop" ? "Switch to mobile layout" : "Switch to desktop layout"}
+            className="flex items-center gap-1.5 flex-1 px-2 py-1.5 rounded text-xs text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+          >
+            {layoutMode === "desktop" ? <Smartphone size={13} /> : <Monitor size={13} />}
+            {layoutMode === "desktop" ? "Mobile" : "Desktop"}
+          </button>
+        </div>
         <div className="text-xs text-text-muted px-2">Data: yfinance</div>
       </div>
     </aside>

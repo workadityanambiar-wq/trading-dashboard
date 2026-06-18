@@ -739,44 +739,47 @@ export default function DollarPage() {
   const dxyprice = overview?.price ?? 0;
   const dxydaily = overview?.daily ?? 0;
 
-  return (
-    <div className="flex flex-col h-full overflow-auto bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <CircleDollarSign size={22} className="text-blue-500"/>
-          <div>
-            <h1 className="text-base font-bold text-text-primary">U.S. Dollar Intelligence</h1>
-            <p className="text-xs text-text-muted">Institutional macro dashboard · Real-time</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {dxyprice>0&&(
-            <div className="text-right">
-              <div className="text-sm font-bold font-mono" style={{color:BLUE}}>{dxyprice.toFixed(3)}</div>
-              <div className="text-xs font-mono" style={{color:chgColor(dxydaily)}}>DXY {fmtPct(dxydaily)} today</div>
-            </div>
-          )}
-          <button onClick={load} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-text-primary hover:border-blue-500/50 transition-colors">
-            <RefreshCw size={12} className={loading?"animate-spin":""}/>Refresh
-          </button>
-        </div>
-      </div>
+  const TAB_LIST = TABS.map(t => ({ value: t, label: t }));
 
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-border px-6 flex-shrink-0 overflow-x-auto">
-        {TABS.map(t=>(
-          <button key={t} onClick={()=>setTab(t)}
-            className={cn("px-4 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors",
-              tab===t?"border-blue-500 text-blue-400 font-semibold":"border-transparent text-text-muted hover:text-text-primary"
-            )}>
-            {t}
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Mobile header */}
+      <header
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border"
+        style={{ paddingTop: `calc(env(safe-area-inset-top) + 8px)` }}
+      >
+        <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center gap-2.5">
+            <CircleDollarSign size={18} className="text-blue-500 shrink-0"/>
+            <div>
+              <div className="text-[14px] font-bold text-text-primary leading-tight">Dollar Tracker</div>
+              {dxyprice > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-bold font-mono" style={{color:BLUE}}>{dxyprice.toFixed(3)}</span>
+                  <span className="text-[11px] font-mono" style={{color:chgColor(dxydaily)}}>{fmtPct(dxydaily)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <button onClick={load} className="flex items-center justify-center w-8 h-8 rounded-xl bg-surface-2 text-text-muted active:bg-border transition-colors">
+            <RefreshCw size={13} className={loading?"animate-spin":""}/>
           </button>
-        ))}
-      </div>
+        </div>
+        {/* Horizontal scroll tabs */}
+        <div className="flex gap-0 overflow-x-auto px-4 pb-0" style={{scrollbarWidth:"none"}}>
+          {TABS.map(t=>(
+            <button key={t} onClick={()=>setTab(t)}
+              className={cn("px-3 py-2 text-[12px] whitespace-nowrap border-b-2 transition-colors shrink-0",
+                tab===t?"border-blue-500 text-blue-400 font-semibold":"border-transparent text-text-muted"
+              )}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="p-4">
         {loading && <Spinner/>}
         {error && <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm"><AlertTriangle size={16}/>{error}</div>}
         {!loading && !error && (

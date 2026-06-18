@@ -10,15 +10,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0a0a0f",
-        surface: "#111118",
-        "surface-2": "#1a1a24",
-        border: "#2a2a38",
-        "text-primary": "#e8e8f0",
-        "text-muted": "#6b6b80",
-        positive: "#22c55e",
-        negative: "#ef4444",
-        accent: "#6366f1",
+        background:    "rgb(var(--bg)       / <alpha-value>)",
+        surface:       "rgb(var(--surface)  / <alpha-value>)",
+        "surface-2":   "rgb(var(--surface2) / <alpha-value>)",
+        border:        "rgb(var(--border)   / <alpha-value>)",
+        "text-primary":"rgb(var(--text-primary) / <alpha-value>)",
+        "text-muted":  "rgb(var(--text-muted)   / <alpha-value>)",
+        positive:  "#22c55e",
+        negative:  "#ef4444",
+        accent:    "#6366f1",
       },
       fontFamily: {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],

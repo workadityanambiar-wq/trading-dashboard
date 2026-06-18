@@ -1357,73 +1357,70 @@ export default function TreasuryPage() {
   const composite10 = composite?.composite_score;
 
   return (
-    <div className="space-y-4 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Landmark size={20} className="text-blue-500"/>
-            U.S. Treasury Yield Curve Intelligence
-          </h1>
-          <p className="text-xs text-text-muted mt-0.5">Institutional macro · Rates · Fixed income analytics</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {composite10 !== undefined && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface rounded-lg border border-border">
-              <span className="text-xs text-text-muted">Composite</span>
-              <span className="text-sm font-bold font-mono" style={{color:scoreColor(composite10)}}>{composite10}</span>
-              <span className="text-xs" style={{color:scoreColor(composite10)}}>{composite?.label}</span>
-            </div>
-          )}
-          {curve?.inversion_alert && (
-            <div className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 rounded-lg border border-red-500/30 text-xs text-red-400">
-              <AlertTriangle size={12}/> Inversion Alert
-            </div>
-          )}
-          <button onClick={load} disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm text-white transition-colors disabled:opacity-50">
-            <RefreshCw size={14} className={loading?"animate-spin":""}/>
-            {loading ? "Loading…" : "Refresh"}
-          </button>
-        </div>
-      </div>
-
-      {/* Quick yield strip */}
-      {currentMats && (
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {MATURITIES.map(mat => {
-            const m = currentMats[mat]; if (!m) return null;
-            return (
-              <div key={mat} className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg shrink-0 text-sm font-mono">
-                <span className="text-text-muted text-xs">{mat}</span>
-                <span className="font-bold" style={{color:MAT_COLORS[mat]}}>{fmt(m.current,3)}%</span>
-                <span className="text-xs" style={{color:bpsColor(m.chg_1d)}}>{fmtBps(m.chg_1d)}</span>
+    <div className="min-h-screen bg-background">
+      {/* Mobile header */}
+      <header
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border"
+        style={{ paddingTop: `calc(env(safe-area-inset-top) + 8px)` }}
+      >
+        <div className="flex items-center justify-between px-4 pb-1">
+          <div className="flex items-center gap-2.5">
+            <Landmark size={16} className="text-blue-500 shrink-0"/>
+            <div>
+              <div className="text-[14px] font-bold text-text-primary leading-tight">Treasury Yields</div>
+              <div className="flex items-center gap-2">
+                {composite10 !== undefined && (
+                  <span className="text-[11px] font-mono" style={{color:scoreColor(composite10)}}>Score: {composite10} · {composite?.label}</span>
+                )}
+                {curve?.inversion_alert && (
+                  <span className="text-[10px] text-red-400 flex items-center gap-0.5"><AlertTriangle size={9}/> Inverted</span>
+                )}
               </div>
-            );
-          })}
-          {curve && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg shrink-0 text-sm font-mono">
-              <span className="text-text-muted text-xs">2s10s</span>
-              <span className="font-bold" style={{color:curve.spreads["2s10s"]<0?R:G}}>{curve.spreads["2s10s"]?.toFixed(1)}bp</span>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex gap-1 flex-wrap border-b border-border pb-1">
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={cn("px-3 py-1.5 rounded-t-lg text-xs font-medium transition-colors",
-              tab === t ? "bg-surface-2 text-text-primary border border-border border-b-surface-2"
-                        : "text-text-muted hover:text-text-primary")}>
-            {t}
+          </div>
+          <button onClick={load} disabled={loading}
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-surface-2 text-text-muted active:bg-border transition-colors">
+            <RefreshCw size={13} className={loading?"animate-spin":""}/>
           </button>
-        ))}
+        </div>
+
+        {/* Quick yield strip */}
+        {currentMats && (
+          <div className="flex gap-2 overflow-x-auto px-4 py-1.5" style={{scrollbarWidth:"none"}}>
+            {MATURITIES.map(mat => {
+              const m = currentMats[mat]; if (!m) return null;
+              return (
+                <div key={mat} className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border rounded-lg shrink-0">
+                  <span className="text-[10px] text-text-muted">{mat}</span>
+                  <span className="text-[12px] font-bold font-mono" style={{color:MAT_COLORS[mat]}}>{fmt(m.current,3)}%</span>
+                  <span className="text-[10px] font-mono" style={{color:bpsColor(m.chg_1d)}}>{fmtBps(m.chg_1d)}</span>
+                </div>
+              );
+            })}
+            {curve && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border rounded-lg shrink-0">
+                <span className="text-[10px] text-text-muted">2s10s</span>
+                <span className="text-[12px] font-bold font-mono" style={{color:curve.spreads["2s10s"]<0?R:G}}>{curve.spreads["2s10s"]?.toFixed(1)}bp</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-0 overflow-x-auto px-4 pb-0" style={{scrollbarWidth:"none"}}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={cn("px-3 py-2 text-[12px] whitespace-nowrap border-b-2 transition-colors shrink-0",
+                tab === t ? "border-blue-500 text-blue-400 font-semibold" : "border-transparent text-text-muted")}>
+              {t}
+            </button>
+          ))}
       </div>
+
+      </header>
 
       {/* Tab content */}
-      <div>
+      <div className="p-4">
         {loading && !overview ? <Spinner/> : (
           <>
             {tab === "Overview"    && (overview    ? <OverviewTab    d={overview}/>    : <Spinner/>)}

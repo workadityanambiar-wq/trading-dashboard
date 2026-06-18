@@ -186,48 +186,45 @@ export default function OilPage() {
   const wti = overview?.cards.find(c => c.name === "WTI Crude");
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-amber-500/10">
-            <Droplets size={18} className="text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-text-primary">Crude Oil Market Intelligence</h1>
-            <p className="text-xs text-text-muted">Institutional-grade commodity analytics · Real-time</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {wti && (
-            <div className="text-right">
-              <div className="text-lg font-bold text-amber-400">{fmtPrice(wti.price)}</div>
-              <div className={cn("text-xs font-medium", wti.daily >= 0 ? "text-emerald-400" : "text-red-400")}>
-                WTI {fmtPct(wti.daily)} today
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Mobile header */}
+      <header
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border"
+        style={{ paddingTop: `calc(env(safe-area-inset-top) + 8px)` }}
+      >
+        <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 shrink-0">
+              <Droplets size={15} className="text-amber-400" />
             </div>
-          )}
+            <div>
+              <div className="text-[14px] font-bold text-text-primary leading-tight">Oil Tracker</div>
+              {wti && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-bold font-mono text-amber-400">{fmtPrice(wti.price)}</span>
+                  <span className={cn("text-[11px] font-mono", wti.daily >= 0 ? "text-emerald-400" : "text-red-400")}>WTI {fmtPct(wti.daily)}</span>
+                </div>
+              )}
+            </div>
+          </div>
           <button onClick={load} disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg text-xs text-text-muted hover:text-text-primary disabled:opacity-50">
-            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-            {lastRefresh || "Refresh"}
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-surface-2 text-text-muted active:bg-border transition-colors">
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-border flex-shrink-0 px-6 flex gap-0 overflow-x-auto">
-        {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={cn("px-3 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors",
-              tab === t ? "border-amber-500 text-amber-400" : "border-transparent text-text-muted hover:text-text-primary")}>
-            {t}
-          </button>
-        ))}
-      </div>
+        <div className="flex gap-0 overflow-x-auto px-4 pb-0" style={{scrollbarWidth:"none"}}>
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={cn("px-3 py-2 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors shrink-0",
+                tab === t ? "border-amber-500 text-amber-400 font-semibold" : "border-transparent text-text-muted")}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="p-4">
         {error && (
           <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center gap-2 mb-4">
             <AlertTriangle size={14} /> {error}

@@ -281,22 +281,23 @@ export default function RegimePage() {
   ] as const;
 
   return (
-    <div className="flex-1 flex flex-col gap-6 p-6 overflow-y-auto">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-          Regime Detection
-        </h2>
+    <div className="min-h-screen bg-background">
+      {/* Mobile header */}
+      <header
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border px-4 flex items-center justify-between"
+        style={{ paddingTop: `calc(env(safe-area-inset-top) + 8px)`, paddingBottom: "10px" }}
+      >
+        <h2 className="text-[14px] font-bold text-text-primary">Market Regime</h2>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors"
+          className="flex items-center justify-center w-8 h-8 rounded-xl bg-surface-2 text-text-muted active:bg-border transition-colors"
         >
-          <RefreshCw size={12} className={cn(isFetching && "animate-spin")} />
-          Refresh
+          <RefreshCw size={13} className={cn(isFetching && "animate-spin")} />
         </button>
-      </div>
+      </header>
+
+      <div className="flex flex-col gap-5 p-4">
 
       {/* Headline */}
       <RegimeHeadline data={data} />
@@ -396,6 +397,7 @@ export default function RegimePage() {
         )}
       </div>
 
+      </div>
     </div>
   );
 }
