@@ -62,6 +62,7 @@ const NAV = [
   { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
   { href: "/regime",        label: "Regime",       icon: Radar },
   { href: "/institutional", label: "Inst. Flow",   icon: Landmark },
+  { href: "/inst-tracker",  label: "Inst. Tracker", icon: Users },
   { href: "/crowding",      label: "Crowding",      icon: Users },
   { href: "/earnings-drift", label: "E. Drift / PEAD", icon: Milestone },
   { href: "/quality",        label: "Quality Factor",  icon: Gem },
