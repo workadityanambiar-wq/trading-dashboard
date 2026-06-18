@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { HistoryDrawer, DrawerConfig } from "@/components/HistoryDrawer";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, CartesianGrid,
@@ -175,6 +176,7 @@ function OverviewTab({ data }: { data: any }) {
 
 function HoldingsTab({ data }: { data: any }) {
   const [view, setView] = useState<"new" | "inc" | "red" | "exit">("new");
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   if (!data) return <div className="text-text-muted text-xs p-4">Loading…</div>;
 
   const views = [
@@ -204,7 +206,8 @@ function HoldingsTab({ data }: { data: any }) {
       {view === "new" && (
         <div className="space-y-2">
           {data.new_positions?.map((p: any) => (
-            <div key={p.ticker} className="rounded-2xl border border-positive/20 bg-positive/5 p-4">
+            <div key={p.ticker} className="rounded-2xl border border-positive/20 bg-positive/5 p-4 cursor-pointer hover:border-positive/50 transition-colors"
+              onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${p.ticker}`, color: "#22c55e" })}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -227,7 +230,8 @@ function HoldingsTab({ data }: { data: any }) {
       {view === "inc" && (
         <div className="space-y-2">
           {data.increases?.map((p: any) => (
-            <div key={`${p.institution}-${p.ticker}`} className="rounded-2xl border border-border bg-surface p-4">
+            <div key={`${p.institution}-${p.ticker}`} className="rounded-2xl border border-border bg-surface p-4 cursor-pointer hover:border-accent/40 transition-colors"
+              onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${p.ticker}`, color: "#6366f1" })}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -292,6 +296,7 @@ function HoldingsTab({ data }: { data: any }) {
           ))}
         </div>
       )}
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }
@@ -299,6 +304,7 @@ function HoldingsTab({ data }: { data: any }) {
 // ── Tab: Sector Flows ─────────────────────────────────────────────────────────
 
 function SectorFlowsTab({ data }: { data: any }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   if (!data) return <div className="text-text-muted text-xs p-4">Loading…</div>;
   const sectors = data.sectors ?? [];
 
@@ -332,7 +338,11 @@ function SectorFlowsTab({ data }: { data: any }) {
         {sectors.map((s: any) => {
           const pos = s.net_flow_bn >= 0;
           return (
-            <div key={s.sector} className="rounded-xl border border-border bg-surface p-3">
+            <div
+              key={s.sector}
+              className="rounded-xl border border-border bg-surface p-3 cursor-pointer hover:border-accent/40 transition-colors"
+              onClick={() => setDrawer({ fetchUrl: `/api/chart/metric/sector-${s.sector}`, color: pos ? "#22c55e" : "#ef4444" })}
+            >
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="text-[12px] font-semibold text-text-primary">{s.sector}</div>
@@ -355,6 +365,7 @@ function SectorFlowsTab({ data }: { data: any }) {
           );
         })}
       </div>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }
@@ -363,6 +374,7 @@ function SectorFlowsTab({ data }: { data: any }) {
 
 function SmartMoneyTab({ data }: { data: any }) {
   const [view, setView] = useState<"bought" | "sold">("bought");
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   if (!data) return <div className="text-text-muted text-xs p-4">Loading…</div>;
 
   const items = view === "bought" ? (data.most_bought ?? []) : (data.most_sold ?? []);
@@ -393,10 +405,14 @@ function SmartMoneyTab({ data }: { data: any }) {
           const buyers = isBuy ? item.net_buyers : item.net_sellers;
           const chg = isBuy ? item.ownership_chg : item.ownership_chg;
           return (
-            <div key={item.ticker} className={cn(
-              "rounded-xl border p-3 flex items-center gap-3",
-              isBuy ? "border-positive/20 bg-positive/5" : "border-negative/20 bg-negative/5"
-            )}>
+            <div
+              key={item.ticker}
+              className={cn(
+                "rounded-xl border p-3 flex items-center gap-3 cursor-pointer hover:border-accent/40 transition-colors",
+                isBuy ? "border-positive/20 bg-positive/5" : "border-negative/20 bg-negative/5"
+              )}
+              onClick={() => setDrawer({ fetchUrl: `/api/chart/stock/${item.ticker}`, color: isBuy ? "#22c55e" : "#ef4444" })}
+            >
               <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0",
                 isBuy ? "bg-positive/20 text-positive" : "bg-negative/20 text-negative")}
               >
@@ -421,6 +437,7 @@ function SmartMoneyTab({ data }: { data: any }) {
           );
         })}
       </div>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

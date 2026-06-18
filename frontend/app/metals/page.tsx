@@ -5,6 +5,7 @@ import {
   PolarAngleAxis, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell, PolarRadiusAxis,
 } from "recharts";
+import { HistoryDrawer, DrawerConfig } from "@/components/HistoryDrawer";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MetalData {
@@ -79,6 +80,11 @@ const trendBadge = (t: string) => {
   return map[t] ?? map.Neutral;
 };
 const CHART_COLORS = ["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#f97316","#84cc16","#ec4899","#6366f1"];
+const METAL_CHART_COLOR: Record<string, string> = {
+  Gold:"#f59e0b", Silver:"#94a3b8", Platinum:"#6366f1", Palladium:"#8b5cf6",
+  Copper:"#f97316", Aluminum:"#06b6d4", Nickel:"#10b981", Zinc:"#3b82f6",
+  Lead:"#64748b", Tin:"#a855f7",
+};
 const heatColor = (v: number) => {
   if (v > 8)  return "#16a34a";
   if (v > 3)  return "#4ade80";
@@ -102,8 +108,14 @@ function StatCard({ label, value, sub, cls }: { label: string; value: string; su
 // ── Metal Price Card ──────────────────────────────────────────────────────────
 function MetalCard({ name, d }: { name: string; d: MetalData }) {
   const isPrecious = PRECIOUS.includes(name);
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
+  const color = METAL_CHART_COLOR[name] ?? "#6366f1";
   return (
-    <div className="bg-surface-2 rounded-lg p-4 border border-border hover:border-accent/40 transition-colors">
+    <>
+    <div
+      className="bg-surface-2 rounded-lg p-4 border border-border hover:border-accent/40 transition-colors cursor-pointer"
+      onClick={() => setDrawer({ fetchUrl: `/api/chart/metal/${name.toLowerCase()}`, color })}
+    >
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="font-semibold text-text-primary text-sm">{name}</div>
@@ -144,6 +156,8 @@ function MetalCard({ name, d }: { name: string; d: MetalData }) {
         <span>52W Hi: {d.unit === "USD/t" ? fmt(d.hi52, 0) : fmt(d.hi52, 2)}</span>
       </div>
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 
@@ -642,6 +656,7 @@ function ChinaTab({ data }: { data: any }) {
 
 // ── Mining Tab ────────────────────────────────────────────────────────────────
 function MiningTab({ data }: { data: any }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   if (!data) return <div className="text-text-muted p-8 text-center">Loading…</div>;
   const miners: MinerRow[] = data.miners ?? [];
   const ratingCls = (r: string) => r.includes("Buy") || r.includes("Overweight") || r.includes("Outperform") ? "text-green-400" : "text-yellow-400";
@@ -670,7 +685,8 @@ function MiningTab({ data }: { data: any }) {
           </tr></thead>
           <tbody>
             {miners.map(m => (
-              <tr key={m.company} className="border-b border-border/30 hover:bg-surface/40">
+              <tr key={m.company} className="border-b border-border/30 hover:bg-surface/40 cursor-pointer"
+                onClick={() => m.ticker && setDrawer({ fetchUrl: `/api/chart/stock/${m.ticker}`, color: "#6366f1" })}>
                 <td className="py-2 pr-3">
                   <div className="font-medium text-text-primary">{m.company}</div>
                   <div className="text-[10px] text-text-muted">{m.ticker}</div>
@@ -701,6 +717,7 @@ function MiningTab({ data }: { data: any }) {
           ))}
         </div>
       </div>
+      <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
     </div>
   );
 }

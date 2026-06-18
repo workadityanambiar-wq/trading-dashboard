@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { HistoryDrawer, DrawerConfig } from "@/components/HistoryDrawer";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, CartesianGrid, ReferenceLine, Area, AreaChart,
@@ -91,9 +92,18 @@ function ScoreGauge({ score, label, size = "lg" }: { score: number; label: strin
   );
 }
 
-function PriceRow({ item }: { item: any }) {
+function toMemorySlug(type: string) {
+  return type.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
+function PriceRow({ item, color = "#6366f1" }: { item: any; color?: string }) {
+  const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
   return (
-    <div className="flex items-center gap-2 py-2.5 border-b border-surface-2 last:border-0">
+    <>
+    <div
+      className="flex items-center gap-2 py-2.5 border-b border-surface-2 last:border-0 cursor-pointer hover:bg-surface-2/50 rounded px-1 transition-colors"
+      onClick={() => setDrawer({ fetchUrl: `/api/chart/memory/${toMemorySlug(item.type)}`, color })}
+    >
       <div className="flex-1 min-w-0">
         <div className="text-[11px] font-semibold text-text-primary truncate">{item.type}</div>
         <div className="text-[9px] text-text-muted">{item.unit}</div>
@@ -108,6 +118,8 @@ function PriceRow({ item }: { item: any }) {
         <span className={chgColor(item.qtr)}>{item.qtr != null ? fmtPct(item.qtr) : "—"}</span>
       </div>
     </div>
+    <HistoryDrawer open={!!drawer} onClose={() => setDrawer(null)} config={drawer} />
+    </>
   );
 }
 
