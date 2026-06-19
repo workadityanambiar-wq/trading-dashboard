@@ -1201,6 +1201,16 @@ export const api = {
   // ── Quality Factor ────────────────────────────────────────────────────────────
   getQuality: (universe = "sp500", top_n = 200) =>
     apiFetch<QualityResponse>(`/quality/scan?universe=${encodeURIComponent(universe)}&top_n=${top_n}`),
+
+  // ── IPO Intelligence ──────────────────────────────────────────────────────────
+  getIPOOverview:     () => apiFetch<IPOOverviewResponse>("/ipo/overview"),
+  getIPOPerformance:  () => apiFetch<IPOPerformanceResponse>("/ipo/performance"),
+  getIPOCalendar:     () => apiFetch<IPOCalendarResponse>("/ipo/calendar"),
+  getIPOLockup:       () => apiFetch<IPOLockupResponse>("/ipo/lockup"),
+  getIPOValuation:    () => apiFetch<IPOValuationResponse>("/ipo/valuation"),
+  getIPOSectors:      () => apiFetch<IPOSectorsResponse>("/ipo/sectors"),
+  getIPOScreener:     () => apiFetch<IPOScreenerResponse>("/ipo/screener"),
+  getIPOPrivate:      () => apiFetch<IPOPrivateResponse>("/ipo/private"),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
@@ -1608,6 +1618,44 @@ export interface TechnicalSignalsParams {
   pivot_min?: number;
   pivot_max?: number;
 }
+
+// ── IPO Intelligence types ────────────────────────────────────────────────────
+
+export interface IPOPerf {
+  ticker: string; company: string; ipo_date: string; ipo_price: number;
+  current_price: number | null; exchange: string; sector: string;
+  raise_m: number; val_b: number; vc: string; vc_pct: number; insider_pct: number;
+  d1: number | null; w1: number | null; m1: number | null;
+  m3: number | null; m6: number | null; y1: number | null;
+}
+export interface IPOPerformanceResponse { performance: IPOPerf[]; count: number; as_of: string }
+
+export interface IPOHealthScore {
+  score: number; cycle: string;
+  components: { vix_score: number; mkt_score: number; ipo_score: number; rate_score: number };
+}
+export interface IPOMarket { vix: number; spy_ytd: number; qqq_ytd: number; ten_yr: number; spy_price: number | null; qqq_price: number | null }
+export interface IPOKPIs { ipos_ytd: number; capital_raised_b: number; avg_d1_return: number | null; unicorn_ipos: number; avg_d1_positive: number | null }
+export interface IPOOverviewResponse { health: IPOHealthScore; market: IPOMarket; kpis: IPOKPIs; as_of: string }
+
+export interface IPOCalendarItem { company: string; ticker: string; exchange: string; expected_date: string; sector: string; val_b: number; raise_m: number; interest: number; days_to_ipo: number }
+export interface IPOCalendarResponse { upcoming: IPOCalendarItem[]; anticipated: IPOCalendarItem[]; count: number }
+
+export interface IPOLockup { ticker: string; company: string; ipo_date: string; expiry_date: string; days_left: number; insider_pct: number; vc_pct: number; vc: string; unlock_shares_m: number | null; current_price: number | null; risk: string }
+export interface IPOLockupResponse { lockups: IPOLockup[]; risk_score: number; as_of: string }
+
+export interface IPOVal { ticker: string; company: string; sector: string; ev_sales: number | null; fwd_pe: number | null; ev_ebitda: number | null; price_book: number | null; rev_growth: number | null; gross_margin: number | null; vs_peer_pct: number | null; rating: string }
+export interface IPOValuationResponse { valuation: IPOVal[]; as_of: string }
+
+export interface IPOSector { sector: string; ipo_count: number; capital_b: number; avg_d1: number | null; avg_m3: number | null; rank: number }
+export interface IPOSectorsResponse { sectors: IPOSector[] }
+
+export interface IPOComposite extends IPOPerf { scores: { demand: number; momentum: number; market: number; lockup: number; insider: number; value: number }; composite: number; rating: string; lockup_days: number }
+export interface IPOScreenerResponse { composite_scores: IPOComposite[]; best_longs: IPOComposite[]; lockup_shorts: IPOComposite[]; high_conviction: IPOComposite[]; overvalued: IPOComposite[]; undervalued: IPOComposite[]; health_score: number; as_of: string }
+
+export interface IPOPrivateCandidate { name: string; val_b: number; round: string; raised_b: number; stage: string; ipo_prob: number; timeline: string }
+export interface IPOExchange { name: string; region: string; ipos: number; cap_b: number }
+export interface IPOPrivateResponse { candidates: IPOPrivateCandidate[]; exchanges: IPOExchange[]; pipeline_score: number }
 
 export interface TechnicalSignalsResponse {
   total: number;

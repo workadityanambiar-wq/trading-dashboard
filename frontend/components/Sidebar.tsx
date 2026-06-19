@@ -59,6 +59,7 @@ const NAV = [
   { href: "/rotation",  label: "Rotation",  icon: RotateCcw },
   { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
   { href: "/mtf",         label: "Multi-TF",     icon: AlignCenter },
+  { href: "/ipo",         label: "IPO Intel",    icon: TrendingUp },
   { href: "/earnings",    label: "Earnings",     icon: CalendarDays },
   { href: "/rs",          label: "RS Rankings",  icon: BarChart3 },
   { href: "/regime",        label: "Regime",       icon: Radar },
