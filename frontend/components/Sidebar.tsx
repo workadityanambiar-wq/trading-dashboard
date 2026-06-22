@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import {
+  Mountain,
   LayoutDashboard,
   ScanSearch,
   Cpu,
@@ -77,6 +78,7 @@ const NAV = [
   { href: "/memory",        label: "Memory Intel",    icon: Cpu },
   { href: "/ai-compute",   label: "AI Compute Infra", icon: Cpu },
   { href: "/quantum",      label: "Quantum Intel",    icon: Cpu },
+  { href: "/rare-earths",  label: "Rare Earths",      icon: Mountain },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },

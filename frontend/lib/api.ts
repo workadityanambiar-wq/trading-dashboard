@@ -1221,6 +1221,17 @@ export const api = {
   getQuantumVC:         () => apiFetch<QuantumVCResponse>("/quantum/vc"),
   getQuantumForecast:   () => apiFetch<QuantumForecastResponse>("/quantum/forecast"),
   getQuantumLeaderboard:() => apiFetch<QuantumLeaderboardResponse>("/quantum/leaderboard"),
+
+  // ── Rare Earths & Critical Minerals ──────────────────────────────────────────
+  getREOverview:   () => apiFetch<REOverviewResponse>("/rare-earths/overview"),
+  getREElements:   () => apiFetch<REElementsResponse>("/rare-earths/elements"),
+  getREMinerals:   () => apiFetch<REMineralsResponse>("/rare-earths/minerals"),
+  getRESupply:     () => apiFetch<RESupplyResponse>("/rare-earths/supply"),
+  getREChina:      () => apiFetch<REChinaResponse>("/rare-earths/china"),
+  getREDemand:     () => apiFetch<REDemandResponse>("/rare-earths/demand"),
+  getRECompanies:  () => apiFetch<RECompaniesResponse>("/rare-earths/companies"),
+  getREProjects:   () => apiFetch<REProjectsResponse>("/rare-earths/projects"),
+  getREComposite:  () => apiFetch<RECompositeResponse>("/rare-earths/composite"),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
@@ -1900,3 +1911,45 @@ export interface QuantumLeader {
 }
 export interface QuantumGeoRisk { region: string; risk: string; detail: string }
 export interface QuantumLeaderboardResponse { leaderboard: QuantumLeader[]; geopolitical: QuantumGeoRisk[]; total_companies: number; as_of: string }
+
+// ── Rare Earths & Critical Minerals types ─────────────────────────────────────
+
+export interface REElement { symbol: string; name: string; type: string; price_kg: number; chg_7d: number; chg_30d: number; chg_1y: number; criticality: number; deficit: boolean; china_pct: number; use: string }
+export interface REElementsResponse { elements: REElement[]; pricing_score: number }
+
+export interface REMineral { name: string; type: string; unit: string; price: number; chg_7d: number; chg_30d: number; chg_1y: number; prod_kt: number; demand_kt: number; deficit_kt: number; china_pct: number; criticality: number }
+export interface REMineralsResponse { battery: REMineral[]; strategic: REMineral[]; strength_score: number }
+
+export interface RECountry { country: string; re_prod_kt: number; share_pct: number; yoy_pct: number; restrictions: boolean; risk: string }
+export interface REProcessing { region: string; re_pct: number; li_pct: number; co_pct: number; projects: number; utilization: number; score: number }
+export interface RESupplyResponse { production: RECountry[]; processing: REProcessing[]; concentration_score: number; total_prod_kt: number }
+
+export interface REControl { mineral: string; date: string; severity: string }
+export interface REAltSource { mineral: string; source: string; readiness_pct: number }
+export interface REChinaData { mining_pct: number; refining_pct: number; magnet_pct: number; risk_score: number; controls: REControl[]; alt_sources: REAltSource[] }
+export interface REChinaResponse { china: REChinaData }
+
+export interface REDefenseItem { system: string; re_kg: number; minerals: string[]; annual: number; priority: string }
+export interface REDemandForecast { year: number; ev_m: number; wind_gw: number; re_demand_kt: number }
+export interface REEvData { ev_sales_2024m: number; ev_sales_2025em: number; ev_sales_2030em: number; ev_cagr_pct: number; re_per_ev_kg: number; wind_gw_2024: number; wind_gw_2030e: number; re_ev_demand_kt_2024: number; re_ev_demand_kt_2030e: number; re_wind_demand_kt_2024: number; re_wind_demand_kt_2030e: number; demand_forecast: REDemandForecast[] }
+export interface REMagnetData { market_b: number; cagr_pct: number; china_pct: number; segments: Record<string, number>; nd_demand_2024_kt: number; nd_demand_2030e_kt: number; dy_demand_2024_kt: number; dy_demand_2030e_kt: number; demand_index: number; supply_risk: string; key_producers: string[] }
+export interface REDemandResponse { defense: REDefenseItem[]; ev: REEvData; magnets: REMagnetData; defense_score: number; green_score: number }
+
+export interface REMacd { macd: number; signal: number; histogram: number; bullish: boolean }
+export interface REStock { ticker: string; company: string; type: string; exposure: number; price: number; mkt_cap_b: number | null; ret_1m: number | null; ret_3m: number | null; ret_6m: number | null; ret_ytd: number | null; ret_1y: number | null; rsi: number | null; macd: REMacd | null; ema20: number | null; ema50: number | null; ema200: number | null; vs_ema20: number | null; vs_ema50: number | null; vs_ema200: number | null; signal: string; score: number; target: number | null; stop: number | null; exp_return_pct: number | null }
+export interface RECompaniesResponse { stocks: REStock[]; count: number; as_of: string }
+
+export interface REProject { name: string; company: string; region: string; mineral: string; capex_m: number; capacity_kt: number; status: string; year: number; govt_m: number }
+export interface REGeoRisk { risk: string; severity: string; prob: number; impact: number; detail: string }
+export interface REFlowETF { name: string; full: string; aum_b: number; flow_30d_m: number; ytd: number }
+export interface REFlowHF { fund: string; stance: string; focus: string }
+export interface REFlows { fund_flow_30d_b: number; etf_aum_b: number; positioning: string; smart_score: number; etfs: REFlowETF[]; hedge_funds: REFlowHF[] }
+export interface REProjectsResponse { projects: REProject[]; geo_risks: REGeoRisk[]; flows: REFlows; capacity_score: number; total_capex_b: number; total_govt_b: number }
+
+export interface RECompositeScore { score: number; label: string; components: Record<string, number>; weights: Record<string, number> }
+export interface RESignal { ticker: string; company: string; type: string; exposure_pct: number; price: number; signal: string; score: number; target: number | null; stop: number | null; exp_return_pct: number | null; confidence: number; rsi: number | null; ret_ytd: number | null; mkt_cap_b: number | null }
+export interface RECompositeResponse { composite: RECompositeScore; signals: RESignal[]; as_of: string }
+
+export interface RESupercycle { score: number; regime: string; components: Record<string, number> }
+export interface REKPIs { global_re_prod_kt: number; china_share_pct: number; china_refining_pct: number; deficit_minerals: number; ev_demand_re_kt_2024: number; magnet_demand_index: number; active_export_controls: number }
+export interface REOverviewResponse { supercycle: RESupercycle; composite: RECompositeScore; kpis: REKPIs; as_of: string }
