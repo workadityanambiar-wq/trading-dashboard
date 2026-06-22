@@ -964,6 +964,145 @@ export interface ExpectedReturnResponse {
   as_of:         string;
 }
 
+// ── Congressional Trading Intelligence types ──────────────────────────────────
+
+export interface CongressionalBullishness {
+  score: number; label: string;
+  total_purchases_30d: number; total_sales_30d: number;
+  net_flow: number; active_traders: number;
+}
+export interface CongressionalKPIs {
+  total_politicians_tracked: number; house_members: number; senate_members: number;
+  total_trades_30d: number; options_trades_30d: number;
+  committee_linked_trades: number; avg_conviction: number;
+  buy_count: number; sell_count: number;
+}
+export interface CongressionalTopTrade {
+  politician: string; party: string; ticker: string; action: string;
+  size: string; sector: string; days_ago: number; conviction: number;
+  committee_link: string | null; asset_type: string;
+}
+export interface CongressionalAlert {
+  id: string; type: string; priority: string; title: string;
+  detail: string; tickers: string[]; ts: string;
+}
+export interface CongressionalMarketData {
+  price: number; chg_pct: number; rsi: number; macd: number;
+  macd_signal: number; ema20: number; ema50: number | null;
+  score: number; signal: string;
+}
+export interface CongressionalOverviewResponse {
+  bullishness: CongressionalBullishness;
+  positioning: string;
+  top_trades: CongressionalTopTrade[];
+  markets: Record<string, CongressionalMarketData>;
+  alerts: CongressionalAlert[];
+  kpis: CongressionalKPIs;
+}
+
+export interface CongressionalTrade {
+  politician: string; party: string; state: string; chamber: string;
+  committees: string[]; ticker: string; asset_type: string; action: string;
+  size_label: string; size_max: number; trade_date: string;
+  disclosure_delay_days: number; sector: string;
+  committee_link: string | null; conviction: number;
+}
+export interface CongressionalTradesResponse { trades: CongressionalTrade[]; total: number }
+
+export interface CongressionalBuyer {
+  name: string; party: string; state: string; chamber: string; style: string;
+  total_purchases: number; num_trades: number; tickers: string[];
+  avg_conviction: number; win_rate: number; avg_alpha: number;
+  annualized_return: number; vs_sp500: number;
+}
+export interface CongressionalBuyersResponse { buyers: CongressionalBuyer[] }
+
+export interface CongressionalRiskExit { ticker: string; reason: string; politicians: string[]; risk_score: number }
+export interface CongressionalSeller {
+  name: string; party: string; state: string; chamber: string;
+  total_sales: number; num_trades: number; tickers: string[];
+  sectors_exiting: string[]; risk_reduction_score: number;
+}
+export interface CongressionalSellersResponse { sellers: CongressionalSeller[]; risk_exits: CongressionalRiskExit[] }
+
+export interface CongressionalOption {
+  politician: string; party: string; state: string; ticker: string;
+  option_type: string; strike: number; expiry: string;
+  size_label: string; trade_date: string; sector: string; conviction: number;
+}
+export interface CongressionalOptionsSentiment {
+  call_volume: number; put_volume: number; put_call_ratio: number;
+  sentiment: string; score: number;
+}
+export interface CongressionalOptionsResponse { options: CongressionalOption[]; sentiment: CongressionalOptionsSentiment }
+
+export interface CongressionalSector {
+  sector: string; net_buy: number; net_sell: number; net_flow: number;
+  active_traders: number; top_tickers: string[]; trend: string; flow_score: number;
+}
+export interface CongressionalSectorsResponse { sectors: CongressionalSector[] }
+
+export interface CongressionalCommittee {
+  name: string; chamber: string; members: string[]; sector_focus: string;
+  influence_score: number; pending_bills: number; budget_authority: number | null;
+  member_buy_volume: number; member_sell_volume: number; linked_trades: number;
+}
+export interface CongressionalCommitteesResponse { committees: CongressionalCommittee[] }
+
+export interface CongressionalSpending {
+  category: string; fy_budget: number; yoy_growth: number;
+  beneficiaries: string[]; congressional_buys: string[];
+}
+export interface CongressionalContract {
+  company: string; ticker: string; sector: string;
+  total_fy: number; yoy_growth: number; gov_rev_pct: number;
+  recent_award: string; award_value: number; momentum: number;
+}
+export interface CongressionalGovernmentResponse {
+  spending: CongressionalSpending[]; contracts: CongressionalContract[];
+  total_spending_tracked: number; total_contracts: number; fastest_growing: string;
+}
+
+export interface CongressionalBill {
+  bill: string; status: string; impact: string;
+  beneficiaries: string[]; at_risk: string[];
+  sector: string; budget: number | null; catalyst_date: string;
+}
+export interface CongressionalLobbying {
+  company: string; ticker: string; sector: string;
+  annual_spend: number; pac_contributions: number; influence_score: number;
+  key_committees: string[];
+}
+export interface CongressionalLegislationResponse {
+  bills: CongressionalBill[]; lobbying: CongressionalLobbying[];
+  positive_count: number; negative_count: number; mixed_count: number;
+}
+
+export interface CongressionalPerf {
+  name: string; party: string; state: string; chamber: string; style: string;
+  total_trades: number; win_rate: number; avg_alpha: number;
+  annualized_return: number; vs_sp500: number;
+  best_trade: string; worst_trade: string;
+}
+export interface CongressionalPerformanceResponse {
+  performance: CongressionalPerf[]; top_traders: CongressionalPerf[]; worst_traders: CongressionalPerf[];
+}
+
+export interface CongressionalComponent { score: number; weight: number }
+export interface CongressionalBestLong { ticker: string; reason: string; conviction: number }
+export interface CongressionalShortCandidate { ticker: string; reason: string; risk: number }
+export interface CongressionalEventDriven { event: string; date: string; beneficiaries: string[]; positioning: string }
+export interface CongressionalCompositeResponse {
+  composite_score: number; label: string;
+  components: Record<string, CongressionalComponent>;
+  alerts: CongressionalAlert[];
+  cluster_buys: Record<string, string[]>;
+  best_longs: CongressionalBestLong[];
+  short_candidates: CongressionalShortCandidate[];
+  event_driven: CongressionalEventDriven[];
+  markets: Record<string, CongressionalMarketData>;
+}
+
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
   getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
@@ -1232,6 +1371,19 @@ export const api = {
   getRECompanies:  () => apiFetch<RECompaniesResponse>("/rare-earths/companies"),
   getREProjects:   () => apiFetch<REProjectsResponse>("/rare-earths/projects"),
   getREComposite:  () => apiFetch<RECompositeResponse>("/rare-earths/composite"),
+
+  // ── Congressional Trading ─────────────────────────────────────────────────
+  getCongressionalOverview:    () => apiFetch<CongressionalOverviewResponse>("/congressional/overview"),
+  getCongressionalTrades:      () => apiFetch<CongressionalTradesResponse>("/congressional/trades"),
+  getCongressionalBuyers:      () => apiFetch<CongressionalBuyersResponse>("/congressional/buyers"),
+  getCongressionalSellers:     () => apiFetch<CongressionalSellersResponse>("/congressional/sellers"),
+  getCongressionalOptions:     () => apiFetch<CongressionalOptionsResponse>("/congressional/options"),
+  getCongressionalSectors:     () => apiFetch<CongressionalSectorsResponse>("/congressional/sectors"),
+  getCongressionalCommittees:  () => apiFetch<CongressionalCommitteesResponse>("/congressional/committees"),
+  getCongressionalGovernment:  () => apiFetch<CongressionalGovernmentResponse>("/congressional/government"),
+  getCongressionalLegislation: () => apiFetch<CongressionalLegislationResponse>("/congressional/legislation"),
+  getCongressionalPerformance: () => apiFetch<CongressionalPerformanceResponse>("/congressional/performance"),
+  getCongressionalComposite:   () => apiFetch<CongressionalCompositeResponse>("/congressional/composite"),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
