@@ -1151,6 +1151,166 @@ export interface CongressionalCompositeResponse {
   markets: Record<string, CongressionalMarketData>;
 }
 
+// ── Crypto & Digital Assets types ─────────────────────────────────────────────
+
+export interface CryptoAlert { id: string; priority: string; title: string; detail: string; tickers: string[] }
+
+export interface CryptoAsset {
+  ticker: string; name: string;
+  price: number; chg_1d: number; chg_7d: number; chg_30d: number; chg_1y: number;
+  rsi: number; macd: number; macd_signal: number;
+  ema20: number; ema50: number | null; ema200: number | null; adx: number | null;
+  score: number; signal: string;
+}
+export interface CryptoKPIs {
+  total_mcap_b: number; btc_mcap_b: number; eth_mcap_b: number; btc_dominance: number;
+  total_vol_24h_b: number; defi_tvl_b: number; stablecoin_mcap_b: number;
+  active_addresses_24h: number; fear_greed: number; fear_greed_label: string;
+  mvrv_zscore_btc: number; funding_rate_btc: number; etf_daily_flow_m: number; cycle_phase: string;
+}
+export interface CryptoMacro {
+  btc_gold_90d: number; btc_nasdaq_90d: number; btc_sp500_90d: number;
+  btc_dxy_90d: number; btc_10y_90d: number; btc_m2_90d: number;
+  fear_greed: number; fear_greed_label: string; google_trends: number;
+  sentiment_score: number; global_liquidity_b: number; global_liquidity_chg_90d: number;
+  cycle_phase: string; tailwinds: string[]; headwinds: string[];
+}
+export interface CryptoOverviewResponse {
+  crypto_score: number; regime: string; kpis: CryptoKPIs;
+  btc: CryptoAsset & { market_cap_b: number };
+  eth: CryptoAsset & { market_cap_b: number };
+  alerts: CryptoAlert[]; macro: CryptoMacro; as_of: string;
+}
+export interface CryptoAssetsResponse { assets: CryptoAsset[]; count: number; as_of: string }
+
+export interface CryptoOnChainBTC {
+  mvrv_zscore: number; sopr: number; nupl: number; realized_cap_b: number;
+  supply_in_profit_pct: number; active_addresses_24h: number;
+  exchange_outflow_btc: number; exchange_inflow_btc: number; net_exchange_flow_btc: number;
+  hash_rate_eh: number; difficulty: number; miner_revenue_usd_24h: number;
+  ssr: number; hodl_wave_1y_pct: number; illiquid_supply_pct: number;
+  rhodl_ratio: number; longterm_holder_pct: number; shortterm_holder_pct: number;
+  puell_multiple: number; price: number;
+  history_mvrv: number[]; history_nupl: number[]; history_labels: string[];
+}
+export interface CryptoOnChainETH {
+  mvrv_zscore: number; sopr: number; nupl: number; realized_cap_b: number;
+  supply_in_profit_pct: number; active_addresses_24h: number;
+  exchange_outflow_eth: number; exchange_inflow_eth: number; net_exchange_flow_eth: number;
+  staking_rate_pct: number; staked_eth: number; burn_rate_eth_day: number;
+  supply_growth_annualized: number; gas_gwei_avg: number; l2_tvl_b: number;
+  validators: number; staking_yield: number; price: number;
+  history_staked: number[]; history_burn: number[]; history_labels: string[];
+}
+export interface CryptoOnChainResponse { btc: CryptoOnChainBTC; eth: CryptoOnChainETH; as_of: string }
+
+export interface DeFiProtocol {
+  name: string; ticker: string; category: string;
+  tvl_b: number; tvl_chg_7d: number; rev_ann_m: number;
+  mcap_b: number; ps: number; chain: string; dominance_pct: number;
+}
+export interface RWAAsset { name: string; ticker: string; cat: string; tvl_b: number; growth_90d: number; yield_pct: number }
+export interface CryptoDeFiResponse {
+  protocols: DeFiProtocol[]; total_tvl_b: number;
+  top_by_tvl: DeFiProtocol[]; top_by_revenue: DeFiProtocol[];
+  by_category: { category: string; tvl_b: number }[];
+  rwa: RWAAsset[]; total_rwa_tvl_b: number; as_of: string;
+}
+
+export interface CryptoDerivAsset {
+  oi_b: number; oi_chg_24h: number; funding_rate_8h: number; ann_funding: number;
+  liq_long_24h_m: number; liq_short_24h_m: number;
+  options_oi_b: number; call_pct: number; put_call_ratio: number;
+  max_pain: number; iv_30d: number; iv_90d: number; iv_skew: number;
+  term_structure: string; basis_3m_ann: number; cme_oi_b: number; price: number;
+}
+export interface CryptoDerivativesResponse { btc: CryptoDerivAsset; eth: CryptoDerivAsset; total_crypto_oi_b: number; as_of: string }
+
+export interface CryptoBTCETF {
+  name: string; ticker: string; issuer: string; aum_b: number; btc_held: number;
+  daily_flow_m: number; fee_pct: number; prem_bps: number;
+  price?: number; chg_1d?: number; chg_7d?: number; rsi?: number;
+}
+export interface CryptoETHETF {
+  name: string; ticker: string; issuer: string; aum_b: number; eth_held: number;
+  daily_flow_m: number; fee_pct: number; prem_bps: number;
+  price?: number; chg_1d?: number; chg_7d?: number; rsi?: number;
+}
+export interface CryptoETFResponse {
+  btc_etfs: CryptoBTCETF[]; eth_etfs: CryptoETHETF[];
+  btc_total_aum_b: number; eth_total_aum_b: number;
+  btc_total_flow_m: number; eth_total_flow_m: number;
+  btc_total_held: number; total_etf_aum_b: number; as_of: string;
+}
+
+export interface Stablecoin {
+  name: string; symbol: string; type: string; mcap_b: number; chg_30d: number;
+  reserves: boolean; quality: string; vol_24h_b: number; peg_bps: number; share_pct: number;
+}
+export interface CryptoStablecoinsResponse {
+  stablecoins: Stablecoin[]; total_mcap_b: number; top_3_share_pct: number; fiat_backed_pct: number; as_of: string;
+}
+
+export interface ListedMiner {
+  name: string; ticker: string; hash_rate_eh: number; share_pct: number;
+  energy_cost_kwh: number; breakeven_btc: number; btc_held: number; ai_pivot: boolean;
+  price?: number; chg_1d?: number; chg_7d?: number; rsi?: number; score: number; signal: string;
+}
+export interface MiningPool { name: string; ticker: string | null; hash_rate_eh: number; share_pct: number; listed: boolean }
+export interface MiningStats {
+  hash_rate_eh: number; hash_rate_change_30d: number; difficulty: number; difficulty_change: number;
+  block_reward_btc: number; halving_date: string; next_halving_est: string;
+  miner_revenue_usd_24h: number; puell_multiple: number; fee_rev_pct: number;
+  breakeven_price: number; btc_price: number;
+}
+export interface CryptoMiningResponse {
+  stats: MiningStats; miners: ListedMiner[]; pools: MiningPool[];
+  listed_hash_share_pct: number; as_of: string;
+}
+
+export interface L1L2Ecosystem {
+  name: string; ticker: string | null; type: string; tps: number;
+  active_devs: number; dapps: number; tvl_b: number; fees_7d_m: number;
+  staking_yield: number | null; l2_count: number; score: number;
+  price?: number; chg_1d?: number; chg_7d?: number; rsi?: number;
+}
+export interface CryptoEcosystemsResponse {
+  ecosystems: L1L2Ecosystem[]; total_tvl_b: number; eth_tvl_share: number; l2_tvl_b: number; as_of: string;
+}
+
+export interface InstitutionalHolding {
+  entity: string; ticker: string; type: string; btc_held: number; avg_price: number;
+  value_b: number; pnl_pct: number; current_val_b: number; unrealized_b: number;
+  stock_price?: number; stock_chg_1d?: number;
+}
+export interface VCPipeline { company: string; sector: string; val_b: number; stage: string; ipo_prob: number; window: string }
+export interface CryptoProxy { ticker: string; price: number; chg_1d: number; score: number; signal: string }
+export interface CryptoInstitutionalResponse {
+  holdings: InstitutionalHolding[]; vc_pipeline: VCPipeline[];
+  total_btc_held: number; total_val_b: number; pct_circulating_supply: number;
+  proxies: CryptoProxy[]; as_of: string;
+}
+
+export interface CryptoSignal {
+  ticker: string; price: number; signal: string; score: number;
+  tech_score: number; composite_score: number; target: number; stop: number;
+  exp_return: number; confidence: number;
+}
+export interface CryptoComponent { score: number; weight: number }
+export interface CryptoBestLong { ticker: string; reason: string; conviction: number }
+export interface CryptoShortCandidate { ticker: string; reason: string; risk: number }
+export interface CryptoCompositeResponse {
+  composite_score: number; label: string;
+  components: Record<string, CryptoComponent>;
+  signals: CryptoSignal[];
+  alerts: CryptoAlert[];
+  best_longs: CryptoBestLong[];
+  short_candidates: CryptoShortCandidate[];
+  macro: CryptoMacro;
+  outlook: { "1m": string; "3m": string; "12m": string };
+  as_of: string;
+}
+
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
   getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
@@ -1430,6 +1590,19 @@ export const api = {
   getDefenseNATO:        () => apiFetch<DefenseNATOResponse>("/defense/nato"),
   getDefenseSupplyChain: () => apiFetch<DefenseSupplyChainResponse>("/defense/supply-chain"),
   getDefenseComposite:   () => apiFetch<DefenseCompositeResponse>("/defense/composite"),
+
+  // ── Crypto & Digital Assets ───────────────────────────────────────────────
+  getCryptoOverview:    () => apiFetch<CryptoOverviewResponse>("/crypto/overview"),
+  getCryptoAssets:      () => apiFetch<CryptoAssetsResponse>("/crypto/assets"),
+  getCryptoOnChain:     () => apiFetch<CryptoOnChainResponse>("/crypto/onchain"),
+  getCryptoDeFi:        () => apiFetch<CryptoDeFiResponse>("/crypto/defi"),
+  getCryptoDerivatives: () => apiFetch<CryptoDerivativesResponse>("/crypto/derivatives"),
+  getCryptoETF:         () => apiFetch<CryptoETFResponse>("/crypto/etf"),
+  getCryptoStablecoins: () => apiFetch<CryptoStablecoinsResponse>("/crypto/stablecoins"),
+  getCryptoMining:      () => apiFetch<CryptoMiningResponse>("/crypto/mining"),
+  getCryptoEcosystems:  () => apiFetch<CryptoEcosystemsResponse>("/crypto/ecosystems"),
+  getCryptoInstitutional:() => apiFetch<CryptoInstitutionalResponse>("/crypto/institutional"),
+  getCryptoComposite:   () => apiFetch<CryptoCompositeResponse>("/crypto/composite"),
 
   // ── Congressional Trading ─────────────────────────────────────────────────
   getCongressionalOverview:    () => apiFetch<CongressionalOverviewResponse>("/congressional/overview"),
