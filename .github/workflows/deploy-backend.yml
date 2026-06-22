@@ -1,22 +1,14 @@
 name: Deploy Backend to Railway
 
+# Railway auto-deploys via GitHub integration on every push to master.
+# This workflow is kept as documentation only.
+# To manually deploy: cd backend && railway up --detach
+
 on:
-  push:
-    branches: [master]
-    paths:
-      - "backend/**"
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        working-directory: backend
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service 5f99efb6-891c-49b2-82d4-ab67c842412a --environment 509eba38-12c7-4588-b2ac-39cb681c9491 --detach
+      - run: echo "Railway auto-deploys from the GitHub integration. No manual action needed."
