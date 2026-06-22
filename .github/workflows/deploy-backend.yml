@@ -1,0 +1,19 @@
+name: Deploy Backend to Railway
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "backend/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Railway deploy
+        run: |
+          curl -s "${{ secrets.RAILWAY_DEPLOY_HOOK_URL }}" \
+            -X POST \
+            --fail \
+            && echo "Railway deploy triggered successfully" \
+            || echo "Railway deploy trigger failed"
