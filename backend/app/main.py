@@ -24,6 +24,7 @@ from app.api import memory as memory_api
 from app.api import chart as chart_api
 from app.api import ai_compute as ai_compute_api
 from app.api import ipo as ipo_api
+from app.api import quantum as quantum_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -123,6 +124,7 @@ app.include_router(memory_api.router,        prefix="/api/memory")
 app.include_router(chart_api.router,         prefix="/api/chart")
 app.include_router(ai_compute_api.router,    prefix="/api/ai-compute")
 app.include_router(ipo_api.router,           prefix="/api/ipo")
+app.include_router(quantum_api.router,       prefix="/api/quantum")
 
 
 @app.get("/health")

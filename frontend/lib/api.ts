@@ -1211,6 +1211,16 @@ export const api = {
   getIPOSectors:      () => apiFetch<IPOSectorsResponse>("/ipo/sectors"),
   getIPOScreener:     () => apiFetch<IPOScreenerResponse>("/ipo/screener"),
   getIPOPrivate:      () => apiFetch<IPOPrivateResponse>("/ipo/private"),
+
+  // ── Quantum Computing Intelligence ────────────────────────────────────────────
+  getQuantumMarkets:    () => apiFetch<QuantumMarketsResponse>("/quantum/markets"),
+  getQuantumOverview:   () => apiFetch<QuantumOverviewResponse>("/quantum/overview"),
+  getQuantumHardware:   () => apiFetch<QuantumHardwareResponse>("/quantum/hardware"),
+  getQuantumGovernment: () => apiFetch<QuantumGovernmentResponse>("/quantum/government"),
+  getQuantumEnterprise: () => apiFetch<QuantumEnterpriseResponse>("/quantum/enterprise"),
+  getQuantumVC:         () => apiFetch<QuantumVCResponse>("/quantum/vc"),
+  getQuantumForecast:   () => apiFetch<QuantumForecastResponse>("/quantum/forecast"),
+  getQuantumLeaderboard:() => apiFetch<QuantumLeaderboardResponse>("/quantum/leaderboard"),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
@@ -1831,3 +1841,62 @@ export interface CountryMacroResponse {
   };
   data_note: string;
 }
+
+// ── Quantum Computing Intelligence types ──────────────────────────────────────
+
+export interface QuantumMacd { macd: number; signal: number; histogram: number; bullish: boolean }
+
+export interface QuantumStock {
+  ticker: string; company: string; type: string; approach: string; exposure: number;
+  price: number; mkt_cap_b: number | null;
+  ret_1m: number | null; ret_3m: number | null; ret_6m: number | null; ret_ytd: number | null; ret_1y: number | null;
+  rsi: number | null; macd: QuantumMacd | null;
+  ema20: number | null; ema50: number | null; ema200: number | null;
+  vs_ema20: number | null; vs_ema50: number | null; vs_ema200: number | null;
+  signal: string; score: number; target: number | null; stop: number | null; expected_return_pct: number | null;
+}
+export interface QuantumMarketsResponse { stocks: QuantumStock[]; count: number; as_of: string }
+
+export interface QuantumReadiness {
+  score: number; regime: string;
+  components: { hardware: number; error_correction: number; enterprise: number; government: number; patents: number; commercialization: number; sentiment: number };
+}
+export interface QuantumKPIs {
+  global_investment_b: number; total_qubits: number; logical_qubits: number;
+  enterprise_pilots: number; enterprise_contracts: number; public_mktcap_b: number; vc_raised_m: number;
+}
+export interface QuantumOverviewResponse { readiness: QuantumReadiness; kpis: QuantumKPIs; as_of: string }
+
+export interface QuantumHardwareItem {
+  company: string; system: string; approach: string;
+  qubits: number | null; aq: number | null; qv: number | null;
+  gate_fidelity: number | null; coherence_us: number | null; error_rate: number | null;
+  logical_qubits: number; score: number; rank: number;
+}
+export interface QuantumQubitHistory { year: number; ibm: number | null; google: number | null; ionq: number | null; qv_best: number | null }
+export interface QuantumHardwareResponse { hardware: QuantumHardwareItem[]; history: QuantumQubitHistory[] }
+
+export interface QuantumGovtFunding { country: string; program: string; annual_b: number; total_b: number; year: number; score: number; rank: number }
+export interface QuantumGovernmentResponse { funding: QuantumGovtFunding[]; total_annual_b: number; total_overall_b: number; investment_index: number }
+
+export interface QuantumIndustry { industry: string; pilots: number; contracts: number; partners: string[]; use_case: string; score: number; rank: number }
+export interface QuantumSoftware { platform: string; vendor: string; stars_k: number; downloads_m: number; enterprise: boolean; languages: string; score: number }
+export interface QuantumEnterpriseResponse { industries: QuantumIndustry[]; software: QuantumSoftware[]; adoption_score: number }
+
+export interface QuantumStartup { company: string; stage: string; raised_m: number; val_b: number; approach: string; hq: string; focus: string }
+export interface QuantumPatent { entity: string; type: string; patents_2024: number; total_patents: number; pubs_2024: number; citations: number }
+export interface QuantumVCResponse { startups: QuantumStartup[]; patents: QuantumPatent[]; total_raised_m: number; total_val_b: number; private_score: number }
+
+export interface QuantumCommProb { years_out: number; year: number; broad_commercial_pct: number; fault_tolerant_pct: number; quantum_advantage_pct: number }
+export interface QuantumQubitProj { year: number; physical_qubits: number; logical_qubits: number; qv_estimate: number }
+export interface QuantumQVPoint { year: number; qv: number; projected?: boolean }
+export interface QuantumForecastResponse { commercialization_probs: QuantumCommProb[]; qubit_projections: QuantumQubitProj[]; qv_timeline: QuantumQVPoint[]; readiness_now: number }
+
+export interface QuantumLeader {
+  ticker: string; company: string; type: string; approach: string; exposure: number;
+  price: number | null; mkt_cap_b: number | null; ret_ytd: number | null;
+  signal: string | null; signal_score: number | null;
+  tech_score: number; fund_score: number; adopt_score: number; eco_score: number; composite: number; rank: number;
+}
+export interface QuantumGeoRisk { region: string; risk: string; detail: string }
+export interface QuantumLeaderboardResponse { leaderboard: QuantumLeader[]; geopolitical: QuantumGeoRisk[]; total_companies: number; as_of: string }
