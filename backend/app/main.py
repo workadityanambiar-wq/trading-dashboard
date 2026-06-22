@@ -139,4 +139,4 @@ app.include_router(ai_capex_api.router,      prefix="/api/ai-capex")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.1"}
+    return {"status": "ok", "version": "2.2"}
