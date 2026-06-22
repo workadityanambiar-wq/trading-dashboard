@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -49,7 +49,7 @@ def _is_market_hours() -> bool:
     if now_et.weekday() >= 5:       # Saturday / Sunday
         return False
     h = now_et.hour + now_et.minute / 60
-    return 9.0 <= h <= 16.5         # 9:00 AM – 4:30 PM ET
+    return 9.0 <= h <= 16.5         # 9:00 AM â€“ 4:30 PM ET
 
 
 async def _auto_refresh_loop():
@@ -139,4 +139,5 @@ app.include_router(ai_capex_api.router,      prefix="/api/ai-capex")
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.2"}
+    return {"status": "ok", "version": "2.3"}
+
