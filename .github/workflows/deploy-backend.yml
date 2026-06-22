@@ -15,14 +15,21 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Debug Railway CLI
+        run: |
+          railway --version
+          railway login --help 2>&1 || true
+          ls -la ~/.railway/ 2>/dev/null || echo "~/.railway not found"
+          ls -la ~/.config/railway/ 2>/dev/null || echo "~/.config/railway not found"
+
       - name: Write Railway auth config
         env:
           RAILWAY_CONFIG_JSON: ${{ secrets.RAILWAY_CONFIG }}
         run: |
           mkdir -p ~/.railway
           python3 -c "import os; open(os.path.expanduser('~/.railway/config.json'), 'w').write(os.environ['RAILWAY_CONFIG_JSON'])"
-          echo "Config written: $(wc -c < ~/.railway/config.json) bytes"
-          railway whoami || true
+          cat ~/.railway/config.json
+          railway whoami 2>&1 || true
 
       - name: Deploy to Railway
         working-directory: backend
