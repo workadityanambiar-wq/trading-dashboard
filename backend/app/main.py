@@ -27,6 +27,7 @@ from app.api import ipo as ipo_api
 from app.api import quantum as quantum_api
 from app.api import rare_earths as re_api
 from app.api import congressional as congressional_api
+from app.api import defense as defense_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -129,6 +130,7 @@ app.include_router(ipo_api.router,           prefix="/api/ipo")
 app.include_router(quantum_api.router,       prefix="/api/quantum")
 app.include_router(re_api.router,            prefix="/api/rare-earths")
 app.include_router(congressional_api.router, prefix="/api/congressional")
+app.include_router(defense_api.router,      prefix="/api/defense")
 
 
 @app.get("/health")

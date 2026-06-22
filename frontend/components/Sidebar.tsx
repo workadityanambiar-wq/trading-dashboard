@@ -7,6 +7,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import {
   Mountain,
   Building2,
+  Swords,
   LayoutDashboard,
   ScanSearch,
   Cpu,
@@ -81,6 +82,7 @@ const NAV = [
   { href: "/quantum",      label: "Quantum Intel",    icon: Cpu },
   { href: "/rare-earths",   label: "Rare Earths",      icon: Mountain },
   { href: "/congressional", label: "Congress Intel",   icon: Building2 },
+  { href: "/defense",       label: "Defense Intel",    icon: Swords },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },
   { href: "/alpha-engine",      label: "Alpha Engine",      icon: FlameKindling },

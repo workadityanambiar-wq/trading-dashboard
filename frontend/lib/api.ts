@@ -964,6 +964,54 @@ export interface ExpectedReturnResponse {
   as_of:         string;
 }
 
+// ── Defense & Military Intelligence types ────────────────────────────────────
+
+export interface DefenseCountry { country: string; code: string; flag: string; budget_b: number; yoy_pct: number; gdp_pct: number; region: string; trend: string }
+export interface DefenseGeoRegion { region: string; score: number; category: string; color: string; threats: string[]; beneficiaries: string[]; escalation_prob: number; deescalation_prob: number; procurement: string[] }
+export interface DefenseProcurementProgram { cat: string; program: string; contractor: string; nations: string; contract_b: number; annual_b: number; backlog_b: number; deliveries: number; new_orders: number; status: string; score: number }
+export interface DefenseTechnology { name: string; cat: string; funding_b: number; growth: number; trl: number; maturity: string; adoption: number; companies: string[] }
+export interface DefenseSupplyInput { input: string; cat: string; criticality: number; domestic_pct: number; constraint: string; stockpile_days: number; risk: number; suppliers: string[]; mitigation: string }
+export interface DefenseNATOMember { country: string; gdp_b: number; defense_b: number; gdp_pct: number; meets: boolean; trend: string; yoy: number }
+export interface DefenseAlert { id: string; priority: string; title: string; detail: string; tickers: string[] }
+export interface DefenseContractor {
+  ticker: string; company: string; segment: string;
+  price: number; chg_pct: number; rsi: number; macd: number; macd_signal: number;
+  ema20: number; ema50: number | null; ema200: number | null; adx: number | null;
+  score: number; signal: string;
+  rev_b: number; rev_g: number; backlog_b: number; backlog_g: number;
+  op_margin: number; fcf_b: number; eps_g: number; div_yield: number;
+  fwd_pe: number; ev_ebitda: number; gov_pct: number; rating: string;
+  rev_1y: number; rev_3y: number; rev_5y: number;
+}
+export interface DefenseSignal { ticker: string; company: string; price: number; signal: string; score: number; fund_score: number; tech_score: number; target: number; stop: number; exp_return: number; confidence: number; backlog_b: number; fwd_pe: number }
+export interface DefenseBestLong { ticker: string; reason: string; conviction: number }
+export interface DefenseComponent { score: number; weight: number }
+
+export interface DefenseOverviewResponse {
+  defense_score: number; regime: string;
+  kpis: { global_spending_b: number; avg_spending_growth_pct: number; active_conflicts: number; procurement_score: number; nato_members_tracked: number; contractors_tracked: number; programs_tracked: number; top_geo_risk: string };
+  alerts: DefenseAlert[];
+  top_programs: { program: string; contractor: string; annual_b: number; backlog_b: number; score: number }[];
+  top_risks: DefenseGeoRegion[];
+  defense_cycle: { current: string; next_phase: string; catalyst: string; horizon_1y: string; horizon_3y: string; horizon_5y: string };
+}
+export interface DefenseSpendingResponse { countries: DefenseCountry[]; total_tracked_b: number; nato_total_b: number; history: { year: string; global: number; us: number; china: number; russia: number; nato_ex_us: number }[]; fastest_growing: DefenseCountry[] }
+export interface DefenseGeoResponse { regions: DefenseGeoRegion[]; composite_risk: number; composite_label: string; escalation_model: { region: string; prob: number; de_prob: number }[] }
+export interface DefenseProcurementResponse { programs: DefenseProcurementProgram[]; by_category: Record<string, DefenseProcurementProgram[]>; total_backlog_b: number; total_annual_b: number; avg_score: number; top_by_score: DefenseProcurementProgram[] }
+export interface DefenseContractorsResponse { contractors: DefenseContractor[]; as_of: string }
+export interface DefenseTechResponse { technologies: DefenseTechnology[]; total_funding_b: number; innovation_score: number; drone_index: number; space_score: number; cyber_score: number; ai_adoption: number }
+export interface DefenseNATOResponse { members: DefenseNATOMember[]; meeting_target: DefenseNATOMember[]; below_target: DefenseNATOMember[]; compliance_pct: number; total_nato_spending_b: number; allied_expansion_score: number; rearmament_pipeline: DefenseNATOMember[]; gdp_pct_avg: number; indo_pacific: { country: string; budget_b: number; yoy: number; target_gdp_pct: number; key_buys: string[] }[] }
+export interface DefenseSupplyChainResponse { inputs: DefenseSupplyInput[]; resilience_score: number; critical_count: number; high_risk_count: number; critical_inputs: DefenseSupplyInput[]; avg_domestic_pct: number; avg_stockpile_days: number }
+export interface DefenseCompositeResponse {
+  composite_score: number; label: string; defense_score: number; regime: string;
+  components: Record<string, DefenseComponent>;
+  signals: DefenseSignal[];
+  alerts: DefenseAlert[];
+  best_longs: DefenseBestLong[];
+  key_risks: string[];
+  outlook: { "1y": string; "3y": string; "5y": string };
+}
+
 // ── Congressional Trading Intelligence types ──────────────────────────────────
 
 export interface CongressionalBullishness {
@@ -1371,6 +1419,17 @@ export const api = {
   getRECompanies:  () => apiFetch<RECompaniesResponse>("/rare-earths/companies"),
   getREProjects:   () => apiFetch<REProjectsResponse>("/rare-earths/projects"),
   getREComposite:  () => apiFetch<RECompositeResponse>("/rare-earths/composite"),
+
+  // ── Defense & Military Intelligence ──────────────────────────────────────
+  getDefenseOverview:    () => apiFetch<DefenseOverviewResponse>("/defense/overview"),
+  getDefenseSpending:    () => apiFetch<DefenseSpendingResponse>("/defense/spending"),
+  getDefenseGeo:         () => apiFetch<DefenseGeoResponse>("/defense/geopolitical"),
+  getDefenseProcurement: () => apiFetch<DefenseProcurementResponse>("/defense/procurement"),
+  getDefenseContractors: () => apiFetch<DefenseContractorsResponse>("/defense/contractors"),
+  getDefenseTech:        () => apiFetch<DefenseTechResponse>("/defense/technology"),
+  getDefenseNATO:        () => apiFetch<DefenseNATOResponse>("/defense/nato"),
+  getDefenseSupplyChain: () => apiFetch<DefenseSupplyChainResponse>("/defense/supply-chain"),
+  getDefenseComposite:   () => apiFetch<DefenseCompositeResponse>("/defense/composite"),
 
   // ── Congressional Trading ─────────────────────────────────────────────────
   getCongressionalOverview:    () => apiFetch<CongressionalOverviewResponse>("/congressional/overview"),
