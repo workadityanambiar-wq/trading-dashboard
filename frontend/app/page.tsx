@@ -15,7 +15,8 @@ import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 
 function raw(v: number | null | undefined, d = 2) {
   if (v == null) return "—";
-  return `${v >= 0 ? "+" : ""}${v.toFixed(d)}%`;
+  const pct = v * 100;
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(d)}%`;
 }
 function chgColor(v: number | null | undefined) {
   if (v == null) return "text-text-muted";
@@ -60,7 +61,7 @@ function MarketCard({ ticker, name, price, change }: {
 
 function SectorRow({ name, ticker, chg, onClick }: { name: string; ticker: string; chg: number; onClick?: () => void }) {
   const isPos = chg >= 0;
-  const barPct = Math.min(Math.abs(chg) * 10, 100);
+  const barPct = Math.min(Math.abs(chg) * 1000, 100);
   return (
     <div onClick={onClick} className={cn("flex items-center gap-3 py-2.5 border-b border-surface-2 last:border-0", onClick && "cursor-pointer hover:bg-surface-2/30")}>
       <span className="text-[12px] text-text-muted flex-1 truncate">{name}</span>

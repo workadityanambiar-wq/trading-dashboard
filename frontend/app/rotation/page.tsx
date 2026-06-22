@@ -155,7 +155,6 @@ function RotationChart({ sectors }: ChartProps) {
               fontWeight={700}
               fill={color}
               textAnchor={anchor}
-              style={{ textShadow: "0 1px 3px #000" }}
             >
               {s.ticker}
             </text>
