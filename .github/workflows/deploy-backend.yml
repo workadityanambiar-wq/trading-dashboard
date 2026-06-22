@@ -15,8 +15,11 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Write Railway auth config
+        run: |
+          mkdir -p ~/.railway
+          echo '${{ secrets.RAILWAY_CONFIG }}' > ~/.railway/config.json
+
       - name: Deploy to Railway
         working-directory: backend
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --service 5f99efb6-891c-49b2-82d4-ab67c842412a --environment 509eba38-12c7-4588-b2ac-39cb681c9491 --detach
