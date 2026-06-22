@@ -10,10 +10,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Railway deploy
-        run: |
-          curl -s "${{ secrets.RAILWAY_DEPLOY_HOOK_URL }}" \
-            -X POST \
-            --fail \
-            && echo "Railway deploy triggered successfully" \
-            || echo "Railway deploy trigger failed"
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        working-directory: backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service 5f99efb6-891c-49b2-82d4-ab67c842412a --detach
