@@ -16,9 +16,13 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Write Railway auth config
+        env:
+          RAILWAY_CONFIG_JSON: ${{ secrets.RAILWAY_CONFIG }}
         run: |
           mkdir -p ~/.railway
-          echo '${{ secrets.RAILWAY_CONFIG }}' > ~/.railway/config.json
+          python3 -c "import os; open(os.path.expanduser('~/.railway/config.json'), 'w').write(os.environ['RAILWAY_CONFIG_JSON'])"
+          echo "Config written: $(wc -c < ~/.railway/config.json) bytes"
+          railway whoami || true
 
       - name: Deploy to Railway
         working-directory: backend
