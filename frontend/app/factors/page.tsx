@@ -545,7 +545,7 @@ export default function FactorsPage() {
             {ffQLoading && <RefreshCw size={13} className="animate-spin text-text-muted" />}
           </div>
           {ffQData?.series?.length ? (
-            <QuintileReturns data={ffQData.series} height={360} logScale showBrush />
+            <QuintileReturns key={factor} data={ffQData.series} height={360} initialLogScale showBrush />
           ) : (
             <div className="h-72 flex items-center justify-center text-text-muted text-sm">
               {ffQLoading ? "Loading historical data…" : "No data"}
@@ -635,7 +635,7 @@ export default function FactorsPage() {
             </div>
             {quintileMode === "live" ? (
               qData?.series?.length ? (
-                <QuintileReturns data={qData.series} height={300} />
+                <QuintileReturns key={`${factor}-live`} data={qData.series} height={300} showBrush />
               ) : (
                 <div className="h-72 flex items-center justify-center text-text-muted text-sm">
                   {qLoading ? "Computing quintile returns…" : "No data"}
@@ -643,7 +643,7 @@ export default function FactorsPage() {
               )
             ) : (
               ffQData?.series?.length ? (
-                <QuintileReturns data={ffQData.series} height={360} logScale showBrush />
+                <QuintileReturns key={`${factor}-longrun`} data={ffQData.series} height={360} initialLogScale showBrush />
               ) : (
                 <div className="h-72 flex items-center justify-center text-text-muted text-sm">
                   {ffQLoading ? "Loading historical quintile data…" : "No data"}
