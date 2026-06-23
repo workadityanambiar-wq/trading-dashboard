@@ -15,6 +15,7 @@ import type { ICPoint } from "@/lib/api";
 interface Props {
   data: ICPoint[];
   height?: number;
+  yDomain?: [number, number];
 }
 
 const MONTH_FMT = new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" });
@@ -38,7 +39,7 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export function FactorICChart({ data, height = 280 }: Props) {
+export function FactorICChart({ data, height = 280, yDomain = [-0.15, 0.15] }: Props) {
   const filtered = data.filter((d) => d.ic !== null);
 
   return (
@@ -54,7 +55,7 @@ export function FactorICChart({ data, height = 280 }: Props) {
           minTickGap={60}
         />
         <YAxis
-          domain={[-0.15, 0.15]}
+          domain={yDomain}
           tick={{ fill: "#6b6b80", fontSize: 10 }}
           axisLine={{ stroke: "#2a2a38" }}
           tickLine={false}

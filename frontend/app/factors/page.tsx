@@ -383,6 +383,7 @@ export default function FactorsPage() {
   const [universePreset, setUniverse] = useState<UniversePreset>("sp500");
   const [customTickers, setCustom]    = useState<string[]>([]);
   const [quintileMode, setQuintileMode] = useState<"live" | "longrun">("live");
+  const [icMode, setIcMode]             = useState<"live" | "longrun">("live");
 
   const universeParam = useMemo(() => {
     return universePreset === "custom" ? customTickers.join(",") : universePreset;
@@ -414,7 +415,16 @@ export default function FactorsPage() {
     enabled: hasPriceHistory && hasFFQuintile,
   });
 
-  const stats: ICStats | undefined = icData?.stats;
+  const { data: ffICData, isLoading: ffICLoading } = useQuery({
+    queryKey: ["ff-ic", factor],
+    queryFn: () => api.getFFIC(factor),
+    staleTime: 24 * 60 * 60 * 1000,
+    enabled: hasPriceHistory && hasFFQuintile,
+  });
+
+  const activeStats = icMode === "live" ? icData?.stats : ffICData?.stats;
+
+  // activeStats is defined above with the ffICData query
 
   return (
     <div className="space-y-5 max-w-screen-xl">
@@ -467,27 +477,51 @@ export default function FactorsPage() {
 
       {/* Stats row — only for price-based factors */}
       {hasPriceHistory && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard
-            label="Mean IC"
-            value={stats?.mean_ic != null ? `${stats.mean_ic >= 0 ? "+" : ""}${stats.mean_ic.toFixed(3)}` : null}
-            description="Avg monthly Spearman(score, fwd return)"
-          />
-          <StatCard
-            label="ICIR"
-            value={stats?.icir != null ? stats.icir.toFixed(2) : null}
-            description="IC / std(IC) — signal-to-noise"
-          />
-          <StatCard
-            label="% Positive IC"
-            value={stats?.pct_positive != null ? formatPct(stats.pct_positive, 1) : null}
-            description="Fraction of months with positive IC"
-          />
-          <StatCard
-            label="Observations"
-            value={stats?.n_obs != null ? String(stats.n_obs) : null}
-            description="Monthly IC measurements"
-          />
+        <div className="space-y-2">
+          {hasFFQuintile && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">IC / ICIR:</span>
+              <div className="flex rounded border border-border overflow-hidden">
+                <button
+                  onClick={() => setIcMode("live")}
+                  className={cn("px-2.5 py-0.5 text-xs transition-colors",
+                    icMode === "live" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}
+                >5Y Live</button>
+                <button
+                  onClick={() => setIcMode("longrun")}
+                  className={cn("px-2.5 py-0.5 text-xs transition-colors",
+                    icMode === "longrun" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}
+                >1963+ (FF)</button>
+              </div>
+              {icMode === "longrun" && (
+                <span className="text-[10px] text-text-muted/60">
+                  Spearman([1-5], quintile returns) · Kenneth French Data Library
+                </span>
+              )}
+            </div>
+          )}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard
+              label="Mean IC"
+              value={activeStats?.mean_ic != null ? `${activeStats.mean_ic >= 0 ? "+" : ""}${activeStats.mean_ic.toFixed(3)}` : null}
+              description={icMode === "live" ? "Avg monthly Spearman(score, fwd return)" : "Avg monthly Spearman(quintile rank, return)"}
+            />
+            <StatCard
+              label="ICIR"
+              value={activeStats?.icir != null ? activeStats.icir.toFixed(2) : null}
+              description="IC / std(IC) — signal-to-noise"
+            />
+            <StatCard
+              label="% Positive IC"
+              value={activeStats?.pct_positive != null ? formatPct(activeStats.pct_positive, 1) : null}
+              description="Fraction of months with positive IC"
+            />
+            <StatCard
+              label="Observations"
+              value={activeStats?.n_obs != null ? String(activeStats.n_obs) : null}
+              description="Monthly IC measurements"
+            />
+          </div>
         </div>
       )}
 
@@ -502,21 +536,35 @@ export default function FactorsPage() {
         <>
           {/* IC chart */}
           <div className="rounded-lg border border-border bg-surface p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div>
                 <div className="text-sm font-medium">Information Coefficient</div>
                 <div className="text-xs text-text-muted mt-0.5">
-                  Monthly Spearman(score, 21-day fwd return) · 3M rolling avg
+                  {icMode === "live"
+                    ? "Monthly Spearman(score, 21-day fwd return) · 3M rolling avg"
+                    : "Monthly Spearman(quintile rank, VW return) · 3M rolling avg · Since 1963"}
                 </div>
               </div>
-              {icLoading && <RefreshCw size={13} className="animate-spin text-text-muted" />}
+              {(icMode === "live" ? icLoading : ffICLoading) && (
+                <RefreshCw size={13} className="animate-spin text-text-muted" />
+              )}
             </div>
-            {icData?.series?.length ? (
-              <FactorICChart data={icData.series} height={260} />
+            {icMode === "live" ? (
+              icData?.series?.length ? (
+                <FactorICChart data={icData.series} height={260} />
+              ) : (
+                <div className="h-64 flex items-center justify-center text-text-muted text-sm">
+                  {icLoading ? "Computing IC…" : "No data — price history may still be loading"}
+                </div>
+              )
             ) : (
-              <div className="h-64 flex items-center justify-center text-text-muted text-sm">
-                {icLoading ? "Computing IC…" : "No data — price history may still be loading"}
-              </div>
+              ffICData?.series?.length ? (
+                <FactorICChart data={ffICData.series} height={260} yDomain={[-1, 1]} />
+              ) : (
+                <div className="h-64 flex items-center justify-center text-text-muted text-sm">
+                  {ffICLoading ? "Loading historical IC…" : "No data"}
+                </div>
+              )
             )}
           </div>
 

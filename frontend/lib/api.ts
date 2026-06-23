@@ -1370,6 +1370,8 @@ export const api = {
   getFamaFrench: () => apiFetch<FFResponse>("/factors/fama-french"),
   getFFQuintiles: (factor: string) =>
     apiFetch<QuintileResponse>(`/factors/ff-quintiles?factor=${factor}`),
+  getFFIC: (factor: string) =>
+    apiFetch<ICResponse>(`/factors/ff-ic?factor=${factor}`),
   triggerFundamentals: (maxTickers = 50) =>
     fetch(`/api/factors/fetch-fundamentals?max_tickers=${maxTickers}`, { method: "POST" }),
   prefetchUniverse: (exchange = "", limit = 500) =>

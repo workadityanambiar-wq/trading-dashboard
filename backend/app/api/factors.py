@@ -636,10 +636,13 @@ async def get_fama_french():
 
 # ── /ff-quintiles ─────────────────────────────────────────────────────────────
 
-def _fetch_ff_portfolio_quintiles(url: str, reverse: bool = False, use_deciles: bool = False) -> pd.DataFrame:
+def _fetch_ff_portfolio_quintiles(url: str, reverse: bool = False, use_deciles: bool = False, cumulative: bool = True) -> pd.DataFrame:
     """
-    Download a Ken French portfolio ZIP and return value-weight monthly cumulative
-    returns for Q1-Q5 (Lo → Q1, Hi → Q5; reversed when reverse=True).
+    Download a Ken French portfolio ZIP and return value-weight monthly returns
+    for Q1-Q5 (Lo → Q1, Hi → Q5; reversed when reverse=True).
+
+    cumulative=True (default): convert to cumulative (0-based) for the chart.
+    cumulative=False: return raw monthly % returns (for IC computation).
 
     Two modes:
       use_deciles=False  → file has quintile columns (Lo 20 / Qnt 2-4 / Hi 20).
@@ -719,10 +722,10 @@ def _fetch_ff_portfolio_quintiles(url: str, reverse: bool = False, use_deciles: 
         df = df.rename(columns={"Q1": "_q5", "Q2": "_q4", "Q4": "_q2", "Q5": "_q1"})
         df = df.rename(columns={"_q1": "Q1", "_q2": "Q2", "_q4": "Q4", "_q5": "Q5"})
 
-    # Cumulative returns (0-based: 0 = flat start)
-    for q in ["Q1", "Q2", "Q3", "Q4", "Q5"]:
-        if q in df.columns:
-            df[q] = (1 + df[q]).cumprod() - 1
+    if cumulative:
+        for q in ["Q1", "Q2", "Q3", "Q4", "Q5"]:
+            if q in df.columns:
+                df[q] = (1 + df[q]).cumprod() - 1
 
     return df
 
@@ -750,6 +753,100 @@ def _build_ff_quintiles(factor: str) -> dict:
     _FF_QPORT_CACHE[factor] = result
     _FF_QPORT_CACHE_TS[factor] = datetime.utcnow()
     return result
+
+
+_FF_IC_CACHE: dict[str, dict] = {}
+_FF_IC_CACHE_TS: dict[str, datetime] = {}
+
+
+def _build_ff_ic(factor: str) -> dict:
+    """
+    Compute a long-run monthly IC series from Fama-French quintile portfolio returns.
+    IC = Spearman([1,2,3,4,5], [Q1_ret, Q2_ret, Q3_ret, Q4_ret, Q5_ret]).
+    """
+    from scipy.stats import spearmanr
+
+    global _FF_IC_CACHE, _FF_IC_CACHE_TS
+    ts = _FF_IC_CACHE_TS.get(factor)
+    if ts and (datetime.utcnow() - ts).total_seconds() < _FF_TTL_HOURS * 3600:
+        return _FF_IC_CACHE[factor]
+
+    if factor not in _FF_QUINTILE_MAP:
+        return {"factor": factor, "series": [], "stats": {}, "no_history": True}
+
+    url, reverse, use_deciles = _FF_QUINTILE_MAP[factor]
+    df = _fetch_ff_portfolio_quintiles(url, reverse, use_deciles, cumulative=False)
+
+    if df.empty:
+        result: dict = {"factor": factor, "series": [], "stats": {}, "no_history": True}
+        _FF_IC_CACHE[factor] = result
+        _FF_IC_CACHE_TS[factor] = datetime.utcnow()
+        return result
+
+    ranks = [1, 2, 3, 4, 5]
+    ic_vals: list[float] = []
+    dates: list[str] = []
+
+    for _, row in df.iterrows():
+        rets = [row.get(f"Q{i}") for i in range(1, 6)]
+        if any(v is None or (isinstance(v, float) and np.isnan(v)) for v in rets):
+            continue
+        ic_val, _ = spearmanr(ranks, rets)
+        ic_vals.append(float(ic_val))
+        dates.append(row["date"].strftime("%Y-%m-%d"))
+
+    ic_series = pd.Series(ic_vals, index=pd.to_datetime(dates))
+    ma3 = ic_series.rolling(3, min_periods=1).mean()
+    cum_ic = ic_series.cumsum()
+
+    records = [
+        {
+            "date": d,
+            "ic": round(float(ic_series.iloc[i]), 4),
+            "ic_3m_ma": round(float(ma3.iloc[i]), 4),
+            "cumulative_ic": round(float(cum_ic.iloc[i]), 4),
+        }
+        for i, d in enumerate(dates)
+    ]
+
+    n = len(ic_vals)
+    mean_ic = float(np.mean(ic_vals)) if n else 0.0
+    std_ic  = float(np.std(ic_vals, ddof=1)) if n > 1 else None
+    icir    = mean_ic / std_ic if std_ic and std_ic > 0 else None
+    pct_pos = float(sum(v > 0 for v in ic_vals) / n) if n else 0.0
+
+    result = {
+        "factor": factor,
+        "series": records,
+        "stats": {
+            "mean_ic":    round(mean_ic, 4),
+            "icir":       round(icir, 3) if icir is not None else None,
+            "pct_positive": round(pct_pos, 4),
+            "n_obs":      n,
+        },
+    }
+
+    _FF_IC_CACHE[factor] = result
+    _FF_IC_CACHE_TS[factor] = datetime.utcnow()
+    return result
+
+
+@router.get("/ff-ic")
+async def get_ff_ic(factor: str = Query("momentum_12_1")):
+    """
+    Long-run monthly IC estimated from Fama-French quintile portfolio returns.
+    IC = Spearman([1,2,3,4,5], [Q1_ret..Q5_ret]) each month since 1963.
+    Available factors: momentum_12_1, momentum_6_1, low_volatility.
+    Cached for 24 hours.
+    """
+    if factor not in _FF_QUINTILE_MAP:
+        return {"factor": factor, "series": [], "stats": {}, "no_history": True}
+    try:
+        data = await asyncio.get_event_loop().run_in_executor(None, _build_ff_ic, factor)
+        return data
+    except Exception as e:
+        logger.error(f"FF IC fetch failed for {factor}: {e}")
+        raise HTTPException(503, f"Could not fetch FF IC data: {e}")
 
 
 @router.get("/ff-quintiles")
