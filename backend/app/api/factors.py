@@ -461,6 +461,19 @@ async def get_summary(universe: str = Query("sp500")):
 _FF5_URL  = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
 _MOM_URL  = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip"
 
+# ── /ff-quintiles — portfolio quintile files ──────────────────────────────────
+_FF_QPORT_BASE = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp"
+# (url, reverse, use_deciles):
+#   reverse=True  → Lo20=best factor (low-vol); Q1↔Q5 swapped
+#   use_deciles=True → file only has 10 decile cols; average pairs → quintiles
+_FF_QUINTILE_MAP: dict[str, tuple[str, bool, bool]] = {
+    "momentum_12_1":  (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",  False, True),
+    "momentum_6_1":   (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",  False, True),
+    "low_volatility": (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_VAR_CSV.zip",  True,  False),
+}
+_FF_QPORT_CACHE: dict[str, dict] = {}
+_FF_QPORT_CACHE_TS: dict[str, datetime] = {}
+
 
 def _fetch_ff_csv(url: str, skip_rows: int = 3) -> pd.DataFrame:
     """Download a Ken French zip CSV and return a monthly DataFrame."""
@@ -619,6 +632,144 @@ async def get_fama_french():
     except Exception as e:
         logger.error(f"Fama-French fetch failed: {e}")
         raise HTTPException(503, f"Could not fetch Fama-French data: {e}")
+
+
+# ── /ff-quintiles ─────────────────────────────────────────────────────────────
+
+def _fetch_ff_portfolio_quintiles(url: str, reverse: bool = False, use_deciles: bool = False) -> pd.DataFrame:
+    """
+    Download a Ken French portfolio ZIP and return value-weight monthly cumulative
+    returns for Q1-Q5 (Lo → Q1, Hi → Q5; reversed when reverse=True).
+
+    Two modes:
+      use_deciles=False  → file has quintile columns (Lo 20 / Qnt 2-4 / Hi 20).
+                           Finds them by parsing the header line.
+      use_deciles=True   → file has 10 decile columns; pairs are averaged (D1+D2 → Q1, etc.)
+    """
+    r = httpx.get(url, timeout=30, follow_redirects=True)
+    r.raise_for_status()
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    raw = zf.read(zf.namelist()[0]).decode("latin-1")
+
+    header_cols: list[str] = []
+    data_lines: list[str] = []
+    started = False
+
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if not started:
+            if stripped.startswith(","):
+                header_cols = ["date"] + [c.strip() for c in stripped.split(",")[1:]]
+                continue
+            parts = stripped.split(",")
+            if stripped and stripped[0].isdigit() and len(parts[0].strip()) == 6:
+                started = True
+                data_lines.append(line)
+            continue
+        if not stripped:      # blank line = end of first (VW) section
+            break
+        if stripped[0].isdigit() and len(stripped.split(",")[0].strip()) == 4:
+            break
+        data_lines.append(line)
+
+    if not data_lines:
+        return pd.DataFrame()
+
+    df = pd.read_csv(io.StringIO("\n".join(data_lines)), header=None)
+
+    if use_deciles:
+        # Momentum file: 10 decile columns — average consecutive pairs → quintiles
+        n_dec = min(10, len(df.columns) - 1)
+        df.columns = ["date"] + [f"D{i}" for i in range(1, len(df.columns))]
+        for qi, (d1, d2) in enumerate([(1, 2), (3, 4), (5, 6), (7, 8), (9, 10)], 1):
+            c1, c2 = f"D{d1}", f"D{d2}"
+            if c1 in df.columns and c2 in df.columns:
+                df[f"Q{qi}"] = (
+                    pd.to_numeric(df[c1], errors="coerce") +
+                    pd.to_numeric(df[c2], errors="coerce")
+                ) / 2
+        df = df[["date", "Q1", "Q2", "Q3", "Q4", "Q5"]]
+    else:
+        # Quintile file: find Lo 20 / Qnt N / Hi 20 columns by header
+        quintile_names = ["Lo 20", "Qnt 2", "Qnt 3", "Qnt 4", "Hi 20"]
+        rename: dict[int, str] = {0: "date"}
+        for qi, name in enumerate(quintile_names, 1):
+            if name in header_cols:
+                rename[header_cols.index(name)] = f"Q{qi}"
+        df = df.rename(columns=rename)
+        # Fallback: first 5 data columns as quintiles
+        if "Q1" not in df.columns:
+            df = df.iloc[:, :6]
+            df.columns = ["date", "Q1", "Q2", "Q3", "Q4", "Q5"]
+        df = df[["date"] + [c for c in ["Q1","Q2","Q3","Q4","Q5"] if c in df.columns]]
+
+    df["date"] = (
+        pd.to_datetime(df["date"].astype(str).str.strip(), format="%Y%m")
+        + pd.offsets.MonthEnd(0)
+    )
+    for q in ["Q1", "Q2", "Q3", "Q4", "Q5"]:
+        if q in df.columns:
+            df[q] = pd.to_numeric(df[q], errors="coerce") / 100
+            df.loc[df[q] < -0.95, q] = np.nan   # mask -99.99 sentinel values
+
+    df = df.dropna(subset=["Q1"]).sort_values("date")
+    df = df[df["date"] >= "1963-01-01"].reset_index(drop=True)
+
+    if reverse:
+        df = df.rename(columns={"Q1": "_q5", "Q2": "_q4", "Q4": "_q2", "Q5": "_q1"})
+        df = df.rename(columns={"_q1": "Q1", "_q2": "Q2", "_q4": "Q4", "_q5": "Q5"})
+
+    # Cumulative returns (0-based: 0 = flat start)
+    for q in ["Q1", "Q2", "Q3", "Q4", "Q5"]:
+        if q in df.columns:
+            df[q] = (1 + df[q]).cumprod() - 1
+
+    return df
+
+
+def _build_ff_quintiles(factor: str) -> dict:
+    global _FF_QPORT_CACHE, _FF_QPORT_CACHE_TS
+    ts = _FF_QPORT_CACHE_TS.get(factor)
+    if ts and (datetime.utcnow() - ts).total_seconds() < _FF_TTL_HOURS * 3600:
+        return _FF_QPORT_CACHE[factor]
+
+    url, reverse, use_deciles = _FF_QUINTILE_MAP[factor]
+    df = _fetch_ff_portfolio_quintiles(url, reverse, use_deciles)
+    if df.empty:
+        result: dict = {"factor": factor, "series": []}
+    else:
+        records = []
+        for _, row in df.iterrows():
+            rec: dict = {"date": row["date"].strftime("%Y-%m-%d")}
+            for q in ["Q1", "Q2", "Q3", "Q4", "Q5"]:
+                v = row[q]
+                rec[q] = round(float(v), 4) if pd.notna(v) else None
+            records.append(rec)
+        result = {"factor": factor, "series": records, "source": "ff"}
+
+    _FF_QPORT_CACHE[factor] = result
+    _FF_QPORT_CACHE_TS[factor] = datetime.utcnow()
+    return result
+
+
+@router.get("/ff-quintiles")
+async def get_ff_quintiles(factor: str = Query("momentum_12_1")):
+    """
+    Long-run quintile cumulative returns from Kenneth French portfolio data.
+    Equal-weight monthly-rebalanced; Q5 = highest factor score (Hi 20).
+    Available factors: momentum_12_1, momentum_6_1, low_volatility, value.
+    Cached for 24 hours.
+    """
+    if factor not in _FF_QUINTILE_MAP:
+        return {"factor": factor, "series": [], "no_history": True}
+    try:
+        data = await asyncio.get_event_loop().run_in_executor(
+            None, _build_ff_quintiles, factor
+        )
+        return data
+    except Exception as e:
+        logger.error(f"FF quintile fetch failed for {factor}: {e}")
+        raise HTTPException(503, f"Could not fetch FF quintile data: {e}")
 
 
 # ── /fetch-fundamentals ───────────────────────────────────────────────────────

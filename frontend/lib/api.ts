@@ -1368,6 +1368,8 @@ export const api = {
     apiFetch<QuintileResponse>(`/factors/quintiles?factor=${factor}&universe=${encodeURIComponent(universe)}`),
   getFactorSummary: () => apiFetch<SummaryResponse>("/factors/summary"),
   getFamaFrench: () => apiFetch<FFResponse>("/factors/fama-french"),
+  getFFQuintiles: (factor: string) =>
+    apiFetch<QuintileResponse>(`/factors/ff-quintiles?factor=${factor}`),
   triggerFundamentals: (maxTickers = 50) =>
     fetch(`/api/factors/fetch-fundamentals?max_tickers=${maxTickers}`, { method: "POST" }),
   prefetchUniverse: (exchange = "", limit = 500) =>

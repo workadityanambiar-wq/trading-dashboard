@@ -375,10 +375,14 @@ function FamaFrenchSection() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+// Factors that have a Fama-French long-run quintile portfolio equivalent
+const FF_QUINTILE_FACTORS = new Set(["momentum_12_1", "momentum_6_1", "low_volatility"]);
+
 export default function FactorsPage() {
   const [factor, setFactor]           = useState("momentum_12_1");
   const [universePreset, setUniverse] = useState<UniversePreset>("sp500");
   const [customTickers, setCustom]    = useState<string[]>([]);
+  const [quintileMode, setQuintileMode] = useState<"live" | "longrun">("live");
 
   const universeParam = useMemo(() => {
     return universePreset === "custom" ? customTickers.join(",") : universePreset;
@@ -387,6 +391,7 @@ export default function FactorsPage() {
   const ready = universePreset !== "custom" || customTickers.length >= 10;
   const selectedMeta = FACTOR_OPTIONS.find((f) => f.value === factor)!;
   const hasPriceHistory = selectedMeta?.icHistory ?? false;
+  const hasFFQuintile   = FF_QUINTILE_FACTORS.has(factor);
 
   const { data: icData, isLoading: icLoading } = useQuery({
     queryKey: ["ic", factor, universeParam],
@@ -400,6 +405,13 @@ export default function FactorsPage() {
     queryFn: () => api.getQuintiles(factor, universeParam),
     staleTime: 5 * 60 * 1000,
     enabled: ready && hasPriceHistory,
+  });
+
+  const { data: ffQData, isLoading: ffQLoading } = useQuery({
+    queryKey: ["ff-quintiles", factor],
+    queryFn: () => api.getFFQuintiles(factor),
+    staleTime: 24 * 60 * 60 * 1000,
+    enabled: hasPriceHistory && hasFFQuintile,
   });
 
   const stats: ICStats | undefined = icData?.stats;
@@ -510,29 +522,60 @@ export default function FactorsPage() {
 
           {/* Quintile chart */}
           <div className="rounded-lg border border-border bg-surface p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div>
                 <div className="text-sm font-medium">Quintile Cumulative Returns</div>
                 <div className="text-xs text-text-muted mt-0.5">
-                  Equal-weight, monthly rebalanced · Q5 = top 20% by factor score
+                  {quintileMode === "live"
+                    ? "Equal-weight, monthly rebalanced · Q5 = top 20% by factor score"
+                    : "Kenneth French portfolio quintiles (Lo20→Q1, Hi20→Q5) · Equal-weight · Since 1963"}
                 </div>
               </div>
-              {qLoading && <RefreshCw size={13} className="animate-spin text-text-muted" />}
+              <div className="flex items-center gap-2">
+                {hasFFQuintile && (
+                  <div className="flex rounded border border-border overflow-hidden">
+                    <button
+                      onClick={() => setQuintileMode("live")}
+                      className={cn("px-2.5 py-1 text-xs transition-colors",
+                        quintileMode === "live" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}
+                    >5Y Live</button>
+                    <button
+                      onClick={() => setQuintileMode("longrun")}
+                      className={cn("px-2.5 py-1 text-xs transition-colors",
+                        quintileMode === "longrun" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}
+                    >1963+ (FF)</button>
+                  </div>
+                )}
+                {(quintileMode === "live" ? qLoading : ffQLoading) && (
+                  <RefreshCw size={13} className="animate-spin text-text-muted" />
+                )}
+              </div>
             </div>
-            {qData?.series?.length ? (
-              <QuintileReturns data={qData.series} height={300} />
+            {quintileMode === "live" ? (
+              qData?.series?.length ? (
+                <QuintileReturns data={qData.series} height={300} />
+              ) : (
+                <div className="h-72 flex items-center justify-center text-text-muted text-sm">
+                  {qLoading ? "Computing quintile returns…" : "No data"}
+                </div>
+              )
             ) : (
-              <div className="h-72 flex items-center justify-center text-text-muted text-sm">
-                {qLoading ? "Computing quintile returns…" : "No data"}
-              </div>
+              ffQData?.series?.length ? (
+                <QuintileReturns data={ffQData.series} height={300} />
+              ) : (
+                <div className="h-72 flex items-center justify-center text-text-muted text-sm">
+                  {ffQLoading ? "Loading historical quintile data…" : "No data"}
+                </div>
+              )
             )}
-            {qData?.series?.length ? (
-              <div className="mt-3 flex gap-4 text-xs text-text-muted">
-                <span><span className="text-green-400">Q5</span> = highest factor score (long)</span>
-                <span><span className="text-red-400">Q1</span> = lowest factor score (short)</span>
-                <span>No transaction costs applied</span>
-              </div>
-            ) : null}
+            <div className="mt-3 flex flex-wrap gap-4 text-xs text-text-muted">
+              <span><span className="text-green-400">Q5</span> = highest factor score (long)</span>
+              <span><span className="text-red-400">Q1</span> = lowest factor score (short)</span>
+              {quintileMode === "longrun" && (
+                <span className="text-text-muted/60">Source: Kenneth French Data Library · No transaction costs</span>
+              )}
+              {quintileMode === "live" && <span>No transaction costs applied</span>}
+            </div>
           </div>
         </>
       )}
