@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { TickerChip } from "@/components/TickerChip";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -187,6 +188,30 @@ export default function WatchlistPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Watchlist"
+        subtitle="Your personal tracked stocks with live setup signals, technical scores, and setup context updated in real time."
+        steps={[
+          { title: "Add Tickers", detail: "Type one or more ticker symbols in the input box at the top (comma or space separated) and press Enter or click Add. The stock is immediately added to your watchlist." },
+          { title: "View Setup Signals", detail: "Each ticker shows its current setup type (e.g. Early Breakout, Volatility Squeeze, Momentum Continuation) with color coding. 'No Setup' means no actionable technical pattern is present today." },
+          { title: "Sort the Table", detail: "Click any column header to sort by that metric. Key columns: Regime Score (how well the stock fits the current market regime), RS vs SPY, ATR %, and Stage (Minervini stage analysis 1–4)." },
+          { title: "Open History Drawer", detail: "Click any row to open the History Drawer. This shows the full setup history for the ticker — how often it generates setups, performance after each setup, and current technical details." },
+          { title: "Trade from Watchlist", detail: "For any setup, click the trade button to open the MT5 trade modal with pre-filled entry, stop, and target based on the current setup parameters." },
+          { title: "Remove or Clear", detail: "Click the × on any ticker chip to remove it. Use 'Clear' in the header to reset the entire watchlist (you will be prompted to confirm)." },
+        ]}
+        howItWorks={[
+          { title: "Persistent Storage", detail: "Your watchlist is stored in browser localStorage — it persists across page reloads and browser sessions on the same device. There is no server-side sync." },
+          { title: "Setup Detection", detail: "Setups are detected by the same engine that powers the Setups Screener page. Each ticker is evaluated against 6 pattern templates (breakout, squeeze, accumulation, etc.) on every page load or manual refresh." },
+          { title: "Regime-Adjusted Score", detail: "The regime-adjusted score weights each setup's historical win rate by the current market regime. A breakout setup scores higher in a strong bull regime than in a choppy one — aligning entry quality with market conditions." },
+          { title: "Real-Time Data", detail: "Technical metrics (RS, ATR, MAs, volume ratios) are fetched live on each watchlist query. The stale-time is 2 minutes — data refreshes automatically when you navigate away and return." },
+        ]}
+        tips={[
+          "Add your entire portfolio to the watchlist — monitoring regime-adjusted scores for current holdings helps you identify when to trim positions before they deteriorate.",
+          "Stocks moving from 'No Setup' to 'Early Breakout' after a period of base-building represent the most timely entry opportunities.",
+          "Sort by RS vs SPY descending to quickly identify which holdings are outperforming the market — these deserve larger allocations.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

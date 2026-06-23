@@ -12,6 +12,7 @@ import { CorrelationHeatmap } from "@/components/charts/CorrelationHeatmap";
 import { cn, formatPct } from "@/lib/utils";
 import { Play, RefreshCw, PieChart } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 const METHODS = [
   { value: "equal_weight", label: "Equal Weight" },
@@ -167,6 +168,29 @@ export default function PortfolioPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Portfolio Optimizer — Guide"
+        subtitle="Mean-variance and hierarchical risk parity optimization with efficient frontier"
+        steps={[
+          { title: "Enter Your Tickers", detail: "Type a comma-separated list of tickers in the input box (e.g. AAPL,MSFT,GOOGL,NVDA,JPM). The default is a diversified 10-stock portfolio. Use 5-20 assets for best results." },
+          { title: "Select the Time Period", detail: "The lookback period (1Y, 3Y, 5Y) determines how much historical return data is used to estimate the covariance matrix. Longer periods are more stable but may not reflect recent market structure." },
+          { title: "Choose an Optimization Method", detail: "Equal Weight: all positions equal. Max Sharpe: maximizes risk-adjusted return. Min Volatility: minimizes portfolio standard deviation. HRP: Hierarchical Risk Parity — allocates risk equally across clusters of correlated assets." },
+          { title: "Run Optimization", detail: "Click the Run Optimization button. All four methods run simultaneously so you can compare them on the Efficient Frontier chart and metrics cards." },
+          { title: "Interpret Results", detail: "Review the Sharpe ratio, CAGR, Max Drawdown, and Volatility for each method. Click a method card to highlight that portfolio on the Efficient Frontier chart. The correlation heatmap shows how diversified your portfolio is." },
+        ]}
+        howItWorks={[
+          { title: "Data Collection", detail: "Historical daily returns are fetched from Yahoo Finance for all tickers in the portfolio. Returns are computed as log returns for numerical stability." },
+          { title: "Covariance Matrix", detail: "The annualized covariance matrix is estimated from historical daily returns. The matrix captures how much assets move together — low off-diagonal values mean better diversification." },
+          { title: "Max Sharpe Optimization", detail: "Uses scipy.optimize.minimize with the negative Sharpe ratio as the objective function. Constraints: weights sum to 1, all weights >= 0 (long-only)." },
+          { title: "HRP Algorithm", detail: "Hierarchical Risk Parity clusters assets by correlation, then allocates risk inversely proportional to variance within each cluster. It's more robust to estimation error than mean-variance methods." },
+          { title: "Efficient Frontier", detail: "The frontier is traced by running min-variance optimization at 50 equally spaced target return levels. The resulting risk/return pairs form the frontier curve." },
+        ]}
+        tips={[
+          "HRP typically produces the most robust out-of-sample results because it doesn't rely on expected return estimates.",
+          "If tickers are highly correlated (e.g. all tech), the optimizer will concentrate weight in the lowest-vol asset — diversify your input list.",
+          "Use the correlation heatmap to identify which pairs drive the most diversification benefit.",
+        ]}
+      />
       {/* Header */}
       <div>
         <h1 className="text-base font-semibold">Portfolio Optimizer</h1>

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ChartModal } from "@/components/ChartModal";
 import { useChart } from "@/contexts/ChartContext";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,27 @@ export default function RSPage() {
   return (
     <div className="space-y-5 max-w-screen-2xl">
       <ChartModal />
+      <PageGuide
+        title="Relative Strength Rankings — Guide"
+        subtitle="RS rank comparing each stock's performance vs. the S&P 500 benchmark"
+        steps={[
+          { title: "Understand the RS Rank", detail: "RS Rank (1–100) measures how a stock has performed relative to the S&P 500 over the past 12 months, with the most recent 3 months weighted more heavily. RS 90+ = top 10% of performers. This is the same metric used by IBD and the CAN SLIM methodology." },
+          { title: "Filter and Sort", detail: "Use the universe selector (S&P 500, S&P 1500, themes) and sort by RS Rank, Excess Return, or Momentum Score descending. The top RS stocks are the current market leaders — institutions are already accumulating them." },
+          { title: "Read Excess Return", detail: "Excess Return = stock return minus SPY return over the period. Positive excess return means the stock has outperformed the S&P 500. Sort by 3M excess return to find the most recent price leaders." },
+          { title: "Check RS Trend Direction", detail: "The trend arrow shows whether the stock's RS rank is rising (improving relative strength) or falling (deteriorating). The sweet spot is a high absolute RS rank (>80) that is also rising." },
+          { title: "Tap for the Chart", detail: "Click any row to open the stock's price chart. High RS stocks typically show clean uptrends — the RS score quantifies what you see visually. If the chart is choppy and the RS is high, that's a divergence worth investigating." },
+        ]}
+        howItWorks={[
+          { title: "RS Score Calculation", detail: "RS = weighted average of 3-month (40% weight), 6-month (20%), 9-month (20%), and 12-month (20%) relative return vs. S&P 500. Heavier weighting on recent performance captures current market leadership dynamics." },
+          { title: "Percentile Ranking", detail: "All stocks in the universe are ranked from best to worst RS score. The rank is normalized to a percentile (1–100). Comparing RS ranks across different universe sizes is meaningful because they are all on the same 1–100 scale." },
+          { title: "IBD-Style Methodology", detail: "This approach is modeled on William O'Neil's IBD RS Rating, which has been used to identify growth stock leaders since the 1960s. The highest RS stocks appear first in the IBD 50 and similar growth stock lists." },
+        ]}
+        tips={[
+          "Only buy breakouts from stocks with RS Rank above 85 — weak relative strength rarely leads to sustained price moves after breakout.",
+          "Stocks holding RS Rank above 70 during broad market corrections are demonstrating institutional accumulation against the trend.",
+          "An RS rank jumping from 60 to 80+ in a single month (RS line breakout) is an early warning of institutional sponsorship starting.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

@@ -10,6 +10,7 @@ import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Activity,
   Cpu, BarChart3, Brain, Globe, Zap, Shield, Eye, Target,
   ChevronRight, Layers, Waves, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
@@ -1345,6 +1346,28 @@ export default function MemoryPage() {
           ))}
         </div>
       </header>
+
+      <PageGuide
+        title="Market Memory — Guide"
+        subtitle="Historical analog matching — find past periods that most resemble current market conditions"
+        steps={[
+          { title: "View the Top Analog", detail: "The top panel shows the best historical analog — the past period that most closely resembles today's market conditions by comparing regime, volatility, breadth, momentum, and macro factor readings." },
+          { title: "Read the Similarity Score", detail: "The similarity score (0–100%) shows how closely current conditions match the analog period. Above 80% = strong match with high confidence in the forward scenario; below 60% = weaker match, treat with caution." },
+          { title: "Study the Analog Outcome", detail: "The chart overlay shows what happened in the market after the analog period began. The median outcome, best case (75th percentile), and worst case (25th percentile) are plotted as forward-looking scenario bands." },
+          { title: "Browse All Analogs", detail: "Scroll down to see the top 5 analog matches ranked by similarity score. Look for consensus across multiple analogs — if all 5 analogs point in the same direction, confidence in that outcome is higher." },
+          { title: "Check Key Similarities", detail: "The factor match panel lists which specific characteristics align: regime type, VIX level, breadth percentile, momentum score, yield curve shape, sector leadership. More matching factors = stronger analog quality." },
+        ]}
+        howItWorks={[
+          { title: "Multi-Dimensional Matching", detail: "The system computes a similarity vector of 12 market characteristics for the current period and compares it against every rolling 3-month window in the historical database going back to 1990 (over 8,000 data points)." },
+          { title: "Distance Algorithm", detail: "Similarity is computed using Euclidean distance in 12-dimensional factor space, normalized by each factor's historical standard deviation. This ensures all dimensions contribute equally regardless of scale." },
+          { title: "Forward Return Distribution", detail: "Once the best analog windows are identified, the system extracts the actual forward 1/3/6/12 month returns from those historical periods and builds a probability distribution of possible outcomes for the current market." },
+        ]}
+        tips={[
+          "Analogs are most useful for setting risk/reward expectations — they calibrate probabilities, not certainties.",
+          "When the analog shows a median forward return of +15% with a 25th percentile of +5%, you have a strongly asymmetric risk/reward — lean long.",
+          "Always combine analog output with real-time regime and breadth signals before acting — the analog is historical context, not a guarantee.",
+        ]}
+      />
 
       <div className="px-4 pt-4 pb-8">
         {isLoading ? (

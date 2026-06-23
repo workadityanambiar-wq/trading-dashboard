@@ -8,6 +8,7 @@ import {
 import { api, type OptionsResponse, type OptionRow } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Search, RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -291,6 +292,29 @@ export default function OptionsPage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+
+      <PageGuide
+        title="Options Chain — Guide"
+        subtitle="Real-time options chain with implied volatility, Greeks, and skew analysis"
+        steps={[
+          { title: "Enter a Ticker", detail: "Type a US equity ticker (e.g. AAPL, TSLA, SPY) in the search box and press Enter or tap the search button. The options chain loads automatically for the nearest expiry." },
+          { title: "Select an Expiry", detail: "Use the expiry date dropdown to select weekly, monthly, or LEAPS (long-dated) expirations. Monthly options (3rd Friday) tend to have the most liquidity and tightest bid/ask spreads." },
+          { title: "Toggle Calls / Puts / Both", detail: "Use the toggle to view only calls, only puts, or both sides of the chain simultaneously. The current stock price is highlighted as the at-the-money strike." },
+          { title: "Read the IV Columns", detail: "IV (Implied Volatility) is the market's expectation of future price movement embedded in the option price. High IV = expensive options. Compare IV across strikes to see the volatility smile/skew." },
+          { title: "Analyze the IV Skew Chart", detail: "The skew chart plots IV vs. strike. A steep put skew (puts have much higher IV than calls) means the market is paying up for downside protection — a bearish signal." },
+        ]}
+        howItWorks={[
+          { title: "Data Source", detail: "Options chain data is fetched from Yahoo Finance in real time using the yfinance library's option_chain() method. Data includes strike, bid, ask, last price, volume, open interest, and IV." },
+          { title: "Greeks Computation", detail: "Greeks (Delta, Gamma, Theta, Vega) are computed using the Black-Scholes model with the current stock price, strike, time to expiry, and market IV as inputs. Risk-free rate uses the current 3-month T-bill yield." },
+          { title: "IV Surface", detail: "The IV surface chart plots IV against both strike and time to expiry. This 3D view shows whether IV is elevated at specific parts of the term structure (e.g. high near-term IV around earnings)." },
+          { title: "Open Interest Heatmap", detail: "The open interest by strike chart shows where large amounts of options are outstanding. Max pain (the strike where the most contracts expire worthless) is computed and marked." },
+        ]}
+        tips={[
+          "High put/call ratio (>1.2) combined with elevated IV percentile is a contrarian bullish signal.",
+          "Options with IV > historical volatility (HV) are statistically overpriced — better to sell premium than buy.",
+          "Gamma spikes near expiry for near-ATM options — avoid buying these unless you expect a move before expiry.",
+        ]}
+      />
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">

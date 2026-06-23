@@ -6,6 +6,7 @@ import {
   Zap, Brain, Table2, RefreshCw, ChevronDown,
   Target, Layers, AlertCircle,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -1034,6 +1035,30 @@ export default function OptionsAnalyticsPage() {
 
       {/* Shared inputs */}
       <InputPanel />
+
+      <PageGuide
+        title="Options Analytics Platform"
+        subtitle="An institutional derivatives toolkit covering Black-Scholes pricing, Greeks, volatility surface modeling, strategy P&L, and AI trade ideas."
+        steps={[
+          { title: "Set Core Inputs", detail: "The top input bar is shared across all tabs. Enter: S (spot price), K (strike), T (days to expiry), r (risk-free rate %), σ (implied vol %), q (dividend yield %), and option type (call/put)." },
+          { title: "Pricer Tab", detail: "Choose a pricing model: Black-Scholes (analytic), Binomial Tree (discrete, handles American exercise), or Monte Carlo (simulation-based, handles path-dependent payoffs). Click 'Price' to compute premium and full Greeks." },
+          { title: "Greeks Tab", detail: "Visualize how each Greek (Delta, Gamma, Theta, Vega, Rho) changes as spot price, volatility, or time changes. Use the parameter slider to create sensitivity charts." },
+          { title: "Vol Surface Tab", detail: "Enter a ticker (e.g. AAPL) and click 'Load Chain' to fetch the live options chain. The backend fits a 3D volatility surface (strike × expiry × IV) and renders it as an interactive heatmap." },
+          { title: "Strategy Tab", detail: "Select a pre-built strategy (iron condor, straddle, bull spread, etc.) and the platform computes the full P&L diagram at expiry, breakeven points, max profit, and max loss." },
+          { title: "AI Trade Ideas Tab", detail: "Enter IV rank, IV percentile, and your market outlook (bullish/bearish/neutral). The AI model recommends the optimal options strategy with entry, target, and risk parameters." },
+        ]}
+        howItWorks={[
+          { title: "Black-Scholes Engine", detail: "Implements the closed-form BSM formula for European calls and puts. Delta, Gamma, Theta, Vega, and Rho are computed analytically from the BSM partial derivatives." },
+          { title: "Binomial Tree", detail: "Cox-Ross-Rubinstein binomial lattice with N steps (default 50). Supports American exercise by allowing early exercise at each node — useful for pricing American puts with dividend-paying underlyings." },
+          { title: "Monte Carlo Pricer", detail: "Simulates N paths of geometric Brownian motion (default 10,000). Each path's terminal payoff is discounted; the average gives the option price. Standard error shows convergence quality." },
+          { title: "Volatility Surface", detail: "Live options chain is fetched from yfinance. Raw IV is computed by inverting BSM for each mid-price. The surface is smoothed using SVI (Stochastic Volatility Inspired) parametrization and rendered as a 3D heatmap." },
+        ]}
+        tips={[
+          "When IV rank > 50%, strategies that sell premium (iron condors, strangles) tend to outperform on a risk-adjusted basis.",
+          "Compare Monte Carlo price to Black-Scholes for the same inputs — a big divergence suggests path-dependency or fat tails matter for that contract.",
+          "The volatility smile is most pronounced for short-dated options — load a 1-week expiry chain to see the steepest skew.",
+        ]}
+      />
 
       {/* Tabs */}
       <div className="flex gap-0 border-b border-border shrink-0">

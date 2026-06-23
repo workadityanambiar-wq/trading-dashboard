@@ -6,8 +6,11 @@ Factor API endpoints.
 /quintiles — Q1-Q5 cumulative return series
 /summary — IC stats for all factors
 /fetch-fundamentals — trigger background fetch of fundamentals
+/fama-french — long-run Fama-French 5-factor + momentum data since 1963
 """
 import asyncio
+import io
+import zipfile
 from datetime import datetime, timedelta
 from typing import List, Optional
 import pandas as pd
@@ -15,6 +18,7 @@ import asyncio
 import numpy as np
 import logging
 
+import httpx
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 
 from app.core.data import cache, fetcher, universe
@@ -25,6 +29,11 @@ logger = logging.getLogger(__name__)
 
 _START_5Y = (datetime.today() - timedelta(days=5 * 365)).strftime("%Y-%m-%d")
 _TODAY = datetime.today().strftime("%Y-%m-%d")
+
+# ── Fama-French cache ─────────────────────────────────────────────────────────
+_FF_CACHE: dict = {}
+_FF_CACHE_TS: datetime | None = None
+_FF_TTL_HOURS = 24
 
 
 def _get_prices_for_universe() -> pd.DataFrame:
@@ -445,6 +454,171 @@ async def get_summary(universe: str = Query("sp500")):
         summaries.append(stats)
 
     return {"status": "ok", "factors": summaries}
+
+
+# ── /fama-french ─────────────────────────────────────────────────────────────
+
+_FF5_URL  = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
+_MOM_URL  = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip"
+
+
+def _fetch_ff_csv(url: str, skip_rows: int = 3) -> pd.DataFrame:
+    """Download a Ken French zip CSV and return a monthly DataFrame."""
+    r = httpx.get(url, timeout=30, follow_redirects=True)
+    r.raise_for_status()
+    zf = zipfile.ZipFile(io.BytesIO(r.content))
+    name = zf.namelist()[0]
+    raw = zf.read(name).decode("latin-1")
+
+    # Each file has a monthly section then an annual section separated by a blank line
+    lines = raw.splitlines()
+    data_lines = []
+    started = False
+    for line in lines:
+        stripped = line.strip()
+        if not started:
+            if stripped and stripped[0].isdigit() and len(stripped.split(",")[0]) == 6:
+                started = True
+                data_lines.append(line)
+            continue
+        # Stop at annual section (4-digit year rows) or trailing notes
+        if stripped and stripped[0].isdigit() and len(stripped.split(",")[0]) == 4:
+            break
+        if stripped.startswith("Annual"):
+            break
+        data_lines.append(line)
+
+    text = "\n".join(data_lines)
+    df = pd.read_csv(io.StringIO(text), header=None)
+    df = df.dropna(how="all")
+    df.columns = range(len(df.columns))
+    return df
+
+
+def _build_ff_data() -> dict:
+    global _FF_CACHE, _FF_CACHE_TS
+    if _FF_CACHE_TS and (datetime.utcnow() - _FF_CACHE_TS).total_seconds() < _FF_TTL_HOURS * 3600:
+        return _FF_CACHE
+
+    # ── 5-factor monthly ──────────────────────────────────────────────────────
+    ff5 = _fetch_ff_csv(_FF5_URL)
+    # columns: date(YYYYMM), Mkt-RF, SMB, HML, RMW, CMA, RF
+    ff5.columns = ["date", "mkt_rf", "smb", "hml", "rmw", "cma", "rf"]
+    ff5["date"] = pd.to_datetime(ff5["date"].astype(str), format="%Y%m") + pd.offsets.MonthEnd(0)
+    for col in ["mkt_rf", "smb", "hml", "rmw", "cma", "rf"]:
+        ff5[col] = pd.to_numeric(ff5[col], errors="coerce") / 100
+
+    # ── Momentum monthly ──────────────────────────────────────────────────────
+    mom_raw = _fetch_ff_csv(_MOM_URL)
+    mom_raw.columns = ["date", "mom"] + [f"_x{i}" for i in range(len(mom_raw.columns) - 2)]
+    mom_raw["date"] = pd.to_datetime(mom_raw["date"].astype(str), format="%Y%m") + pd.offsets.MonthEnd(0)
+    mom_raw["mom"] = pd.to_numeric(mom_raw["mom"], errors="coerce") / 100
+
+    merged = ff5.merge(mom_raw[["date", "mom"]], on="date", how="left")
+    merged = merged[merged["date"] >= "1963-01-01"].dropna(subset=["mkt_rf"])
+    merged = merged.sort_values("date")
+
+    # ── Cumulative returns ────────────────────────────────────────────────────
+    factors = ["mkt_rf", "smb", "hml", "rmw", "cma", "mom"]
+    cum = (1 + merged[factors]).cumprod()
+    cum["date"] = merged["date"].values
+
+    # ── SPX total return from yfinance (^GSPC + dividends proxy) ─────────────
+    try:
+        import yfinance as yf
+        spx_hist = yf.download("^GSPC", start="1963-01-01", auto_adjust=True, progress=False)
+        if not spx_hist.empty:
+            if hasattr(spx_hist.columns, "get_level_values"):
+                spx_close = spx_hist["Close"].squeeze()
+            else:
+                spx_close = spx_hist["Close"]
+            spx_monthly = spx_close.resample("ME").last().pct_change().dropna()
+            spx_cum = (1 + spx_monthly).cumprod()
+            spx_cum.index = spx_cum.index + pd.offsets.MonthEnd(0)
+            spx_dates = pd.DatetimeIndex(merged["date"].values)
+            spx_aligned = spx_cum.reindex(spx_dates, method="ffill")
+            cum["spx"] = spx_aligned.values
+    except Exception as e:
+        logger.warning(f"SPX download failed: {e}")
+
+    # ── Drawdown per factor ───────────────────────────────────────────────────
+    all_factor_cols = [c for c in cum.columns if c != "date"]
+    rolling_max = cum[all_factor_cols].cummax()
+    drawdown = (cum[all_factor_cols] / rolling_max - 1)
+
+    records = []
+    for _, row in cum.iterrows():
+        rec: dict = {"date": row["date"].strftime("%Y-%m-%d")}
+        for col in all_factor_cols:
+            rec[col] = round(float(row[col]), 4) if pd.notna(row[col]) else None
+        records.append(rec)
+
+    dd_records = []
+    for i, row in drawdown.iterrows():
+        rec: dict = {"date": cum.loc[i, "date"].strftime("%Y-%m-%d")}
+        for col in all_factor_cols:
+            rec[col] = round(float(row[col]), 4) if pd.notna(row[col]) else None
+        dd_records.append(rec)
+
+    # ── Summary stats per factor ──────────────────────────────────────────────
+    returns_df = merged[["date"] + [f for f in factors if f in merged.columns]].copy()
+    summaries = {}
+    for col in all_factor_cols:
+        if col == "spx":
+            continue
+        if col not in merged.columns:
+            continue
+        s = merged[col].dropna()
+        if s.empty:
+            continue
+        ann = float((1 + s).prod() ** (12 / len(s)) - 1)
+        vol = float(s.std() * np.sqrt(12))
+        sharpe = ann / vol if vol > 0 else 0
+        max_dd = float((cum[col] / cum[col].cummax() - 1).min())
+        summaries[col] = {
+            "ann_return": round(ann, 4),
+            "ann_vol":    round(vol, 4),
+            "sharpe":     round(sharpe, 3),
+            "max_dd":     round(max_dd, 4),
+            "n_months":   len(s),
+        }
+
+    result = {
+        "series":    records,
+        "drawdown":  dd_records,
+        "summaries": summaries,
+        "start":     records[0]["date"] if records else None,
+        "end":       records[-1]["date"] if records else None,
+        "n_months":  len(records),
+        "factors": {
+            "mkt_rf": "Market (Mkt-RF)",
+            "smb":    "Size (SMB)",
+            "hml":    "Value (HML)",
+            "rmw":    "Profitability (RMW)",
+            "cma":    "Investment (CMA)",
+            "mom":    "Momentum",
+            "spx":    "S&P 500 (^GSPC)",
+        },
+    }
+
+    _FF_CACHE.update(result)
+    _FF_CACHE_TS = datetime.utcnow()
+    return _FF_CACHE
+
+
+@router.get("/fama-french")
+async def get_fama_french():
+    """
+    Long-run Fama-French 5-factor + Momentum cumulative returns since 1963.
+    Data from Kenneth French Data Library + SPX from yfinance.
+    Cached for 24 hours.
+    """
+    try:
+        data = await asyncio.get_event_loop().run_in_executor(None, _build_ff_data)
+        return data
+    except Exception as e:
+        logger.error(f"Fama-French fetch failed: {e}")
+        raise HTTPException(503, f"Could not fetch Fama-French data: {e}")
 
 
 # ── /fetch-fundamentals ───────────────────────────────────────────────────────

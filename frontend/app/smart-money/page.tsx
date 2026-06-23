@@ -5,6 +5,7 @@ import {
   Activity, BarChart3, Layers, Eye, Zap,
 } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -449,6 +450,28 @@ export default function SmartMoneyPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <PageGuide
+        title="Smart Money Tracker — Guide"
+        subtitle="Institutional accumulation scoring via OBV, CMF, VWAP, dark pool, and block trade analysis"
+        steps={[
+          { title: "Enter a Ticker or Compare Mode", detail: "In Single Ticker mode, enter any valid ticker and click Analyze. In Compare mode, enter a comma-separated list of up to 10 tickers to rank them by institutional accumulation score." },
+          { title: "Select a Period", detail: "The analysis period (30d, 60d, 90d, 180d) controls how much price and volume history is used. 60d is the default — long enough to detect institutional patterns but short enough to be current." },
+          { title: "Read the Composite Score", detail: "The gauge shows the Institutional Accumulation Score (0–100). Above 65 = likely institutional accumulation (green). 50–65 = neutral (amber). Below 50 = distribution or weak flow (red)." },
+          { title: "Drill into Sub-Indicators", detail: "Click the OBV, CMF, VWAP, Dark Pool, and Block Trades tabs below the charts to see detailed breakdowns of each component." },
+          { title: "Use Compare Mode for Relative Ranking", detail: "In Compare mode, the leaderboard ranks tickers by composite score. Use this to find the stocks with the strongest institutional backing within a sector or watchlist." },
+        ]}
+        howItWorks={[
+          { title: "OBV (On-Balance Volume)", detail: "Adds volume on up-days and subtracts on down-days. When OBV rises faster than price, institutions are quietly accumulating. An OBV-price divergence is the classic smart money footprint." },
+          { title: "CMF (Chaikin Money Flow)", detail: "Measures cumulative volume-weighted close position within the daily range over 20 days. Values above +0.20 signal strong institutional buying; below -0.20 indicates distribution." },
+          { title: "VWAP Analysis", detail: "Price above VWAP with rising volume signals institutions are net long. The score rewards stocks trading 0.1%-3% above VWAP — the optimal accumulation zone without over-extension." },
+          { title: "Dark Pool & Block Trades", detail: "Dark pool activity is inferred from price-volume heuristics: high volume with low price impact, sustained elevated volume (not retail spikes), and wide-volume/narrow-range days. Block trade days (volume 2x+ average) are classified as buy or sell blocks based on close position in range." },
+        ]}
+        tips={[
+          "A score above 70 with positive OBV divergence + high CMF = the strongest institutional accumulation signal available from public data.",
+          "Compare 5-10 stocks in the same sector — the one with the highest score is where institutions are concentrating, even if price hasn't moved yet.",
+          "Dark pool scores above 65 on a stock near a breakout level is one of the highest-conviction setups on the platform.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20">

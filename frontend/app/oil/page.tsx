@@ -12,6 +12,7 @@ import {
   Droplets, Flame, Globe, BarChart2, Activity, Zap,
   Target, Shield, ChevronUp, ChevronDown,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 const AMBER = "#f59e0b";
 const GREEN = "#10b981";
@@ -223,6 +224,28 @@ export default function OilPage() {
           ))}
         </div>
       </header>
+
+      <PageGuide
+        title="Oil Tracker — Guide"
+        subtitle="Crude oil price analysis with supply, demand, inventory, and macro context"
+        steps={[
+          { title: "Read Crude Oil Prices", detail: "The top panel shows WTI (US benchmark) and Brent (global benchmark) prices with daily change. The spread between Brent and WTI (typically $2–5/bbl) reflects transport and quality differences." },
+          { title: "Check the Energy Regime", detail: "The regime chip classifies oil as Bull, Bear, or Neutral based on price trend vs. moving averages and supply/demand signals. High oil = inflationary, beneficial to energy sector, negative for airlines and transports." },
+          { title: "Navigate the Tabs", detail: "Use the tabs: Overview (prices & trend), Supply (OPEC & rig counts), Inventory (EIA weekly draws), Macro (impact on inflation & rates), Futures (term structure), Technical (chart signals), Positioning (COT data), Scenarios, and Geopolitical." },
+          { title: "Monitor OPEC Compliance", detail: "The supply tab shows each OPEC+ member's production vs. their quota. Low compliance = more supply than planned (bearish). High compliance + cuts = tighter supply (bullish)." },
+          { title: "Read Inventory Draws", detail: "Weekly EIA inventory data is the most important short-term supply signal. Larger-than-expected draws (less oil in storage) are bullish; larger-than-expected builds are bearish." },
+        ]}
+        howItWorks={[
+          { title: "Price Data", detail: "WTI crude (CL=F) and Brent crude (BZ=F) futures prices are fetched from Yahoo Finance. Front-month contracts are used as the spot price proxy. Prices update in real time during market hours." },
+          { title: "Regime Classification", detail: "Oil regime is classified using WTI price vs. 50-day and 200-day MAs plus 3-month momentum. Prices above both MAs with positive momentum = Bull; below both = Bear. Mixed signals = Neutral." },
+          { title: "Energy Sector Correlation", detail: "The correlation between XLE (energy ETF) and WTI is computed on a rolling 60-day window. Historically XLE has 0.6–0.8 correlation to crude prices, with individual E&P stocks showing 1.2–2.0x beta." },
+        ]}
+        tips={[
+          "WTI above $90 historically triggers demand destruction and Fed hawkishness — trim energy longs at those levels.",
+          "Oil below $70 typically causes OPEC production cuts within 2–3 meetings — watch for policy response.",
+          "Energy stocks lead crude on the way up but lag on the way down — divergence often signals trend exhaustion.",
+        ]}
+      />
 
       {/* Content */}
       <div className="p-4">

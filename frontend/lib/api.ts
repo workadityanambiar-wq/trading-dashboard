@@ -178,6 +178,35 @@ export interface QuintileResponse {
   no_history?: boolean;
 }
 
+export interface FFPoint {
+  date: string;
+  mkt_rf?: number | null;
+  smb?: number | null;
+  hml?: number | null;
+  rmw?: number | null;
+  cma?: number | null;
+  mom?: number | null;
+  spx?: number | null;
+}
+
+export interface FFSummary {
+  ann_return: number;
+  ann_vol: number;
+  sharpe: number;
+  max_dd: number;
+  n_months: number;
+}
+
+export interface FFResponse {
+  series: FFPoint[];
+  drawdown: FFPoint[];
+  summaries: Record<string, FFSummary>;
+  factors: Record<string, string>;
+  start: string | null;
+  end: string | null;
+  n_months: number;
+}
+
 export interface QuintilePoint {
   date: string;
   Q1?: number;
@@ -1338,6 +1367,7 @@ export const api = {
   getQuintiles: (factor: string, universe = "sp500") =>
     apiFetch<QuintileResponse>(`/factors/quintiles?factor=${factor}&universe=${encodeURIComponent(universe)}`),
   getFactorSummary: () => apiFetch<SummaryResponse>("/factors/summary"),
+  getFamaFrench: () => apiFetch<FFResponse>("/factors/fama-french"),
   triggerFundamentals: (maxTickers = 50) =>
     fetch(`/api/factors/fetch-fundamentals?max_tickers=${maxTickers}`, { method: "POST" }),
   prefetchUniverse: (exchange = "", limit = 500) =>
@@ -1620,6 +1650,32 @@ export const api = {
   // ── AI CapEx Intelligence ──────────────────────────────────────────────────
   getAICapEx: () => apiFetch<AICapExDashboard>("/ai-capex/dashboard"),
   refreshAICapEx: () => fetch("/api/ai-capex/refresh", { method: "POST" }).then(r => r.json()),
+
+  // ── Space Sector Intelligence ─────────────────────────────────────────────
+  getSpaceOverview:    () => apiFetch<any>("/space/overview"),
+  getSpaceLaunch:      () => apiFetch<any>("/space/launch"),
+  getSpaceSatellite:   () => apiFetch<any>("/space/satellite"),
+  getSpaceDefense:     () => apiFetch<any>("/space/defense-space"),
+  getSpaceBroadband:   () => apiFetch<any>("/space/broadband"),
+  getSpaceEconomy:     () => apiFetch<any>("/space/economy"),
+  getSpaceGovernment:  () => apiFetch<any>("/space/government"),
+  getSpaceTourismLunar:() => apiFetch<any>("/space/tourism-lunar"),
+  getSpaceVC:          () => apiFetch<any>("/space/vc"),
+  getSpaceStocks:      () => apiFetch<any>("/space/stocks"),
+  getSpaceSupplyChain: () => apiFetch<any>("/space/supply-chain"),
+  getSpaceComposite:   () => apiFetch<any>("/space/composite"),
+
+  // ── AI Copilot ────────────────────────────────────────────────────────────
+  copilotChat: (message: string, history: { role: string; content: string }[], modelRole = "primary") =>
+    apiFetch<any>("/copilot/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, history, role: modelRole }),
+    }),
+  getCopilotInsights:     () => apiFetch<any>("/copilot/insights"),
+  getCopilotOpportunities:() => apiFetch<any>("/copilot/opportunities"),
+  getCopilotPMCommand:    () => apiFetch<any>("/copilot/pm-command"),
+  getCopilotStatus:       () => apiFetch<any>("/copilot/status"),
+  getCopilotModels:       () => apiFetch<any>("/copilot/models"),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────

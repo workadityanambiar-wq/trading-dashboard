@@ -13,6 +13,7 @@ import type {
   QuantumIndustry, QuantumSoftware, QuantumStartup, QuantumPatent,
   QuantumLeader, QuantumGeoRisk,
 } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -176,6 +177,30 @@ export default function QuantumPage() {
           Hardware Race · Public Markets · Government Investment · Enterprise Adoption · VC Pipeline
         </p>
       </div>
+
+      <PageGuide
+        title="Quantum Computing Intelligence"
+        subtitle="Track the quantum computing ecosystem: hardware progress, public market stocks, government funding, enterprise adoption, and VC pipeline."
+        steps={[
+          { title: "Overview Tab", detail: "Start here for a synthesis view: quantum readiness score, key milestones (qubit counts, error rates), competitive landscape summary, and AI-generated investment thesis." },
+          { title: "Hardware Tab", detail: "Track quantum hardware progress by company: qubit count, gate fidelity, coherence time, and estimated quantum advantage horizon. IBM, Google, IonQ, Rigetti, and PsiQuantum are all tracked." },
+          { title: "Markets Tab", detail: "Monitor public quantum stocks: price performance, valuation, revenue trajectory, and analyst targets. Includes pure-play quantum (IonQ, Rigetti) and quantum-adjacent (IBM, Honeywell, NVDA, GOOGL)." },
+          { title: "Government Tab", detail: "Track national quantum programs and funding: US National Quantum Initiative, EU Quantum Flagship, China's quantum investments, and country-level competitive positioning." },
+          { title: "VC & IP Tab", detail: "Monitor venture capital funding rounds into quantum startups and patent filing activity. VC funding trends are a leading indicator of commercial quantum timeline expectations." },
+          { title: "Forecast Tab", detail: "Scenario analysis for quantum advantage timelines: when will quantum computers outperform classical for specific problem types (optimization, chemistry, cryptography). Conservative, base, and accelerated scenarios." },
+        ]}
+        howItWorks={[
+          { title: "Hardware Metrics", detail: "Qubit count, gate fidelity, and coherence time data are sourced from published academic papers, company announcements, and conference proceedings. The 'quantum volume' composite metric normalizes across different qubit types (superconducting, trapped ion, photonic)." },
+          { title: "Investment Signal", detail: "Quantum stocks are scored on: hardware progress vs. roadmap, revenue ramp trajectory, enterprise customer acquisition, and funding runway. The composite signal (Strong Buy to Strong Sell) incorporates both technical and fundamental factors." },
+          { title: "Government Tracker", detail: "National quantum program data is aggregated from official government budget documents, NIST reports, and parliamentary/congressional funding records. Cumulative investment and year-over-year growth are tracked per country." },
+          { title: "Timeline Modeling", detail: "The fault-tolerant quantum advantage timeline is modeled using error rate reduction trends (analogous to Moore's Law). Each scenario assumes different error correction overhead and logical qubit requirements." },
+        ]}
+        tips={[
+          "Quantum computing is a 5–10 year investment theme — avoid trading pure-play stocks on short-term news. Their value is in the option on a transformative technology.",
+          "The key indicator to watch is physical error rate: when it drops below 10^-4, fault-tolerant quantum computation becomes feasible. Track this number across companies.",
+          "IBM's quantum roadmap is the most transparent and consistently executed — use it as a baseline for validating other companies' claims.",
+        ]}
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 flex-wrap border-b border-[var(--border)] pb-3">

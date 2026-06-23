@@ -10,6 +10,7 @@ import {
   FlameKindling,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 const SECTIONS = [
   {
@@ -87,6 +88,24 @@ export default function MarketsPage() {
           <h1 className="text-[15px] font-bold text-text-primary tracking-tight">Markets</h1>
         </div>
       </header>
+
+      <PageGuide
+        title="Markets Hub — Guide"
+        subtitle="Navigation hub for all market trackers: macro, commodities, crypto, and sectors"
+        steps={[
+          { title: "Browse by Category", detail: "Markets are organized into thematic sections: Global Macro (Dollar, Treasury, Macro overview), Commodities (Oil, Metals, Rare Earths), Digital Assets (Crypto), Sectors (AI Compute, Defense, Space), and Alternative Data (Congressional, IPO)." },
+          { title: "Tap Any Card to Navigate", detail: "Each card shows the tracker name, a short description of what it covers, and an icon. Tap any card to go directly to that tracker. All trackers have live data and detailed analysis." },
+          { title: "Use the Sidebar for All Pages", detail: "The full site navigation is also available in the sidebar (hamburger menu or left rail on desktop). It lists every page including analysis tools, screeners, and portfolio tools not shown in this hub." },
+        ]}
+        howItWorks={[
+          { title: "Navigation Structure", detail: "This page is a curated navigation hub grouping the most-used market data pages into logical categories. It provides quick one-tap access to the most important trackers without needing to navigate the full sidebar." },
+          { title: "Live Data", detail: "Each linked tracker fetches its own live data independently. Navigation here is instant — data loads after you arrive at each destination." },
+        ]}
+        tips={[
+          "Bookmark this page as your daily market morning checklist — start with Macro overview, then Dollar + Treasury, then sector rotation.",
+          "The Congressional Trading page is easiest to find here — tap it after major news events to see if Congress members are positioning ahead of legislation.",
+        ]}
+      />
 
       <div className="px-4 pt-4 space-y-6">
         {SECTIONS.map(({ title, color, items }) => (

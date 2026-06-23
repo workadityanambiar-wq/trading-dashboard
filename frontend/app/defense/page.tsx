@@ -6,6 +6,7 @@ import {
   LineChart, Line, CartesianGrid, AreaChart, Area, Cell, Legend,
 } from "recharts";
 import { api } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 const C = {
@@ -141,6 +142,30 @@ export default function DefensePage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageGuide
+        title="Global Defense & Military Intelligence"
+        subtitle="Institutional-grade defense sector analysis: global spending trends, procurement contracts, geopolitical risk, contractor performance, and technology investment."
+        steps={[
+          { title: "Overview Tab", detail: "See the defense spending landscape at a glance: global defense spending trajectory, top-10 spenders by country, NATO burden-sharing scores, and the composite defense investment thesis." },
+          { title: "Spending Tab", detail: "Track defense budget trends for 30+ countries: year-over-year growth rates, % of GDP, absolute spending, and forward guidance. US, China, Russia, UK, Germany, India, and France are tracked in most detail." },
+          { title: "Geopolitical Tab", detail: "Real-time geopolitical risk scores by region: conflict intensity, escalation probability, and the defense spending implications. Historical spending spikes following geopolitical events are charted for context." },
+          { title: "Procurement Tab", detail: "Track major defense contract awards: program names, contract values, prime contractors, and performance milestones. Recent DoD, UK MoD, and NATO contract announcements are aggregated here." },
+          { title: "Contractors Tab", detail: "Financial analysis of the top defense contractors: Lockheed Martin, RTX, Northrop Grumman, L3Harris, BAE Systems, and others. Revenue breakdown by program, backlog growth, and margin trajectory." },
+          { title: "Technology Tab", detail: "Track defense tech investment: hypersonics, directed energy, autonomous systems, space defense, cyber, and AI/ML applications. Which programs are growing vs. being cut in the latest budget cycle." },
+        ]}
+        howItWorks={[
+          { title: "Spending Data", detail: "Primary sources: Stockholm International Peace Research Institute (SIPRI) annual military expenditure database, national defense budget documents, and NATO's annual cost reporting. Data is updated annually with current-year estimates." },
+          { title: "Geopolitical Risk Model", detail: "Risk scores integrate: ACLED conflict event data, UN peacekeeping deployment levels, sanctions activity, arms embargo violations, and news sentiment analysis. Each region is scored 0–100 (low to high risk)." },
+          { title: "Contract Tracking", detail: "Major contracts are sourced from DoD daily contract announcements (defense.gov), UK government procurement registry, and company investor relations disclosures. Contracts above $100M threshold are tracked." },
+          { title: "Contractor Scoring", detail: "Each contractor is scored on: revenue growth vs. defense spending growth, backlog coverage ratio, EBIT margin trend, R&D investment as % of revenue, and program execution track record." },
+        ]}
+        tips={[
+          "Defense stocks trade on budget cycle expectations as much as reported revenues — watch the NDAA (National Defense Authorization Act) markup process each spring for spending direction signals.",
+          "The backlog-to-revenue ratio is the key forward indicator: above 3× means 3 years of revenue visibility. Companies with growing backlogs are safer in budget uncertainty periods.",
+          "European defense spending is the secular growth story post-2022: Germany's defense budget nearly doubled — track HENSOLDT, Rheinmetall, and KNDS as direct beneficiaries.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

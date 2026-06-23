@@ -4,6 +4,8 @@ const backendUrl = process.env.BACKEND_URL || "https://carefree-reverence-produc
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  // Allow long-running AI responses from local Ollama (up to 5 min)
+  experimental: { proxyTimeout: 300_000 },
   async rewrites() {
     return [
       {

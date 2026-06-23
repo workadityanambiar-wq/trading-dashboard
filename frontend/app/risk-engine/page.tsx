@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api, type HybridResponse, type RegimeName } from "@/lib/api";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 import { cn } from "@/lib/utils";
 import {
   Play, X, Plus, ChevronUp, ChevronDown, Minus,
@@ -339,6 +340,30 @@ export default function RiskEnginePage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+
+      <PageGuide
+        title="Hybrid Risk Engine"
+        subtitle="Institutional portfolio optimizer combining Hierarchical Risk Parity, Black-Litterman views, CVaR budgeting, and regime overlays."
+        steps={[
+          { title: "Build Your Portfolio", detail: "Start by typing tickers into the search box and adding them one by one, or click a preset (FANG+, S&P Mega-Cap, Balanced) to load a pre-built ticker list. You can add up to 30 stocks." },
+          { title: "Select Market Regime", detail: "Choose the current regime: Strong Trend, Choppy, Bear, or Panic. The regime selection adjusts the optimization objective and volatility assumptions. Use the Regime page to confirm which regime you're actually in." },
+          { title: "Set Risk Parameters", detail: "CVaR Limit sets the maximum acceptable daily CVaR (default 2%). Max Weight per Position caps concentration (default 20%). These constraints are enforced in the optimization." },
+          { title: "Add AI Views (Optional)", detail: "For any ticker, enter a view percentage (e.g. +15 for bullish, -10 for bearish) in the signals panel. These are Black-Litterman views that tilt the optimal weights toward your conviction positions." },
+          { title: "Run Optimization", detail: "Click 'Optimize' to run the hybrid model. The engine computes HRP base weights, applies regime adjustments, incorporates your BL views, and solves for CVaR-constrained weights." },
+          { title: "Review Output", detail: "The results show optimal weights for each position, forecasted portfolio CVaR, Sharpe ratio, and the contribution of each stock to total portfolio risk. The correlation heatmap shows diversification quality." },
+        ]}
+        howItWorks={[
+          { title: "Hierarchical Risk Parity", detail: "HRP clusters correlated assets together and assigns risk budgets inversely proportional to cluster volatility. This avoids the instability of mean-variance optimization (which requires inverting the covariance matrix) and naturally diversifies across clusters." },
+          { title: "Black-Litterman Tilts", detail: "BL combines market equilibrium returns (implied by market-cap weights) with your subjective views using Bayesian updating. The result is a 'blended' expected return vector that tilts the optimal portfolio toward your conviction positions without ignoring the rest of the market." },
+          { title: "CVaR Optimization", detail: "Conditional Value at Risk (CVaR) measures the expected loss in the worst 5% of scenarios. The optimizer solves a linear program to minimize portfolio CVaR subject to weight constraints, giving a tail-risk-aware solution." },
+          { title: "Regime Overlays", detail: "In Strong Trend regimes, the optimizer tilts toward momentum factors and allows higher concentration. In Bear/Panic regimes, maximum weights are reduced, cash/bond positions are allowed, and CVaR limits tighten automatically." },
+        ]}
+        tips={[
+          "HRP requires at least 10 stocks to meaningfully diversify across clusters — with fewer stocks, it converges to near-equal weight.",
+          "Be conservative with BL views: entering very strong views (+50%) can cause the optimizer to over-concentrate in those positions, defeating the purpose of HRP.",
+          "Run the optimizer with and without your views to see the 'cost' of your convictions — how much ex-ante Sharpe you're giving up for your active bets.",
+        ]}
+      />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── types ──────────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,30 @@ export default function AlertsPage() {
 
   return (
     <div className="flex flex-col h-full p-6 gap-6 max-w-5xl mx-auto">
+      <PageGuide
+        title="Alerts & Notifications"
+        subtitle="Configure 28+ technical and fundamental alert conditions with AI explanations, delivered to your in-app notification feed."
+        steps={[
+          { title: "Check Alert Triggers", detail: "The 'Triggers' tab shows all recently fired alerts — conditions that were met for your tracked stocks. Unread alerts are highlighted. Click any trigger to see the AI explanation of why it fired." },
+          { title: "Manage Active Alerts", detail: "The 'Manage' tab lists all your configured alert rules. You can see which conditions are active, edit parameters, or delete alerts you no longer need." },
+          { title: "Create a New Alert", detail: "Go to the 'Create' tab. Enter a ticker, select a category (Price, Volume, Technical, Fundamental, Momentum, Risk), and choose a specific condition. Fill in the required parameters (e.g. price threshold, percentage change)." },
+          { title: "Set Alert Parameters", detail: "Each condition has specific parameters. For 'Price Above', enter the target price. For 'RSI Oversold', enter the RSI threshold. For 'Volume Surge', enter the multiplier vs. average." },
+          { title: "Mark as Read", detail: "Use 'Mark All Read' to clear unread indicators after reviewing your triggers. The unread count badge in the header updates automatically." },
+          { title: "Filter Unread Only", detail: "Toggle 'Unread Only' to focus on alerts you haven't reviewed yet, filtering out older triggers." },
+        ]}
+        howItWorks={[
+          { title: "Alert Evaluation Engine", detail: "Alerts are evaluated server-side on a configurable schedule (default: every 5 minutes for intraday conditions, daily at market close for fundamental conditions). When a condition is met, a trigger record is created and the unread count increments." },
+          { title: "28 Condition Types", detail: "Conditions span 6 categories: Price (above/below/% change), Volume (surge, dry-up), Technical (RSI extremes, MACD cross, MA cross, Bollinger Band touch), Momentum (RS rank change, trend reversal), Fundamental (earnings beat, revenue miss), and Risk (volatility spike, correlation breakdown)." },
+          { title: "AI Explanations", detail: "When a trigger fires, the AI model generates a 2–3 sentence explanation in plain English: what happened, why it matters, and what historical precedent suggests. This is visible when you expand a trigger in the Triggers tab." },
+          { title: "In-App Delivery", detail: "Triggers are stored in the database and surfaced via the bell icon badge. Future channels (email, Slack, webhook) can be configured in the alert definition." },
+        ]}
+        tips={[
+          "Set a 'Price Above 52-Week High' alert for your top watchlist stocks — breaking to all-time highs is one of the most reliable technical signals.",
+          "Combine a 'Volume Surge (2×)' alert with an 'RS Rank Improvement' alert for the same ticker — unusual volume with rising relative strength is often institutional accumulation.",
+          "Don't create too many alerts — alert fatigue makes you ignore them. Focus on 5–10 high-conviction conditions for your most important positions.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

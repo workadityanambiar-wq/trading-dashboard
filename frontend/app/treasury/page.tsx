@@ -11,6 +11,7 @@ import {
   ChevronUp, ChevronDown, Activity, Shield, Target, Zap,
   BarChart2, Globe, Landmark, DollarSign, LineChart as LineIcon,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Colors ─────────────────────────────────────────────────────────────────────
 const B  = "#3b82f6"; // blue
@@ -1418,6 +1419,28 @@ export default function TreasuryPage() {
       </div>
 
       </header>
+
+      <PageGuide
+        title="Treasury Yields — Guide"
+        subtitle="US yield curve analysis, spread monitoring, and rate regime classification"
+        steps={[
+          { title: "Read the Yield Curve Shape", detail: "The yield curve chart plots yields at 1M, 3M, 6M, 1Y, 2Y, 5Y, 10Y, and 30Y maturities. A normal (upward sloping) curve is healthy; a flat or inverted curve (short rates above long rates) historically signals economic stress ahead." },
+          { title: "Check Key Spreads", detail: "The 2Y–10Y spread is the most watched inversion indicator. When negative (inverted), it has preceded every US recession over the past 50 years. The 3M–10Y spread is another important benchmark used by the Fed." },
+          { title: "Read the Rate Regime", detail: "The regime chip classifies the current environment: Rising Rates, Falling Rates, or Stable. This affects bond prices inversely (rising rates = falling bond prices) and drives equity sector rotation (value wins in rising rates, growth wins in falling rates)." },
+          { title: "Monitor Real Yields", detail: "Real yields (nominal yield minus expected inflation) drive gold and growth stock valuations. Rising real yields are negative for gold and long-duration tech stocks. Falling real yields are a powerful tailwind for both." },
+          { title: "Navigate the Tabs", detail: "Use the tab bar to explore: Overview (current yields & changes), Curve (shape & spreads), Inflation (CPI & TIPS data), Fed Policy (dot plot & rate path), Positioning (COT data), Risk Sentiment, Technicals, and Scenarios." },
+        ]}
+        howItWorks={[
+          { title: "Yield Data", detail: "Treasury yields are fetched from Yahoo Finance using standard tickers: ^IRX (13-week), ^FVX (5Y), ^TNX (10Y), ^TYX (30Y). The backend interpolates the full curve across all maturities." },
+          { title: "Spread Calculation", detail: "The 2Y–10Y spread = 10Y yield minus 2Y yield. Negative spread = inverted curve. This relationship has been a reliable recession leading indicator with a 6–18 month lead time historically." },
+          { title: "Duration Sensitivity", detail: "Bond price sensitivity to rate changes is expressed as Modified Duration. A 10Y Treasury with ~8 years modified duration loses approximately 8% in price for every 1% rise in yields — a critical concept for fixed income risk management." },
+        ]}
+        tips={[
+          "The 2Y–10Y curve typically un-inverts before a recession begins — watch for re-steepening as a near-term recession signal.",
+          "Rising 10Y yields with a rising dollar = tightening global financial conditions. Reduce risk exposure.",
+          "When the 10Y yield is at multi-year highs, long-duration Treasuries (TLT) offer attractive risk/reward as a portfolio hedge.",
+        ]}
+      />
 
       {/* Tab content */}
       <div className="p-4">

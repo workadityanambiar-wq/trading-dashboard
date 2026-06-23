@@ -11,6 +11,7 @@ import { SpreadChart } from "@/components/pairs/SpreadChart";
 import { ZScoreChart } from "@/components/pairs/ZScoreChart";
 import { HedgeRatioChart } from "@/components/pairs/HedgeRatioChart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface PairDetail {
@@ -165,6 +166,30 @@ export default function PairDetailPage() {
           </button>
         </div>
       </div>
+
+      <PageGuide
+        title="Pair Detail"
+        subtitle="Deep statistical analysis of a cointegrated stock pair: spread dynamics, z-score signals, hedge ratio evolution, and strategy backtest."
+        steps={[
+          { title: "Read the Signal Badge", detail: "The signal badge (Enter Long Leg, Enter Short Leg, Exit, Neutral) tells you the current trade signal based on the z-score threshold. Green = long the spread, red = short the spread, gray = wait." },
+          { title: "Change Analysis Parameters", detail: "Use the dropdowns in the header to change Period (1y/2y/3y/5y), Hedge Method (OLS/rolling/Kalman), Spread Type (log/price/ratio), and Z-Score Window. Each change triggers a refetch with the new parameters." },
+          { title: "Read the Stat Cards", detail: "Key statistics: Z-Score (current spread deviation in standard deviations), Quality Score (composite pair quality 0–100), Pearson ρ (correlation), Cointegrated (yes/no), Hurst Exponent (< 0.5 = mean-reverting), and Half-Life (average days to mean-revert)." },
+          { title: "Explore Charts", detail: "Four charts: Price Comparison (normalized prices of both legs), Spread Series (spread over time with ±2σ bands), Z-Score (z-score with entry/exit thresholds marked), and Hedge Ratio (Kalman filter estimate of the dynamic hedge ratio)." },
+          { title: "Configure and Run Backtest", detail: "Scroll to the Backtest section. Set entry/exit/stop z-score thresholds, transaction cost (bps), and notional size ($). Click 'Run Backtest' to see historical performance of this pair strategy." },
+          { title: "Review Backtest Results", detail: "Results show: total trades, win rate, profit factor, average return per trade, max drawdown, and Sharpe ratio. The equity curve shows portfolio growth over the backtest period." },
+        ]}
+        howItWorks={[
+          { title: "Cointegration Testing", detail: "The backend runs two cointegration tests: ADF (Augmented Dickey-Fuller) tests if the spread is stationary; Johansen test detects multivariate cointegration. Both must pass for a high-quality pair. The ADF p-value < 0.05 is the primary threshold." },
+          { title: "Hedge Ratio Estimation", detail: "Three methods: OLS (ordinary least squares regression — static), Rolling (OLS over a rolling window — adaptive but noisy), Kalman Filter (state-space model — dynamic and smooth). Kalman is recommended for live trading as it adapts quickly to regime changes." },
+          { title: "Z-Score Signal", detail: "Z-score = (spread - rolling_mean) / rolling_std, computed over the zscore_window period (default 30 days). Signal: z < -2 = buy spread (long leg1, short leg2); z > +2 = sell spread; z crosses 0 = exit." },
+          { title: "Backtest Engine", detail: "The backtest simulates actual trade execution: entry when z crosses threshold, exit when z returns to exit level or hits stop. Round-trip transaction costs and bid-ask slippage (configurable bps) are deducted from each trade P&L." },
+        ]}
+        tips={[
+          "A half-life of 5–30 days is ideal for pair trading — too short means transaction costs eat all profit; too long means capital is tied up unproductively.",
+          "Avoid pairs where the Hurst exponent is > 0.5 — those are trending rather than mean-reverting, and the pair strategy will lose money on average.",
+          "Kalman filter hedge ratios adapt to structural breaks (e.g. a company spinoff or acquisition) better than OLS — always use Kalman for live trading, OLS only for historical analysis.",
+        ]}
+      />
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-text-muted text-sm py-16 justify-center">

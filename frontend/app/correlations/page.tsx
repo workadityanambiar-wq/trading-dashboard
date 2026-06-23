@@ -5,6 +5,7 @@ import { api, type CorrPair, type CorrelationsResponse } from "@/lib/api";
 import { CorrelationHeatmap } from "@/components/charts/CorrelationHeatmap";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Options ───────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,28 @@ export default function CorrelationsPage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+      <PageGuide
+        title="Correlation Matrix — Guide"
+        subtitle="Rolling correlation heatmap for diversification and risk analysis"
+        steps={[
+          { title: "Select a Universe", detail: "Choose Sectors & ETFs for a broad market view, S&P 500 for large caps, Popular ETFs for asset class correlations, Nifty 50 for Indian markets, Europe for European stocks, or Custom to enter your own tickers." },
+          { title: "Pick a Time Period", detail: "The correlation period (1M, 3M, 6M, 1Y) controls how much history is used. Short periods (1M) capture recent regime correlations; longer periods (1Y) show structural relationships." },
+          { title: "Read the Heatmap", detail: "The heatmap shows pairwise correlations. Dark blue = strong positive correlation (+1). Dark red = strong negative correlation (-1). White/light = uncorrelated (0). The diagonal is always +1 (each asset with itself)." },
+          { title: "Find Diversifiers", detail: "Look for asset pairs with correlation near 0 or negative (green cells) — these are true portfolio diversifiers. GLD and TLT often show negative correlation to SPY in risk-off periods." },
+          { title: "Sort and Filter", detail: "Click any row or column header to reorder the matrix by that asset. Use the search filter in Custom mode to select specific pairs of interest." },
+        ]}
+        howItWorks={[
+          { title: "Rolling Correlation", detail: "For each pair of assets, the Pearson correlation coefficient is computed from their daily log return series over the selected period. The matrix is symmetric." },
+          { title: "Color Scale", detail: "Correlations range from -1 to +1. The color scale maps this to a red-white-blue gradient. Values above 0.7 in blue indicate assets that tend to move together — diversification is minimal." },
+          { title: "Regime Sensitivity", detail: "Correlations are not static — in market stress events, most risky assets' correlations converge to +1 (they all fall together). Short-period heatmaps will capture this regime shift faster than long-period ones." },
+          { title: "Custom Universe", detail: "In Custom mode, you can enter any list of valid Yahoo Finance tickers. The backend fetches their price history and computes the correlation matrix on the fly." },
+        ]}
+        tips={[
+          "A portfolio where most pairwise correlations are above 0.7 provides almost no diversification benefit — you're holding the same risk in multiple forms.",
+          "Check correlations at 1M during market selloffs to see how your 'diversifiers' actually behave in a crisis.",
+          "GLD's correlation to equities flips from slightly positive in calm markets to negative in panics — it's a true crisis hedge.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>

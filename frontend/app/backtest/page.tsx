@@ -9,6 +9,7 @@ import { RollingSharpChart } from "@/components/charts/RollingSharpChart";
 import { StatsTable } from "@/components/tables/StatsTable";
 import { cn, formatPct } from "@/lib/utils";
 import { Play, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Config form state ─────────────────────────────────────────────────────────
 
@@ -62,6 +63,29 @@ export default function BacktestPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Factor Backtester — Guide"
+        subtitle="Long-only factor portfolio simulation with full performance analytics"
+        steps={[
+          { title: "Select a Factor", detail: "Choose from Momentum (12-1), Value, Quality, Low Volatility, Earnings Momentum, and others. Each factor ranks stocks differently — momentum favors recent price leaders, value favors cheap stocks." },
+          { title: "Set Top-N Holdings", detail: "Top N controls how many stocks the portfolio holds. Top 25 = concentrated; Top 100 = broad factor tilt. Smaller N amplifies the factor bet but increases stock-specific risk." },
+          { title: "Set Transaction Cost", detail: "Enter the one-way transaction cost in basis points (bps). 10 bps is realistic for liquid large caps. This is applied at every monthly rebalance." },
+          { title: "Choose Start Date", detail: "Pick the backtest start date. Longer histories (5+ years) give more statistical confidence. The backtest always ends at the most recent data available." },
+          { title: "Run and Analyze Results", detail: "Hit Run and wait for results. Review the equity curve, drawdown chart, monthly returns heatmap, rolling Sharpe chart, and statistics table. Compare to the SPY benchmark (shown in orange)." },
+        ]}
+        howItWorks={[
+          { title: "Portfolio Construction", detail: "Each month, all stocks in the S&P 500 universe are ranked by the selected factor score. The top N stocks by rank are equally weighted in the portfolio." },
+          { title: "Rebalancing", detail: "The portfolio rebalances at the end of each calendar month. Transaction costs are applied to both buys and sells. The equity curve reflects costs." },
+          { title: "Return Attribution", detail: "Monthly portfolio return = equal-weighted average of constituent returns. Cumulative returns are compounded (not summed) to produce the equity curve." },
+          { title: "Statistics Computation", detail: "CAGR = annualized compound return. Sharpe = annualized return / annualized volatility (assuming 0% risk-free rate). Max Drawdown = peak-to-trough decline. Hit Rate = % of months with positive return." },
+          { title: "Benchmark Comparison", detail: "SPY buy-and-hold is shown as the benchmark line on the equity curve. The alpha and information ratio are computed relative to SPY." },
+        ]}
+        tips={[
+          "12-1 momentum is the most robust factor academically and works best with 50-100 holdings.",
+          "High transaction costs destroy value factors more than momentum — keep costs below 15 bps per side.",
+          "A backtest with Sharpe above 0.8 and max drawdown below 25% is worth live testing with a paper account.",
+        ]}
+      />
       {/* Header */}
       <div>
         <h1 className="text-base font-semibold">Strategy Backtester</h1>

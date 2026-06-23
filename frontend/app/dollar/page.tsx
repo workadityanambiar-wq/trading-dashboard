@@ -10,6 +10,7 @@ import {
   CircleDollarSign, Activity, Shield, Globe, ChevronUp, ChevronDown,
   BarChart2, Target, Zap,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 const BLUE   = "#3b82f6";
 const GREEN  = "#10b981";
@@ -777,6 +778,28 @@ export default function DollarPage() {
           ))}
         </div>
       </header>
+
+      <PageGuide
+        title="Dollar Tracker — Guide"
+        subtitle="DXY strength analysis with macro regime and currency pair implications"
+        steps={[
+          { title: "Read the DXY Overview", detail: "The top panel shows the current DXY level, daily/weekly/monthly/YTD performance, and whether it is above or below its 20, 50, and 200-day moving averages. Green MA labels = bullish positioning; red = bearish." },
+          { title: "Check Dollar Strength Regime", detail: "The regime chip classifies DXY as Strong, Neutral, or Weak based on momentum and trend relative to moving averages. A strong dollar is negative for emerging markets, commodities, and multinational earnings." },
+          { title: "Review Currency Pairs", detail: "The currency pair table shows how the dollar is performing against EUR, JPY, GBP, CAD, AUD, and CHF. Broad dollar strength across all majors is more significant than a move against a single currency." },
+          { title: "Read the Macro Impact Panel", detail: "The impact analysis shows the typical effect of the current dollar regime on Commodities (inverse), EM Equities (inverse), and US Multinationals (headwind from revenue translation)." },
+          { title: "View Price History Chart", detail: "The area chart shows DXY price history with MA overlays. Use the lookback selector to assess trend context — the 200-day MA crossing is the most important long-term signal." },
+        ]}
+        howItWorks={[
+          { title: "DXY Data", detail: "The DX-Y.NYB ticker from Yahoo Finance tracks the ICE Dollar Index, which measures USD against a basket of 6 major currencies: EUR (57.6%), JPY (13.6%), GBP (11.9%), CAD (9.1%), SEK (4.2%), CHF (3.6%)." },
+          { title: "Strength Score", detail: "The strength score combines the position of DXY relative to its 20/50/200-day SMAs, 3-month momentum, and rate of change. Scores above +0.3 = strong trend dollar; below -0.3 = weak dollar trend." },
+          { title: "Macro Impact Rules", detail: "Impact directions are based on historical correlations: commodities priced in USD move inversely to DXY; EM currencies weaken with a strong dollar due to USD-denominated debt burdens; US exporters face headwinds when DXY rises." },
+        ]}
+        tips={[
+          "DXY above its 200-day MA and rising is historically bearish for gold and oil — factor this into commodity trades.",
+          "A rapidly strengthening dollar (DXY +5% in 3 months) often precedes EM market stress within 3–6 months.",
+          "Dollar weakness combined with a risk-on regime is the ideal setup for EM equities and commodity exporters.",
+        ]}
+      />
 
       {/* Content */}
       <div className="p-4">

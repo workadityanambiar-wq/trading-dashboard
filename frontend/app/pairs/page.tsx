@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { TradeModal } from "@/components/mt5/TradeModal";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface PairSummary {
@@ -126,6 +127,29 @@ export default function PairsPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Pairs Trading — Guide"
+        subtitle="Statistical arbitrage scanner using cointegration and mean-reversion analysis"
+        steps={[
+          { title: "Discover Pairs", detail: "Click the Discover Pairs button and select a universe (S&P 500 sectors, Tech, Finance, etc.). The scanner tests thousands of stock pairs for statistical cointegration and returns the best candidates." },
+          { title: "Filter by Z-Score", detail: "The Z-Score shows how many standard deviations the spread is from its mean right now. Z > +2 = spread is stretched (long the laggard, short the leader). Z < -2 = spread is compressed (reverse the trade)." },
+          { title: "Filter by Quality Score", detail: "The quality score (0-10) aggregates correlation, cointegration strength, Hurst exponent, and half-life. Only trade pairs with quality score > 6." },
+          { title: "Click a Pair for Full Analysis", detail: "Tap any pair row to open the detailed analysis page showing the spread chart, Z-score history, cointegration test results, and backtested trade signals." },
+          { title: "Check Signal and Half-Life", detail: "The signal column shows LONG SPREAD, SHORT SPREAD, or NEUTRAL based on current Z-score thresholds. Half-life tells you how many days the spread typically takes to revert — shorter is better." },
+        ]}
+        howItWorks={[
+          { title: "Correlation Pre-Filter", detail: "All possible pairs within the universe are tested for Pearson and Spearman correlation. Only pairs with correlation above 0.6 pass to the next stage, reducing the candidate set significantly." },
+          { title: "Augmented Dickey-Fuller (ADF) Test", detail: "The ADF test checks whether the spread between two stocks is stationary (mean-reverting). A p-value below 0.05 means the pair is cointegrated — the spread will tend to return to its historical mean." },
+          { title: "Hurst Exponent", detail: "The Hurst exponent (H) measures the memory property of the spread time series. H < 0.5 indicates mean reversion. H = 0.5 is random walk. H > 0.5 is trending. Best pairs have H between 0.3-0.5." },
+          { title: "Ornstein-Uhlenbeck Half-Life", detail: "The OU model estimates how many trading days it takes for the spread to revert halfway to its mean. Pairs with half-life of 5-30 days are the most practical for trading with realistic position holding periods." },
+          { title: "Hedge Ratio", detail: "The hedge ratio (β) is estimated via OLS regression of stock2 on stock1. To be market-neutral, you go long β shares of the laggard for every 1 share short of the leader." },
+        ]}
+        tips={[
+          "Never trade a pair with ADF p-value above 0.10 — the mean reversion assumption isn't statistically supported.",
+          "Pairs from the same sub-sector (e.g. AAPL vs. MSFT) tend to be more stable than cross-sector pairs.",
+          "Set stop-loss at Z-score of ±3.5 — beyond that, the relationship may have broken down permanently.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

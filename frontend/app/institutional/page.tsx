@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, LineChart, Line, CartesianGrid, Legend, Cell,
 } from "recharts";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -321,6 +322,30 @@ export default function InstitutionalPage() {
           Refresh
         </button>
       </div>
+
+      <PageGuide
+        title="Institutional Flow Dashboard"
+        subtitle="Monitor how hedge funds, dealers, CTAs, and volatility-targeting funds are positioned — the real supply and demand behind price."
+        steps={[
+          { title: "Read the Overview Metrics", detail: "The five headline cards show COT Leveraged Fund positioning, Dealer GEX for SPY, CTA trend score, Vol Control allocation, and SPY put/call skew. These are the key regime indicators at a glance." },
+          { title: "Explore COT Tab", detail: "Commitment of Traders data shows speculative positioning (leveraged funds) and commercial hedger positioning for equity index futures, treasuries, and FX. Net position and 52-week z-score are shown for each contract." },
+          { title: "Analyze Dealer Gamma", detail: "The GEX (Gamma Exposure) tab shows SPY dealer gamma by strike and expiry. Positive GEX = dealers are long gamma (they sell into rallies and buy dips, dampening volatility). Negative GEX = dealers short gamma (they amplify moves)." },
+          { title: "Check CTA Positioning", detail: "The CTA tab shows trend-following funds' estimated equity allocation based on realized volatility and momentum signals. High allocation signals crowded longs; low/negative signals forced deleveraging risk." },
+          { title: "Review Vol Control Funds", detail: "Volatility-targeting funds mechanically reduce equity exposure when VIX spikes. The Vol Control tab shows estimated current allocation — a sharp drop signals forced selling pressure." },
+          { title: "Monitor Skew", detail: "The Skew tab tracks put/call implied vol spread for SPY at various maturities. Rising skew means institutions are buying downside protection — a bearish leading indicator." },
+        ]}
+        howItWorks={[
+          { title: "COT Data", detail: "CFTC Commitment of Traders reports are published weekly (Tuesday data, released Friday). The backend parses futures non-commercial net positions and computes a 52-week z-score to identify extremes." },
+          { title: "Dealer Gamma (GEX)", detail: "GEX = Σ (option open interest × gamma × contract multiplier × spot price). Positive when dealers are net long gamma from selling options to clients. Computed from real-time options chain data scraped from public APIs." },
+          { title: "CTA Trend Model", detail: "A simplified version of the AHL/Winton trend signal: exponential moving average crossovers (1m, 3m, 12m) weighted by inverse volatility. The resulting score maps to an estimated equity allocation between -100% and +100%." },
+          { title: "Vol Control Estimation", detail: "Estimates allocation = target_vol / realized_vol_21d, capped at 100%. When VIX spikes, realized vol rises and allocation falls mechanically, creating selling pressure regardless of fundamentals." },
+        ]}
+        tips={[
+          "The most powerful macro signal is when COT lev funds are extremely short AND dealer GEX is deeply negative — this combination has historically preceded sharp rallies (short squeeze + gamma squeeze).",
+          "When Vol Control allocation drops below 50%, expect systematic selling to be a headwind for any rally attempt.",
+          "Rising skew into an options expiry (especially monthly) often signals that smart money is buying tail protection — pay attention to the directionality.",
+        ]}
+      />
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b border-border">

@@ -14,6 +14,7 @@ import {
   TrendingUp, Activity, Brain,
 } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -688,6 +689,28 @@ export default function EarningsPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Earnings Calendar — Guide"
+        subtitle="Upcoming earnings with technical setups, options flow, and historical intelligence"
+        steps={[
+          { title: "Select a Universe and Lookahead", detail: "Choose S&P 500, S&P 1500, Nifty 50, Europe, or All Cached. Set the lookahead window (7D, 14D, 21D, 30D) to control how far ahead you see upcoming earnings." },
+          { title: "Switch View Modes", detail: "Technical view shows price action, setup classification, and relative strength. Options Flow shows implied moves, ATM IV, and put/call ratios. Intelligence view shows historical drift, gap persistence, beat rates, and revision trends." },
+          { title: "Filter by Setup and Score", detail: "Enable 'Setups only' to hide stocks without a technical pattern. Use Min Score to filter to high-quality setups only (70+ is a strong filter)." },
+          { title: "Read the Intelligence Table", detail: "Sort by Signal Strength to find the best setups. The Signal badge (Strong Setup, Bullish, Neutral, Weak, Avoid) is a composite of beat rate, pre-earnings drift, analyst revisions, and gap persistence." },
+          { title: "Expand a Row for Full Detail", detail: "Click any row to expand it and see the complete earnings history — every quarter's gap, pre-5d drift, post-5d return, post-10d return, and whether the company beat or missed estimates." },
+        ]}
+        howItWorks={[
+          { title: "Pre-Earnings Drift", detail: "The avg return in the 5 or 10 days leading into earnings. Stocks with consistent positive pre-drift (e.g., +2% over 5d) tend to be accumulated by institutions before the announcement." },
+          { title: "Gap Persistence", detail: "What % of the time the earnings day gap direction (up/down) persisted for 5 more days. 70%+ means the initial reaction is usually the right one and the move continues." },
+          { title: "Implied vs Historical Move", detail: "The Options Flow tab shows the options-market implied move (expected move from ATM straddle). Compare this to the historical average absolute move — if implied > historical, options are expensive." },
+          { title: "Signal Composite Score", detail: "The signal badge combines 4 factors: EPS beat rate ≥ 65%, pre-5d drift > 0.5%, more upward than downward analyst revisions in the last 30 days, and gap persistence ≥ 60%. Each factor adds one point; 4 = Strong Setup." },
+        ]}
+        tips={[
+          "The Intelligence view is most useful — sort by Signal Strength and focus on Strong Setup + Bullish ratings with earnings in the next 7 days.",
+          "High implied moves (Options tab) with low historical averages = IV crush risk. Selling premium before these earnings can be profitable.",
+          "Consistent pre-earnings drift + high gap persistence = the cleanest long setups. The stock tends to go up before AND after the report.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { AlertTriangle, Activity, RefreshCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 import { RiskTab } from "@/components/mt5/RiskTab";
 import { JournalTab } from "@/components/mt5/JournalTab";
 import { DrawdownTab } from "@/components/mt5/DrawdownTab";
@@ -568,6 +569,28 @@ export default function MT5Page() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <PageGuide
+        title="MT5 Live Trading — Guide"
+        subtitle="Live position management and order execution via MetaTrader 5"
+        steps={[
+          { title: "Check Connection Status", detail: "The status bar at the top shows whether your MT5 account is connected (green dot) or disconnected (red). Your account number, balance, equity, and margin level are shown when connected." },
+          { title: "View Open Positions", detail: "All open positions are listed with symbol, direction (buy/sell), lot size, open price, current price, swap, and floating P&L. Positions are color-coded: green = profit, red = loss." },
+          { title: "Place a New Order", detail: "Tap the + button or the Place Order button. Enter the symbol (e.g. EURUSD, XAUUSD), direction (Buy/Sell), lot size, and optional Stop Loss / Take Profit levels, then confirm." },
+          { title: "Close a Position", detail: "Tap any open position row and press Close. You can partially close by entering a smaller lot size than the full position. Partial closes are useful for taking profit while keeping a running position." },
+          { title: "Monitor Account Metrics", detail: "The account panel shows Balance (realized), Equity (balance + unrealized P&L), Margin (used collateral), Free Margin, and Margin Level %. Margin Level below 100% triggers a margin call." },
+        ]}
+        howItWorks={[
+          { title: "MT5 Python API", detail: "The backend uses the MetaTrader5 Python library to communicate directly with the MT5 terminal running on your machine. All order placement, position querying, and account data comes through this API." },
+          { title: "Real-Time Price Streaming", detail: "Live bid/ask prices are fetched from MT5's tick data stream. Prices update every second for open positions to show real-time floating P&L." },
+          { title: "Order Execution", detail: "Market orders are sent via MetaTrader5.order_send() with ORDER_TYPE_BUY or ORDER_TYPE_SELL. The backend validates lot size, symbol, and margin requirements before sending." },
+          { title: "Credential Security", detail: "MT5 login credentials (account number, password, server) are stored in the backend .env file and never exposed to the browser. All trading actions are proxied through the backend API." },
+        ]}
+        tips={[
+          "Always set a Stop Loss on every trade — even a wide one (e.g. 200 pips on FX) — to protect against gap risk.",
+          "Monitor margin level above 200% to avoid unexpected position close-outs during volatile periods.",
+          "Use the demo account (MetaQuotes-Demo) to test order flow before switching to a live account.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

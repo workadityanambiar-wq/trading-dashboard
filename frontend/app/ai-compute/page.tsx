@@ -11,6 +11,7 @@ import {
   RefreshCw, AlertTriangle, type LucideIcon,
 } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -870,6 +871,30 @@ export default function AIComputePage() {
 
   return (
     <div className="space-y-4 max-w-screen-2xl">
+      <PageGuide
+        title="AI Compute Infrastructure"
+        subtitle="Institutional-grade intelligence platform tracking the global AI compute supply chain: GPUs, hyperscalers, memory, foundries, and investment signals."
+        steps={[
+          { title: "PM Summary Tab", detail: "Start with the Portfolio Manager Summary for a synthesized view: key metrics, sector scores, and AI-generated investment thesis. This is the executive brief for busy PMs." },
+          { title: "GPU Tab", detail: "Track GPU supply/demand balance, pricing trends, allocation across hyperscalers, and Nvidia vs AMD vs Intel competitive positioning. Production schedules and ASP trends are shown." },
+          { title: "Hyperscalers Tab", detail: "Monitor AWS, Azure, GCP, and Oracle Cloud AI-related capex announcements, data center growth rates, and compute reservation pipeline. Revenue attribution to AI workloads is shown." },
+          { title: "Memory Tab", detail: "HBM (High Bandwidth Memory) is the key bottleneck for AI training. This tab tracks HBM supply, pricing, SK Hynix/Samsung/Micron market share, and near-term supply forecasts." },
+          { title: "Stocks Tab", detail: "Institutional-quality trade signals for AI compute stocks (NVDA, AMD, AVGO, MRVL, TSM, etc.) with composite scores, technical signals, and valuation context." },
+          { title: "Signals & Scenarios Tab", detail: "Forward-looking investment scenarios: bull (GPU shortage extends), base (normalization), and bear (demand destruction). Each scenario shows implications for key stocks." },
+        ]}
+        howItWorks={[
+          { title: "Data Aggregation", detail: "Supply chain data is aggregated from public filings (10-K, 10-Q, 8-K), earnings call transcripts, industry reports, and market data APIs. The backend runs nightly ETL pipelines to update all metrics." },
+          { title: "Composite Scoring", detail: "Each sub-sector (GPU, Memory, Foundry) gets a 0–100 score based on supply/demand balance, pricing momentum, and order backlog trends. The aggregate AI Compute Score is a weighted average." },
+          { title: "Stock Signals", detail: "Individual stock signals combine: fundamental momentum (revenue/earnings growth acceleration), technical momentum (RS rank, MA alignment), and supply chain positioning (direct vs. indirect AI exposure). Signals are updated daily." },
+          { title: "Scenario Engine", detail: "The scenario engine runs three Monte Carlo paths for GPU pricing and hyperscaler capex through 12 months. Each path is mapped to stock-level price targets using revenue-multiple sensitivity analysis." },
+        ]}
+        tips={[
+          "HBM availability is the tightest constraint in the AI supply chain — stocks with HBM exposure (SK Hynix, Micron) benefit most from continued AI training demand.",
+          "Watch hyperscaler capex revision cycles: when all three (AWS, Azure, GCP) raise capex guidance simultaneously, GPU demand is about to accelerate — historically a strong NVDA buy signal.",
+          "Fabless chip companies (NVDA, AMD, AVGO) carry higher margin leverage than foundries (TSM) — in bull scenarios they outperform; in normalization scenarios foundries are more defensive.",
+        ]}
+      />
+
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>

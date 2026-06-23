@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,30 @@ export default function HomePage() {
       </header>
 
       <div className="px-4 pt-4 space-y-5">
+
+        <PageGuide
+          title="Home Dashboard — Guide"
+          subtitle="Your real-time command center for global market conditions"
+          steps={[
+            { title: "Read the Market Regime Banner", detail: "The banner at the top shows the current market regime (e.g. 'Risk-On Bull' or 'Risk-Off Bear') and bias. Green = risk-on, red = risk-off. Tap 'Details' to go to the full Regime page." },
+            { title: "Swipe Hero Cards for Key Trackers", detail: "Scroll horizontally through the hero cards to jump to Regime, Dollar, Treasuries, Oil, and Macro pages instantly." },
+            { title: "Check Market Indices", detail: "The indices row shows live prices and % changes for SPY, QQQ, IWM, DIA, and more. Toggle 1D / 1W / 1M using the pill selector. Tap any index card to see its price history chart." },
+            { title: "Browse Quick Links Grid", detail: "The 8-tile grid gives you one-tap access to Rotation, Breadth, VIX, Macro, RS Ranks, Regime, Countries, and Intraday Signals." },
+            { title: "Scan Sector Performance", detail: "The sector bar chart ranks all 11 GICS sectors by today's return. Red bars = underperforming, green = outperforming. Tap any sector row to view its price history. Tap 'Rotation' to see the full RRG chart." },
+            { title: "Check Market Breadth", detail: "The two breadth tiles show what % of S&P 500 stocks are trading above their 50-day and 200-day moving averages. Above 70% is strong; below 30% is a warning sign." },
+          ]}
+          howItWorks={[
+            { title: "Live Data Pipeline", detail: "The backend fetches real-time prices from Yahoo Finance every 5 minutes. Sector ETFs (XLK, XLF, etc.) proxy for sector returns. Data is cached in DuckDB to avoid rate limits." },
+            { title: "Market Regime Model", detail: "The regime is computed by a multi-factor scoring model that combines trend (SMA crossovers), breadth (% above MAs), momentum, credit spreads, and volatility. The score is mapped to one of 6 regimes." },
+            { title: "Breadth Calculation", detail: "Breadth is computed nightly across S&P 500 constituents. The % above 50-MA and % above 200-MA are standard market health indicators used by professional traders." },
+            { title: "Auto-Refresh", detail: "The page auto-refreshes every 5 minutes during market hours. You can force-refresh any time using the circular arrow button in the top-right corner." },
+          ]}
+          tips={[
+            "Green regime banner + breadth above 70% = ideal environment for momentum and growth strategies.",
+            "When breadth diverges from price (index up but breadth falling), expect near-term reversal.",
+            "Tap any index card for a pop-up price history chart without leaving the home page.",
+          ]}
+        />
 
         {/* ── Regime Banner ── */}
         {regime && (

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -308,6 +309,28 @@ export default function IntradayPage() {
 
   return (
     <div className="space-y-4 max-w-screen-2xl">
+
+      <PageGuide
+        title="Intraday Signals — Guide"
+        subtitle="Technical signal scanner: breakouts, pullbacks, and momentum across S&P 500 and themes"
+        steps={[
+          { title: "Select a Theme or Universe", detail: "Choose S&P 500 for the broad large-cap universe, or pick a theme (AI Infrastructure, Energy, Semiconductors, etc.) to focus your scan on a specific sector. The signal scan updates immediately when you change the universe." },
+          { title: "Filter by Signal Type", detail: "Use the type filter to show Breakout signals (price clearing key resistance with volume), Pullback to Support (retest of MA or prior support), or Momentum (strong directional move with above-average volume). Each has different risk/reward." },
+          { title: "Sort by Signal Strength", detail: "Signals are scored 0–10. Sort descending to surface the highest-conviction setups first. Score above 7 = high-conviction; 5–7 = moderate; below 5 = watch list only." },
+          { title: "Tap a Row for the Chart", detail: "Click any signal row to open that stock's price history chart popup. This lets you visually confirm the technical pattern that triggered the signal without leaving the page." },
+          { title: "Filter by Direction and Volume", detail: "Use the Bullish/Bearish direction filter and the minimum volume filter. Higher volume breakouts have a statistically higher success rate — prioritize signals with volume at least 1.5x the 20-day average." },
+        ]}
+        howItWorks={[
+          { title: "Signal Detection", detail: "The backend runs pattern recognition on daily price and volume data for all tickers in the selected universe. Patterns checked include: closes above 20/50-day highs, VWAP reclaims, RSI breakouts from oversold, and volume surges." },
+          { title: "Scoring Algorithm", detail: "Scores are based on three components: volume confirmation (2x+ average = high score), trend alignment (signal direction matches 50-day MA trend), and price structure clarity (clean base vs. choppy range)." },
+          { title: "Multi-Timeframe Check", detail: "Each signal is cross-checked against weekly timeframe data. Signals aligned on both daily and weekly charts receive a bonus to their score, making them higher priority." },
+        ]}
+        tips={[
+          "Breakouts on 2x+ volume have historically 40% higher follow-through than low-volume breaks — filter aggressively on volume.",
+          "Always check the market regime page first — only take long breakouts when the regime is Risk-On. Short signals work better in Risk-Off.",
+          "The best setups come in the first 30 minutes after market open and the last 30 minutes before close — midday signals are noisier.",
+        ]}
+      />
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">

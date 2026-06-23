@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat, type SetupSignal } from "@/lib/api";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, Zap, BarChart2, Activity, Calendar, FlaskConical, ChevronDown, Star } from "lucide-react";
 import { useWatchlist } from "@/hooks/useWatchlist";
@@ -375,6 +376,30 @@ export default function SetupsPage() {
 
   return (
     <div className="space-y-4 max-w-screen-2xl">
+      <PageGuide
+        title="Setup Engine"
+        subtitle="The central trading signal engine — finds stocks with actionable technical setups ranked by how well they fit the current market regime."
+        steps={[
+          { title: "Understand Regime Context", detail: "The regime badge in the header (Strong Trend / Choppy / Bear / Panic) tells you which setups are most reliable right now. In Strong Trend, Breakout and Momentum setups have high win rates. In Choppy, Mean Reversion setups work better." },
+          { title: "Select Universe", detail: "Choose from S&P 500, Nasdaq 100, your Watchlist, or other universes. Larger universes find more candidates but take longer to load." },
+          { title: "Filter by Setup Type", detail: "Click a setup type badge (Early Breakout, Volatility Squeeze, Momentum Continuation, Institutional Accumulation, Mean Reversion Bounce, Failed Breakdown Reversal) to filter to that pattern only." },
+          { title: "Filter by Stage", detail: "Stage 2 (uptrend) setups are the most reliable for longs — these are stocks in established uptrends with proper structure. Stage 1 (basing) setups are earlier-stage, higher risk but bigger potential." },
+          { title: "Sort and Browse", detail: "Sort by Regime Score (best for current conditions), RS vs SPY (relative strength leaders), ATR % (most volatile), or other criteria. Paginate through results using the page controls." },
+          { title: "Open Trade Modal", detail: "For each setup, there's a trade button that opens the MT5 Trade Modal pre-filled with suggested entry, stop-loss (based on ATR), and take-profit levels. Review and confirm before sending to your broker." },
+        ]}
+        howItWorks={[
+          { title: "Setup Detection", detail: "Each setup template uses a specific combination of technical conditions. Early Breakout requires: price within 2% of 52-week high, RS improving, and volume expansion. Volatility Squeeze requires: ATR < 20-day ATR average × 0.7, Bollinger Band width compression, and price above 50-MA." },
+          { title: "Regime-Adjusted Score", detail: "Each setup's historical win rate is measured across regime periods (Strong Trend, Choppy, Bear, Panic). The regime-adjusted score = raw_setup_score × regime_multiplier, where the multiplier is the setup's win rate in the current regime divided by its baseline win rate." },
+          { title: "Stage Analysis", detail: "Minervini-style stage analysis classifies each stock: Stage 1 (basing — price below declining 200-MA), Stage 2 (uptrend — price above rising 200-MA with proper MA alignment), Stage 3 (topping — price breaking below key MAs), Stage 4 (downtrend — all MAs declining)." },
+          { title: "ATR-Based Stop/Target", detail: "The suggested stop-loss is placed 1.5× ATR below the entry price. The take-profit is at 3× ATR above entry, creating a default 2:1 risk-reward ratio." },
+        ]}
+        tips={[
+          "In strong bull regimes, focus exclusively on Stage 2 stocks with Early Breakout setups near 52-week highs — this is where the highest reward/risk is.",
+          "The Regime-Adjusted Score is more important than the raw setup score — a mediocre setup in the right regime outperforms a perfect setup in the wrong regime.",
+          "Combine Setup Engine results with the Pre-Breakout Screener: if a stock appears in both, it has both the technical setup AND the coiled-spring compression before the breakout.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

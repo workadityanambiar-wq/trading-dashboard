@@ -6,6 +6,7 @@ import {
   Star, Globe, Activity, ChevronDown, ChevronUp,
   RefreshCw, SlidersHorizontal, X,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -690,6 +691,30 @@ export default function AlphaEnginePage() {
           </p>
         </div>
       </div>
+
+      <PageGuide
+        title="Alpha Engine"
+        subtitle="Generate a composite 0–100 alpha score for any stock or rank an entire universe across 7 factor categories."
+        steps={[
+          { title: "Choose Mode", detail: "Select 'Single Ticker' to deep-dive into one stock's factor decomposition, or 'Rank Universe' to score and rank a custom list of tickers simultaneously." },
+          { title: "Enter Ticker or List", detail: "In Single mode, type any valid ticker (e.g. NVDA). In Rank mode, enter a comma-separated list. The default list covers major mega-caps." },
+          { title: "Set Lookback Period", detail: "The period (in trading days) controls how far back historical data is used for factor computation. 252 days (1 year) balances recency and statistical stability." },
+          { title: "Customize Factor Weights", detail: "Expand 'Custom Weights' to rebalance the 7 factor categories: Momentum, Relative Strength, Institutional, Earnings, Quality, Macro, and Volatility. Weights are normalized automatically." },
+          { title: "Enable Quick Mode", detail: "Quick Mode uses pre-cached data for faster ranking — ideal when screening large lists. Disable it for maximum accuracy on a focused analysis." },
+          { title: "Analyze Results", detail: "In Single mode, explore each factor panel to see sub-scores and signals. In Rank mode, a sortable table shows all tickers ranked by composite alpha score." },
+        ]}
+        howItWorks={[
+          { title: "Seven Factor Categories", detail: "Momentum (12-1 month price momentum, short-term reversal), Relative Strength (versus market and sector peers), Institutional (13F ownership trends, smart money flow), Earnings (EPS beat rate, revision momentum), Quality (ROE, debt/equity, gross margin stability), Macro (interest rate sensitivity, currency exposure), and Volatility (realized vol, skew, implied/realized spread)." },
+          { title: "Composite Scoring", detail: "Each factor sub-score is z-scored within the universe and scaled 0–100. The composite is a weighted average where weights sum to 100%. A score above 70 signals strong multi-factor conviction." },
+          { title: "Data Sources", detail: "Price data from yfinance; earnings from financial statement APIs; institutional ownership from 13F filing aggregators; macro exposures from factor regression against macro indices." },
+          { title: "Ranking Pipeline", detail: "In Rank mode, all tickers are scored in parallel via async backend tasks, then merged and sorted. The composite score is the primary sort key, with individual factor scores shown as secondary columns." },
+        ]}
+        tips={[
+          "Stocks scoring above 75 on both Momentum and Quality simultaneously represent the most durable alpha opportunities.",
+          "Use the factor weight sliders to build a value-tilt (upweight Quality, downweight Momentum) or growth-tilt (vice versa).",
+          "Compare a stock's alpha score over two periods (e.g. 63 vs 252 days) to see if the score is accelerating or decelerating.",
+        ]}
+      />
 
       {/* ── Controls ── */}
       <div className="bg-surface-2 rounded-2xl border border-border p-4 space-y-4">

@@ -30,6 +30,8 @@ from app.api import congressional as congressional_api
 from app.api import defense as defense_api
 from app.api import crypto as crypto_api
 from app.api import ai_capex as ai_capex_api
+from app.api import space as space_api
+from app.api import copilot as copilot_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
@@ -135,6 +137,8 @@ app.include_router(congressional_api.router, prefix="/api/congressional")
 app.include_router(defense_api.router,       prefix="/api/defense")
 app.include_router(crypto_api.router,        prefix="/api/crypto")
 app.include_router(ai_capex_api.router,      prefix="/api/ai-capex")
+app.include_router(space_api.router,         prefix="/api/space")
+app.include_router(copilot_api.router,       prefix="/api/copilot")
 
 
 @app.get("/health")

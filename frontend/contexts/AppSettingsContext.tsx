@@ -23,14 +23,12 @@ const AppSettingsContext = createContext<AppSettings>({
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>("desktop");
   const [theme, setThemeState] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const savedLayout = localStorage.getItem("qd-layout") as LayoutMode | null;
     const savedTheme  = localStorage.getItem("qd-theme")  as Theme | null;
     if (savedLayout === "desktop" || savedLayout === "mobile") setLayoutModeState(savedLayout);
     if (savedTheme  === "dark"    || savedTheme  === "light")  setThemeState(savedTheme);
-    setMounted(true);
   }, []);
 
   function setLayoutMode(mode: LayoutMode) {
@@ -46,8 +44,6 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   function toggleTheme() {
     setTheme(theme === "dark" ? "light" : "dark");
   }
-
-  if (!mounted) return null;
 
   return (
     <AppSettingsContext.Provider value={{ layoutMode, theme, setLayoutMode, toggleTheme, setTheme }}>

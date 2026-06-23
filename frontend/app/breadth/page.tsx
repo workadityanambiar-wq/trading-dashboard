@@ -5,6 +5,7 @@ import { api, type BreadthSectorRow } from "@/lib/api";
 import { BreadthHistoryChart } from "@/components/charts/BreadthHistoryChart";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Universe / lookback options ───────────────────────────────────────────────
 
@@ -121,6 +122,28 @@ export default function BreadthPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Market Breadth — Guide"
+        subtitle="Participation analysis showing how broadly the rally or decline is distributed"
+        steps={[
+          { title: "Select a Universe", detail: "Choose S&P 500, S&P 1500, Nifty 50, or Europe to analyze breadth within that index. S&P 500 is the most commonly watched by institutional traders." },
+          { title: "Pick a Lookback Period", detail: "The lookback (3M, 6M, 1Y, 2Y) controls how far back the history chart shows. The primary breadth readings (% above 50/200 MA) are always current-day values." },
+          { title: "Read the Breadth Tiles", detail: "The metric tiles show % Above 50-MA, % Above 200-MA, and % at 52-week Highs. Above 70% = strong broad participation; below 30% = narrow or declining market." },
+          { title: "View the History Chart", detail: "The line chart shows how breadth has evolved over the selected lookback period. Look for divergences where the price index makes new highs but breadth fails to confirm." },
+          { title: "Check Sector Breadth Breakdown", detail: "The sector breakdown shows which sectors have the highest and lowest internal breadth. A narrow rally concentrated in 1-2 sectors is less sustainable than a broad one." },
+        ]}
+        howItWorks={[
+          { title: "Moving Average Calculation", detail: "For each stock in the universe, the backend checks whether its current price is above its 50-day and 200-day simple moving average. The ratio of stocks above each MA is reported as a percentage." },
+          { title: "52-Week High/Low Tracking", detail: "The backend scans all tickers for new 52-week highs and lows daily and computes the net new high ratio (highs minus lows, divided by total stocks)." },
+          { title: "Historical Storage", detail: "Daily breadth readings are stored in DuckDB and used to populate the history chart. This allows you to see breadth trends and cycles going back 2 years." },
+          { title: "Sector Breakdown", detail: "Stocks are categorized into GICS sectors. Breadth is computed independently for each sector to identify where participation is strongest and weakest within the universe." },
+        ]}
+        tips={[
+          "Breadth divergence (price up, breadth flat or down) is one of the most reliable leading indicators of a market top.",
+          "Watch for 'breadth thrusts' where % above 50-MA jumps from below 40% to above 70% in 2 weeks — historically a very bullish signal.",
+          "S&P 500 breadth above 80% can't be sustained long-term and typically marks an overbought condition.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

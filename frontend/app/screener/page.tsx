@@ -9,6 +9,7 @@ import {
   RefreshCw, Database, Download, ChevronLeft, ChevronRight,
   Globe, TrendingUp, Layers,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Exchange filter options ───────────────────────────────────────────────────
 
@@ -111,6 +112,29 @@ export default function ScreenerPage() {
 
   return (
     <div className="space-y-4 max-w-screen-2xl">
+      <PageGuide
+        title="Stock Screener — Guide"
+        subtitle="Filter and rank stocks by multi-factor composite scores"
+        steps={[
+          { title: "Choose a Universe", detail: "Select S&P 500 for large-cap US stocks, All US for a broader universe, or Themes to filter by thematic groups (AI Infrastructure, Clean Energy, Semiconductors, etc.)." },
+          { title: "Filter by Exchange or Type", detail: "Use the Exchange filter (NASDAQ, NYSE, Arca, CBOE) and the Stocks / ETFs toggle to narrow your list. Leave both on 'All' to see the full universe." },
+          { title: "Search by Ticker or Name", detail: "The search box filters results in real-time as you type. It matches against both ticker symbol and company name." },
+          { title: "Sort by Any Column", detail: "Click any column header to sort ascending or descending. Factor score columns (Momentum, Quality, Value, Growth, Composite) are the most useful for finding ranked stocks." },
+          { title: "Paginate Results", detail: "Results are paginated at 100 per page. Use the left/right arrows to navigate. The page pre-fetches the next page in the background for instant navigation." },
+          { title: "Download Data", detail: "Tap the Download icon to export the current filtered result set as a CSV file for further analysis in Excel or Python." },
+        ]}
+        howItWorks={[
+          { title: "Factor Score Computation", detail: "Each factor is computed nightly across the full US equity universe. Momentum uses 12-1 price momentum. Quality uses ROE, debt/equity, and earnings stability. Value uses P/E, P/B, and EV/EBITDA. Growth uses revenue and earnings growth rates." },
+          { title: "Z-Score Normalization", detail: "Raw factor values are converted to z-scores within each universe (S&P 500 or All US). This puts all factors on the same scale (mean 0, std 1), enabling fair comparison across sectors." },
+          { title: "Composite Score", detail: "The composite score is an equal-weighted average of all four factor z-scores. Stocks with high composite scores rank well across multiple dimensions simultaneously." },
+          { title: "Thematic Universe", detail: "Thematic universes are curated lists of tickers mapped to themes like AI Infrastructure, Defense, Rare Earths, etc. They are updated manually when major new entrants emerge." },
+        ]}
+        tips={[
+          "Sort by Composite score descending to find the highest all-around quality stocks.",
+          "Use the Themes universe to find factor leaders within a specific sector or trend.",
+          "High momentum + high quality = the 'quality momentum' sweet spot historically associated with the best risk-adjusted returns.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

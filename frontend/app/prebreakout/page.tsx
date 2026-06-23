@@ -5,6 +5,7 @@ import { api, type CoiledSpringSignal } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, Crosshair, TrendingUp, Volume2 } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -131,6 +132,30 @@ export default function PreBreakoutPage() {
           </button>
         </div>
       </div>
+
+      <PageGuide
+        title="Pre-Breakout Screener"
+        subtitle="Find coiled-spring stocks on the verge of a technical breakout using a composite setup quality score."
+        steps={[
+          { title: "Select Universe", detail: "Choose from S&P 500, S&P 1500, Nifty 50, Europe Top 40, Popular ETFs, or All Cached. Larger universes surface more candidates but take slightly longer to load." },
+          { title: "Set Minimum Score", detail: "The Coiled Spring Score ranges 0–100. A threshold of 55+ already filters for solid setups; raise it to 70+ for only the tightest, highest-conviction configurations." },
+          { title: "Choose Sort Field", detail: "Sort by Coiled Spring Score (overall quality), Distance to 52W High (nearest breakout point), Volume Dry-up (most suppressed selling pressure), or other criteria." },
+          { title: "Review the Table", detail: "Each row shows the ticker, score, price, distance to 52W high, ATR, volume ratio, and RS rank. Click any row to open the History Drawer for a deeper time-series view." },
+          { title: "Paginate Through Results", detail: "Use the page controls at the bottom to browse all matching stocks. Each page shows up to 50 results." },
+          { title: "Refresh Data", detail: "Click the refresh button in the header to re-fetch the latest scores. Data is cached for 60 seconds to avoid redundant API calls." },
+        ]}
+        howItWorks={[
+          { title: "Coiled Spring Score", detail: "A weighted composite of: tight historical range (ATR compression), drying volume (declining vol relative to 20-day average), proximity to 52-week high, and Stage 2 uptrend confirmation (price above 50/150/200 MA with proper slope)." },
+          { title: "Stage 2 Filter", detail: "Stocks must be in a Mark Minervini-style Stage 2 uptrend: price above all three moving averages, 150-MA above 200-MA, and 200-MA trending up for at least 4 weeks." },
+          { title: "Volume Analysis", detail: "Volume dry-up is measured as the ratio of recent 5-day average volume to the 20-day baseline. Readings below 0.7 indicate institutional selling has dried up — a classic pre-breakout signature." },
+          { title: "Data Source", detail: "Daily OHLCV data from yfinance. Scores are pre-computed nightly for the full universe and cached, so page loads are near-instant." },
+        ]}
+        tips={[
+          "The best setups combine a high score (70+) with very low volume dry-up ratio — stock is 'holding tight' with no distribution.",
+          "Sort by Distance to 52W High ascending to find stocks literally one good day away from a breakout.",
+          "Cross-reference high-scoring pre-breakouts with the Relative Strength page to confirm sector leadership.",
+        ]}
+      />
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">

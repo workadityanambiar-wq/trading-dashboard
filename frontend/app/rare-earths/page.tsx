@@ -13,6 +13,7 @@ import type {
   REDefenseItem, REProject, REGeoRisk, REFlowETF, REFlowHF,
   REStock, RESignal,
 } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -131,6 +132,30 @@ export default function RareEarthsPage() {
         <h1 className="text-lg font-bold text-[var(--text-primary)]">Rare Earths & Critical Minerals</h1>
         <p className="text-xs text-[var(--text-muted)]">Supply Chain · China Risk · EV Demand · Defense · Mining Stocks · Geopolitical Intelligence</p>
       </div>
+
+      <PageGuide
+        title="Rare Earths & Critical Minerals"
+        subtitle="Track the critical minerals supply chain: China's dominance, EV and defense demand drivers, mining stocks, and geopolitical risk."
+        steps={[
+          { title: "Overview Tab", detail: "The Overview shows the most important headline metrics: supply concentration risk score, demand trajectory, China control index, and the top 3 investment signals across the critical minerals complex." },
+          { title: "Elements Tab", detail: "Track individual rare earth elements: neodymium (magnets), dysprosium (high-temperature magnets), lithium (batteries), cobalt, and others. Each element shows: current price, supply/demand balance, and primary end markets." },
+          { title: "Supply Chain Tab", detail: "Visualize the full supply chain: mining (where raw ore is extracted), processing (where ore is refined into usable materials), manufacturing (where materials become components), and assembly. China's dominance at each stage is highlighted." },
+          { title: "China Risk Tab", detail: "Quantify your exposure to Chinese supply disruption: China's market share at each supply chain stage, export restriction history, stockpile levels, and scenario analysis for supply cutoff events." },
+          { title: "Defense & EV Tab", detail: "Track demand from the two fastest-growing end markets. Defense demand for rare earths (missile guidance, radar, jet engines) is growing faster than supply. EV demand for lithium and cobalt tracks EV adoption curves." },
+          { title: "Companies Tab", detail: "Track publicly listed mining and processing companies: MP Materials (US), Lynas (AU), Piedmont Lithium, and others. Includes production capacity, cost position, and investment signals." },
+        ]}
+        howItWorks={[
+          { title: "Supply Data", detail: "Production data from USGS (US Geological Survey) annual mineral summaries, combined with company filings and trade data. China's production share is updated annually with monthly spot price data from commodity exchanges." },
+          { title: "China Risk Score", detail: "Composite of: China's % of global production, China's % of global processing, export restriction frequency (last 5 years), US stockpile levels vs. consumption, and allied-country alternative supply capacity. Score 0–100; higher = more risk." },
+          { title: "Demand Modeling", detail: "EV demand is modeled from IEA EV adoption forecasts × material content per vehicle (e.g. ~8kg of lithium carbonate per EV battery). Defense demand is estimated from DOD procurement data and platform production schedules." },
+          { title: "Stock Signals", detail: "Mining stocks are scored on: production growth vs. plan, cost per ton vs. spot price (margin), resource life (years of reserves), and geopolitical location risk (jurisdiction score). Combined into a composite investment signal." },
+        ]}
+        tips={[
+          "Rare earth stocks are highly correlated to Chinese export policy news — monitor China's Ministry of Commerce announcements for trading catalysts.",
+          "MP Materials (MP) is the only significant US rare earth miner and is strategically important for US defense — it often trades on geopolitical news rather than commodity prices.",
+          "The lithium cycle is boom-bust: oversupply follows demand spikes with 3–5 year lag. Track Australian hard rock lithium production (Pilbara Minerals, Albemarle's assets) as the swing supply source.",
+        ]}
+      />
 
       <div className="flex gap-1 flex-wrap border-b border-[var(--border)] pb-3">
         {TABS.map(t => (

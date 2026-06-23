@@ -9,6 +9,7 @@ import {
 import { api, CrowdingResult, SectorCrowding } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 
@@ -208,6 +209,32 @@ export default function CrowdingPage() {
             <SectorStrip sectors={data.sector_crowding} />
           </div>
         )}
+      </div>
+
+      <div className="px-6 pt-4">
+        <PageGuide
+          title="Crowding Dashboard"
+          subtitle="Identify overcrowded institutional positions and undiscovered names — before the crowd does."
+          steps={[
+            { title: "Select Universe", detail: "Choose S&P 500 or Nasdaq 100. The universe determines which stocks are screened for crowding metrics." },
+            { title: "Use the Filter Tabs", detail: "Switch between All, Crowded (score ≥ 60), Undiscovered (score ≤ 40), and Squeeze Candidates. Crowded names have high institutional ownership and high short interest — both creating exit risk. Undiscovered names have low institutional coverage." },
+            { title: "Search Tickers", detail: "Use the search box to filter results by ticker or company name. Useful for checking a specific holding's crowding level." },
+            { title: "Read the Crowding Score", detail: "The 0–100 score measures institutional crowding: 0–25 = undiscovered, 25–40 = low crowding, 40–60 = moderate, 60–75 = high, 75–100 = extreme crowding. Red = crowded, green = uncrowded." },
+            { title: "Identify Squeeze Candidates", detail: "Squeeze Candidates are stocks with both high short interest AND improving price action — the classic setup for a short squeeze when fundamental or catalyst news hits." },
+            { title: "Check Sector Crowding Strip", detail: "The sector heatmap at the top shows which sectors are most crowded at the aggregate level — useful for sector rotation decisions." },
+          ]}
+          howItWorks={[
+            { title: "Crowding Score Components", detail: "Weighted composite of: institutional ownership concentration (HHI of top holders), short interest as % of float, 13F quarterly turnover (how much buying/selling vs. prior quarter), and analyst coverage breadth." },
+            { title: "Squeeze Score", detail: "A stock is flagged as a squeeze candidate when: short interest > 20% of float AND price has gained >5% in the past 10 days (momentum into the shorts). Days-to-cover > 5 adds further confirmation." },
+            { title: "Sector Aggregation", detail: "Each sector's crowding score is the market-cap-weighted average of individual stock scores. This reveals where institutional herding is happening at the macro level." },
+            { title: "Data Sources", detail: "Short interest from FINRA biweekly reports; institutional ownership from SEC 13F filings (quarterly lag); analyst coverage from financial data APIs." },
+          ]}
+          tips={[
+            "Avoid initiating new positions in stocks with crowding score > 75 — the exit will be painful when the crowd tries to leave simultaneously.",
+            "The best alpha opportunities are often in the undiscovered (score 0–30) quadrant with improving fundamentals — low institutional coverage means less competition.",
+            "Cross-reference squeeze candidates with the Earnings page — a positive earnings surprise in a heavily shorted stock is the most reliable squeeze catalyst.",
+          ]}
+        />
       </div>
 
       {/* Summary cards */}

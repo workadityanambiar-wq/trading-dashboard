@@ -10,6 +10,7 @@ import { api, DriftResult } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Milestone, Star, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -418,6 +419,30 @@ export default function EarningsDriftPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1600px]">
+      <PageGuide
+        title="Earnings Drift / PEAD"
+        subtitle="Exploit Post-Earnings Announcement Drift — stocks with large positive surprises systematically continue higher for 3–6 months."
+        steps={[
+          { title: "Select Universe", detail: "Choose S&P 500, Nasdaq 100, or your Watchlist. The universe filters which earnings reports are displayed." },
+          { title: "Use Day Tabs to Filter by Recency", detail: "Filter by how far past the earnings date we are: All (0–180 days), Recent (0–30 days = fresh drift candidates), Mid (30–90 days = developing drift), Extended (90–180 days = mature drift)." },
+          { title: "Enable Sweet Spot Filter", detail: "Toggle 'Sweet Spot ★' to show only stocks where: EPS surprise > +5%, analyst revisions are positive, and recent price drift confirms momentum. These are the highest-conviction PEAD setups." },
+          { title: "Sort by PEAD Score", detail: "The PEAD score combines beat magnitude, revision direction, and post-earnings price performance. Higher scores = stronger drift potential." },
+          { title: "Read the Drift Metrics", detail: "Each row shows: EPS surprise %, drift since earnings (price change post-announcement), days since earnings, and revision counts (up vs. down). Green drift = momentum continuing; red = fading." },
+          { title: "Drill Into History", detail: "Click any ticker to open the History Drawer for a time-series view of drift and estimate revisions over multiple quarters." },
+        ]}
+        howItWorks={[
+          { title: "PEAD Phenomenon", detail: "Post-Earnings Announcement Drift is one of the most well-documented market anomalies: stocks with large positive EPS surprises continue to outperform for up to 6 months after the announcement. The effect persists due to institutional under-reaction and slow information diffusion." },
+          { title: "PEAD Score Formula", detail: "Score = 0.4 × EPS_surprise_percentile + 0.3 × revision_momentum + 0.2 × price_drift_percentile + 0.1 × beat_streak_bonus. All components are normalized 0–100 relative to the universe." },
+          { title: "Revision Momentum", detail: "Analysts systematically under-revise estimates after beats — they anchor on prior estimates. A stock with 3+ upward EPS revisions after a beat is more likely to continue drifting than one with no revisions." },
+          { title: "Drift Decay", detail: "PEAD alpha decays with time: the average outperformance is 4–8% in the first 30 days, 8–15% by 90 days, and begins to fade past 180 days as the market fully incorporates the new information." },
+        ]}
+        tips={[
+          "Focus on Sweet Spot stocks where the beat was on revenue AND EPS simultaneously — margin expansion beats without revenue growth have weaker PEAD.",
+          "Avoid earnings drift plays in very small caps (<$500M market cap) where the drift can gap up and leave entry prices far above the announcement close.",
+          "The 30–60 day window after an earnings beat is often the best entry for drift — early enough to capture most of the move, late enough to confirm the market isn't fading the beat.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>

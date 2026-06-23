@@ -9,6 +9,7 @@ import {
 import { api, ERResult, ERComponents } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Colour palette per factor ─────────────────────────────────────────────────
 
@@ -176,6 +177,32 @@ export default function ExpectedReturnPage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
+      <div className="px-6 pt-4">
+        <PageGuide
+          title="Expected Return Engine"
+          subtitle="Compute factor-based expected returns for every stock in the S&P 500 or Nasdaq 100 using a 7-factor model."
+          steps={[
+            { title: "Select Universe & Size", detail: "Choose S&P 500 or Nasdaq 100, and set how many stocks to fetch (top 50 to 500 by market cap). Larger universes give more cross-sectional context but take longer." },
+            { title: "Filter by Sector", detail: "Use the sector dropdown to narrow results to a specific GICS sector. This is useful for intra-sector stock selection based on factor exposures." },
+            { title: "Search Tickers", detail: "Type in the search box to find a specific company's expected return decomposition instantly." },
+            { title: "Read the Expected Return", detail: "The E[R] column shows the annualized expected return. A value of +12% means the model expects 12% price appreciation over the next year based on current factor scores." },
+            { title: "Expand Factor Decomposition", detail: "Click any row to expand it and see the full factor attribution — how much each factor (momentum, value, quality, macro, sentiment, low-vol) contributes to the total expected return." },
+            { title: "Use the Bar Chart", detail: "The factor waterfall bar chart visually shows each factor's contribution. Bars above zero are additive (positive expected return); below zero are subtractive." },
+          ]}
+          howItWorks={[
+            { title: "Factor Model", detail: "E[R] = Base (9%) + Σ (factor_z_score × factor_premium × 0.5). The base rate is the long-run equity risk premium. Each factor z-score is computed cross-sectionally (vs. the universe) and multiplied by an empirical risk premium." },
+            { title: "Factor Premiums", detail: "Momentum: +6%, Value: +4%, Quality: +5%, Macro: ±3%, Sentiment: +2%, Low Volatility: +3%. These are long-run empirical premia from academic and practitioner research; they are not recalibrated daily." },
+            { title: "Z-Score Normalization", detail: "Each stock's raw factor value (e.g. 12-month price momentum = +32%) is normalized relative to the universe using mean and standard deviation. A z-score of +1.5 means the stock is 1.5 standard deviations above average on that factor." },
+            { title: "Data Sources", detail: "Price momentum from yfinance; earnings estimates from financial APIs; quality metrics (ROIC, margins) from quarterly financials; macro exposures from factor regressions against economic indices." },
+          ]}
+          tips={[
+            "Sort by Expected Return descending and filter to Quality + Momentum stocks — this combination has the highest historical information ratio.",
+            "Expected returns are model estimates, not guarantees — use them as one signal among many, not a standalone buy/sell trigger.",
+            "Compare E[R] across sectors to identify which sector the model is most bullish on currently — a useful input for a sector rotation decision.",
+          ]}
+        />
+      </div>
+
       {/* Header */}
       <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <div>

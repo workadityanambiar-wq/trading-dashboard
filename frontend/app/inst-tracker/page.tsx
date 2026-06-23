@@ -12,6 +12,7 @@ import {
   ArrowDownRight, Shield, Eye, Globe, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── API base ─────────────────────────────────────────────────────────────────
 
@@ -1203,6 +1204,32 @@ export default function InstTrackerPage() {
           ))}
         </div>
       </header>
+
+      <div className="px-4 pt-4">
+        <PageGuide
+          title="Institutional Tracker"
+          subtitle="Monitor 13F filings, smart money flows, hedge fund holdings, mutual fund allocations, PE/VC activity, and insider transactions in one dashboard."
+          steps={[
+            { title: "Overview Tab", detail: "Start here for a snapshot: total AUM tracked, top institutional buyers and sellers this quarter, net sector flows, and the most crowded positions. A great starting point for spotting where the big money is moving." },
+            { title: "Holdings Tab", detail: "Browse aggregate institutional ownership for any stock. See the top 20 institutional holders, their position sizes, quarter-over-quarter changes, and whether they're new buyers or sellers." },
+            { title: "Sector Flows Tab", detail: "Visualize net institutional capital flows by GICS sector over the past quarter. Green bars = net buying; red bars = net selling. Rotation from one sector to another is visible here first." },
+            { title: "Smart Money Tab", detail: "Track the top-performing institutional investors (Tiger Global, Coatue, D1 Capital, etc.) — their new positions and exits are leading indicators for where conviction is building." },
+            { title: "Crowded Positions Tab", detail: "Shows the 25 most-owned stocks by institutional holders. High crowding creates exit risk — if sentiment shifts, many funds need to sell simultaneously, amplifying drawdowns." },
+            { title: "Insights Tab", detail: "AI-generated narrative summarizing this quarter's major institutional trends, sector rotation themes, and notable smart money moves, with actionable implications for portfolio positioning." },
+          ]}
+          howItWorks={[
+            { title: "13F Filing Data", detail: "The SEC requires institutional investment managers with >$100M AUM to file Form 13F quarterly (45 days after quarter end). The backend parses and aggregates thousands of filings to compute net position changes." },
+            { title: "Smart Money Selection", detail: "Smart money funds are selected based on historical performance and influence: top-decile 3-year risk-adjusted returns, AUM > $1B, and equity-focused mandate. Their new positions are tracked as high-conviction signals." },
+            { title: "PE/VC Activity", detail: "Private equity and venture capital deal flow is aggregated from public SEC filings (Form D, S-1, 8-K) and deal databases. The tab shows recent investments, exits, and IPO pipeline activity." },
+            { title: "Insider Transactions", detail: "SEC Form 4 filings report insider buys and sells within 2 business days. The Insider tab filters for open-market purchases (the most bullish signal) and screens out options exercises." },
+          ]}
+          tips={[
+            "Focus on 'new position' buys by smart money over adds — initiating a new position requires stronger conviction than adding to an existing one.",
+            "High institutional crowding (>80% ownership by top 20 holders) combined with recent net selling is a strong warning signal for potential forced liquidation.",
+            "Compare the Sector Flows tab to the Regime page — institutional capital flowing into defensive sectors (utilities, healthcare) confirms a risk-off regime shift.",
+          ]}
+        />
+      </div>
 
       {/* Content */}
       <div className="px-4 pt-4 pb-8">

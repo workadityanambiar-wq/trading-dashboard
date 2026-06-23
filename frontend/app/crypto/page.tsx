@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 import type {
   CryptoAsset, CryptoBTCETF, CryptoETHETF, DeFiProtocol, Stablecoin,
   ListedMiner, L1L2Ecosystem, InstitutionalHolding,
@@ -1007,6 +1008,27 @@ export default function CryptoPage() {
 
   return (
     <div style={{ flex: 1, overflowY: "auto", background: C.bg, padding: "20px 24px", minHeight: "100vh" }}>
+      <PageGuide
+        title="Crypto & Digital Assets — Guide"
+        subtitle="Bitcoin, Ethereum, DeFi, ETF flows, mining, and institutional crypto intelligence"
+        steps={[
+          { title: "Read BTC Dominance", detail: "Bitcoin dominance (BTC's share of total crypto market cap) is the most important macro signal in crypto. Rising BTC dominance = risk-off, rotate to BTC. Falling dominance = altcoin season, rotate to risk." },
+          { title: "Navigate the Tabs", detail: "The page has 10 tabs: Overview (BTC/ETH market health), Assets (all crypto with live technicals), On-Chain (network metrics), DeFi (TVL, protocols), Derivatives (futures & options flow), ETF (spot ETF flows), Stablecoins, Mining (hash rate), Ecosystems (L1/L2), and Institutional." },
+          { title: "Check Crypto Market Regime", detail: "The Overview tab's regime panel classifies the crypto market as Bull, Bear, or Neutral based on BTC trend, funding rates, and on-chain signals. Bull regime = risk-on crypto positioning." },
+          { title: "Monitor BTC and ETH Prices", detail: "BTC and ETH are shown with 24h, 7d, and 30d changes, moving averages, and volume. ETH/BTC ratio tells you whether Ethereum is leading or lagging Bitcoin — a rising ratio signals altcoin season." },
+          { title: "Check Spot ETF Flows", detail: "The ETF tab tracks daily inflows and outflows for all US spot Bitcoin ETFs. Large net inflows signal institutional accumulation; large outflows can precede price corrections." },
+        ]}
+        howItWorks={[
+          { title: "Price Data", detail: "BTC-USD and ETH-USD prices are fetched from Yahoo Finance. Major altcoin prices and on-chain data use additional APIs. Data refreshes every 5 minutes." },
+          { title: "On-Chain Metrics", detail: "NUPL (Net Unrealized Profit/Loss) measures how much of the total BTC supply is in profit. Above 0.75 = Euphoria (historically a sell signal). Below 0 = Capitulation (historically a buy signal)." },
+          { title: "Funding Rate", detail: "Perpetual futures funding rate shows whether longs or shorts are paying. Positive funding (longs pay shorts) means excessive long leverage — a correction signal. Rates above 0.1% per 8 hours are extreme." },
+        ]}
+        tips={[
+          "BTC above its 200-week moving average has historically never been a losing long-term buy opportunity.",
+          "Funding rates above 0.1% per 8 hours signal excessive leverage — expect a flush-out move downward.",
+          "ETH outperforming BTC by >20% in a month historically signals the start of an altcoin season within 4–6 weeks.",
+        ]}
+      />
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>

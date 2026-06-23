@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { VIXHistoryChart } from "@/components/charts/VIXHistoryChart";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,28 @@ export default function VolatilityPage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+      <PageGuide
+        title="Volatility Tracker — Guide"
+        subtitle="VIX, term structure, and volatility regime analysis"
+        steps={[
+          { title: "Read the Volatility Regime", detail: "The regime chip classifies the current VIX level: Very Low (<12), Low (12-16), Normal (16-20), Elevated (20-28), High (28-40), or Crisis (>40). Each has different trading implications." },
+          { title: "Check VIX vs. VIX3M", detail: "VIX measures 30-day implied volatility; VIX3M measures 90-day. When VIX > VIX3M (inverted term structure), it signals acute near-term fear. When VIX < VIX3M (normal), it signals calm." },
+          { title: "Review the Percentile", detail: "The VIX percentile shows where current VIX stands relative to its history. 90th percentile = extremely high fear; 10th percentile = extremely complacent." },
+          { title: "Select a Lookback", detail: "Toggle 3M / 6M / 1Y / 2Y to adjust the history chart range. Longer lookbacks help identify where we are in the volatility cycle." },
+          { title: "Read the VVIX", detail: "VVIX is the 'volatility of volatility' — how much VIX itself is expected to move. High VVIX means the market expects VIX to be very unstable, which signals a dangerous environment for options sellers." },
+        ]}
+        howItWorks={[
+          { title: "VIX Data", detail: "VIX, VIX3M, and VVIX are fetched from Yahoo Finance using their standard tickers (^VIX, ^VIX3M, ^VVIX). These are CBOE-calculated real-time indices." },
+          { title: "Regime Classification", detail: "The regime thresholds (12, 16, 20, 28, 40) are based on historical VIX behavior and are widely used in institutional volatility analysis. Each band corresponds to a distinct market psychology." },
+          { title: "Percentile Calculation", detail: "The percentile is computed by comparing the current VIX reading against its rolling 2-year daily history, giving you context for whether current vol is cheap or expensive." },
+          { title: "Term Structure", detail: "The term structure slope (VIX3M minus VIX) is computed and displayed. Positive slope = contango (normal). Negative slope = backwardation (stressed market)." },
+        ]}
+        tips={[
+          "VIX above 30 is historically a good time to BUY equity exposure, not sell. Fear peaks near market bottoms.",
+          "Selling options premium when VIX percentile is above 80 is statistically advantageous but requires strict risk management.",
+          "Watch for VIX spiking while VVIX stays flat — that's a more orderly selloff vs. both spiking (panic).",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

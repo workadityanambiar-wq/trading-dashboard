@@ -6,6 +6,7 @@ import { MacroHistoryChart } from "@/components/charts/MacroHistoryChart";
 import { RefreshCw, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -140,6 +141,28 @@ export default function MacroPage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+      <PageGuide
+        title="Macro Monitor — Guide"
+        subtitle="Cross-asset view of equities, bonds, credit, commodities, FX, and crypto"
+        steps={[
+          { title: "Read the Risk Mode Banner", detail: "The top banner classifies the current environment as Risk-On, Neutral, or Risk-Off based on cross-asset flows. It describes what the signal means for portfolio positioning." },
+          { title: "Browse Asset Categories", detail: "Assets are grouped into Equity, Bonds, Credit, Commodities, FX, and Crypto. Each row shows the asset name, current price, and returns across 1D / 1W / 1M / 3M / 1Y time horizons." },
+          { title: "Toggle Return Periods", detail: "Use the period toggle in the table header to highlight different return windows. This helps identify which assets have momentum vs. are mean-reverting." },
+          { title: "Tap Any Row for History", detail: "Tap any asset row to open a pop-up price history chart. This lets you visualize multi-year price action and trend context." },
+          { title: "Read the Yield Curve", detail: "The yield curve SVG chart at the bottom shows the current US Treasury yield curve shape. Inversion (long rates < short rates) historically precedes recessions." },
+        ]}
+        howItWorks={[
+          { title: "Data Sources", detail: "All 20+ assets are fetched in parallel from Yahoo Finance. Equity indices, bond ETFs (TLT, HYG), commodity futures (GLD, USO), FX pairs, and crypto are included." },
+          { title: "Risk-On/Off Classification", detail: "Risk mode is determined by comparing equity vs. bond performance, credit spread direction (HYG vs. LQD), and VIX level. All three signals must agree for a definitive Risk-On or Risk-Off call." },
+          { title: "Yield Curve Construction", detail: "Treasury yields for 1M, 3M, 6M, 1Y, 2Y, 5Y, 10Y, and 30Y are fetched via Yahoo Finance. The spread between 2Y and 10Y is the primary inversion indicator." },
+          { title: "Return Calculations", detail: "Returns are computed as percentage change from the close N trading days ago to the latest close. All values are annualized where shown." },
+        ]}
+        tips={[
+          "Cross-asset divergence (e.g. equities up but gold and bonds also up) signals a confused market — reduce position size.",
+          "HYG outperforming TLT is a classic risk-on signal; the reverse is risk-off.",
+          "A flat or inverted yield curve means the bond market is pricing in slower growth or recession ahead.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

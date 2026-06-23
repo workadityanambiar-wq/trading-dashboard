@@ -13,6 +13,7 @@ import {
   PolarAngleAxis, PolarRadiusAxis, Legend,
 } from "recharts";
 import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Lock, Zap, Globe, Search } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmt1 = (v: number | null, suffix = "%") =>
@@ -155,6 +156,30 @@ export default function IPOPage() {
 
   return (
     <div className="p-4 max-w-[1600px] mx-auto page-scroll">
+      <PageGuide
+        title="IPO Intelligence Platform"
+        subtitle="Complete institutional-grade IPO analytics: performance tracking, upcoming calendar, lockup expiry risk, valuation comps, and private pipeline."
+        steps={[
+          { title: "Overview Tab", detail: "See aggregate IPO market health: YTD IPO count, average first-day pop, sector distribution of recent IPOs, and the overall IPO market score (favorable vs. window closed)." },
+          { title: "Performance Tab", detail: "Track post-IPO performance for all recent IPOs: first-day return, 30-day, 90-day, and 6-month performance. Sort by any time horizon to identify which sectors or sizes are performing best." },
+          { title: "Calendar Tab", detail: "View the upcoming IPO pipeline: roadshow dates, expected pricing dates, deal size, and lead underwriters. High-profile deals are highlighted." },
+          { title: "Lockup Expiry Tab", detail: "Critical risk monitoring: lockup expiration dates for recent IPOs. When insiders and VC backers are first allowed to sell, shares often drop 5–15%. These dates are tradeable events." },
+          { title: "Valuation Tab", detail: "Compare IPO valuations (EV/Revenue, P/E) against public market comps. Expensive-vs-peers IPOs tend to underperform long-term; reasonably-priced ones often continue higher." },
+          { title: "Private Pipeline Tab", detail: "Track high-profile unicorns and late-stage VC-backed companies likely to IPO in the next 12–18 months. Useful for building a pre-IPO watchlist." },
+        ]}
+        howItWorks={[
+          { title: "IPO Performance Data", detail: "Historical IPO data is fetched from yfinance using known IPO tickers. First-day pop is calculated from IPO price to first-day close. Subsequent returns are computed from IPO price to each date." },
+          { title: "Lockup Calendar", detail: "Lockup periods are typically 180 days from IPO date. The backend identifies all IPOs within the past 180–200 days and flags upcoming lockup expirations within 30 days as high-risk windows." },
+          { title: "Valuation Comps", detail: "Revenue and earnings multiples are computed for each IPO company and compared against a basket of public peers in the same GICS sub-industry. The percentile rank vs. peers indicates relative valuation." },
+          { title: "IPO Market Score", detail: "A composite 0–100 score measuring IPO market conditions: recent IPO performance, market volatility (VIX), credit spreads, and institutional demand (deal size vs. initial range). Score > 60 = IPO window open; < 40 = window closed." },
+        ]}
+        tips={[
+          "Avoid buying IPOs on the first day — the first-day pop is often driven by retail FOMO and underwriter stabilization. The 30–90 day window after lockup expiry is typically the best entry point.",
+          "Underwriter quality matters: Goldman, Morgan Stanley, and JPMorgan-backed IPOs historically outperform over 1–2 years versus smaller bank underwriters.",
+          "Watch lockup expiry dates closely for momentum short candidates — pre-expiry there's often a short opportunity as insiders pre-sell to hedge.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>

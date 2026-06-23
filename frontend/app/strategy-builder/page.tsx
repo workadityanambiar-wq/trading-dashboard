@@ -11,6 +11,7 @@ import {
   Zap, BarChart2, GitBranch, Shuffle, Star, Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -196,6 +197,31 @@ export default function StrategyBuilderPage() {
           Build multi-factor strategies · Backtest · Walk-forward · Monte Carlo · AI insights
         </p>
       </div>
+
+      <PageGuide
+        title="Strategy Builder"
+        subtitle="Design, backtest, and stress-test quantitative equity strategies using multi-factor signals, walk-forward validation, and Monte Carlo simulation."
+        steps={[
+          { title: "Name Your Strategy", detail: "Give the strategy a descriptive name. This is used as the title in all output reports and AI insights commentary." },
+          { title: "Select Factors", detail: "Pick technical factors (momentum, trend, volume, volatility) and/or quant factors (quality, value, earnings revision) from the panels on the left. Each factor gets a weight slider — higher weight = more influence on stock selection." },
+          { title: "Configure Parameters", detail: "Set date range, number of portfolio positions (5–100), position sizing method (equal, inverse vol, or score-weighted), rebalance frequency (daily/weekly/monthly), and initial capital." },
+          { title: "Add Risk Controls", detail: "Optionally set stop-loss (e.g. -8%), take-profit, and trailing stop percentages. These are applied at the position level during the backtest simulation." },
+          { title: "Enable Walk-Forward (Recommended)", detail: "Walk-forward tests the strategy on rolling out-of-sample windows (e.g. 24-month train, 6-month test). This detects overfitting and gives a realistic picture of live performance." },
+          { title: "Run Monte Carlo", detail: "Monte Carlo simulation randomizes the daily return sequence to generate 1,000+ equity paths. The output shows probability of profit, expected return, and the distribution of outcomes." },
+          { title: "Review AI Insights", detail: "After backtesting, the AI Insights tab classifies your strategy's hedge fund style, explains what drove returns, and identifies best/worst market environments." },
+        ]}
+        howItWorks={[
+          { title: "Factor Signal Generation", detail: "Each factor score is computed cross-sectionally using the universe. Stocks are ranked on each factor daily, then a weighted composite z-score determines the top-N positions. Rebalancing happens at the selected frequency." },
+          { title: "Backtest Engine", detail: "The backend simulates daily portfolio returns with configurable transaction costs (bps) and slippage. Performance metrics include CAGR, Sharpe, Sortino, max drawdown, and 20+ institutional-grade statistics." },
+          { title: "Walk-Forward Validation", detail: "The backtest period is divided into rolling windows. The strategy is fitted on training data and evaluated on the subsequent test window. Results across all windows reveal whether performance is consistent or luck-driven." },
+          { title: "Monte Carlo Engine", detail: "The simulated return path from the backtest is bootstrapped (with replacement) to generate N trajectories. This reveals the distribution of realistic outcomes and the probability of ruin." },
+        ]}
+        tips={[
+          "Start with 2–3 factors maximum. Adding many correlated factors gives false precision but doesn't diversify signal.",
+          "Walk-forward Sharpe degradation above 0.3 is a red flag for overfitting — consider simplifying the factor model.",
+          "Equal-weight position sizing typically outperforms score-weighted on a risk-adjusted basis due to lower turnover.",
+        ]}
+      />
 
       <div className="grid grid-cols-[340px_1fr] gap-6 items-start">
         {/* ── Left Panel: Builder ───────────────────────────────────── */}

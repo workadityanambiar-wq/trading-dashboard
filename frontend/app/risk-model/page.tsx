@@ -8,6 +8,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from "recharts";
 import { RefreshCw, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 const pct = (v: number | null, d = 1) => v == null ? "—" : `${v.toFixed(d)}%`;
@@ -187,6 +188,30 @@ export default function RiskModelPage() {
           EWMA covariance · Marchenko-Pastur RMT denoising · Ledoit-Wolf shrinkage · Σ = BΩ<sub>f</sub>B′ + D
         </p>
       </div>
+
+      <PageGuide
+        title="Statistical Factor Risk Model"
+        subtitle="Decompose portfolio risk into systematic and idiosyncratic components using advanced statistical methods."
+        steps={[
+          { title: "Enter Tickers", detail: "Paste a comma or space-separated list of up to 80 tickers. The default is an S&P 500 sample. You can replace it with your own portfolio holdings." },
+          { title: "Set Lookback Period", detail: "Choose 1y, 2y, or 5y. Longer windows capture more market regimes but are slower to adapt to structural changes." },
+          { title: "Adjust Half-Life", detail: "The EWMA half-life (in trading days) controls how quickly the model forgets old data. 63 days (≈3 months) is a sensible default for medium-term risk." },
+          { title: "Run the Model", detail: "Click 'Estimate Risk Model' to trigger the backend. The engine fetches daily returns, fits an EWMA covariance matrix, then applies Random Matrix Theory denoising and Ledoit-Wolf shrinkage." },
+          { title: "Explore the Tabs", detail: "Switch between Scree Plot, Factor Loadings, Asset Risk, Correlation Matrix, and Portfolio Optimizer to inspect different views of your risk decomposition." },
+          { title: "Optimize Portfolio", detail: "In the Portfolio tab, enter custom weights or use the Minimum Variance / Max Sharpe optimizer to find efficient allocations given your risk model." },
+        ]}
+        howItWorks={[
+          { title: "EWMA Covariance", detail: "Returns are exponentially weighted so recent observations matter more. The decay parameter λ is derived from your half-life: λ = exp(−ln2 / halfLife)." },
+          { title: "RMT Denoising", detail: "Marchenko-Pastur law identifies eigenvalues that are noise (below the upper MP bound). Those eigenvalues are clipped to their mean, keeping only statistically significant factors." },
+          { title: "Ledoit-Wolf Shrinkage", detail: "The denoised matrix is further regularized toward a structured target, reducing estimation error in high-dimensional settings." },
+          { title: "Factor Structure", detail: "The final covariance Σ = BΩ_f B′ + D where B is the factor loading matrix, Ω_f is the factor covariance, and D is the diagonal idiosyncratic variance matrix." },
+        ]}
+        tips={[
+          "Use at least 20 tickers — with fewer stocks the ratio p/n is too high for RMT to be meaningful.",
+          "The Scree Plot color codes eigenvalues: purple = signal factors, gray = noise. Count purple bars to gauge factor richness.",
+          "For a concentrated portfolio, shorten the half-life to 21 days so risk reacts faster to drawdowns.",
+        ]}
+      />
 
       {/* Config panel */}
       <div className="bg-surface border border-border rounded-lg p-4 space-y-4">

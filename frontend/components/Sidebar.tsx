@@ -43,6 +43,7 @@ import {
   LogOut,
   UserCircle,
   Wand2,
+  Sparkles,
   BellRing,
   FileDown,
   DollarSign,
@@ -60,8 +61,9 @@ import {
 import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV = [
-  { href: "/watchlist",   label: "Watchlist",    icon: Star },
-  { href: "/",          label: "Overview",  icon: LayoutDashboard },
+  { href: "/copilot",   label: "AI Copilot",   icon: Sparkles },
+  { href: "/watchlist", label: "Watchlist",    icon: Star },
+  { href: "/",          label: "Overview",     icon: LayoutDashboard },
   { href: "/setups",    label: "Setups",    icon: Zap },
   { href: "/rotation",  label: "Rotation",  icon: RotateCcw },
   { href: "/prebreakout", label: "Pre-Breakout", icon: Crosshair },
@@ -88,6 +90,7 @@ const NAV = [
   { href: "/rare-earths",   label: "Rare Earths",      icon: Mountain },
   { href: "/congressional", label: "Congress Intel",   icon: Building2 },
   { href: "/defense",       label: "Defense Intel",    icon: Swords },
+  { href: "/space",         label: "Space Intel",      icon: Mountain },
   { href: "/crypto",        label: "Crypto Intel",     icon: Coins },
   { href: "/breadth",       label: "Breadth",      icon: Gauge },
   { href: "/volatility",    label: "Volatility",   icon: Waves },

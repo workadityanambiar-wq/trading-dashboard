@@ -5,6 +5,7 @@ import { api, type SectorRotationPoint, type RotationQuadrant } from "@/lib/api"
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Quadrant config ───────────────────────────────────────────────────────────
 
@@ -256,6 +257,28 @@ export default function RotationPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Sector Rotation (RRG) — Guide"
+        subtitle="Relative Rotation Graph showing sector momentum vs. relative strength"
+        steps={[
+          { title: "Read the Four Quadrants", detail: "Leading (top-right): strong RS, improving momentum — longs here. Improving (bottom-right): weak RS but momentum turning up — watch for rotation in. Weakening (top-left): strong RS but losing momentum — reduce exposure. Lagging (bottom-left): weak RS and falling momentum — avoid or consider shorts." },
+          { title: "Follow the Rotation Path", detail: "Sectors naturally rotate clockwise through the four quadrants over time. A sector in 'Improving' with strong upward trajectory is often the best entry." },
+          { title: "Tap a Sector Dot", detail: "Click any sector dot on the chart to see its history chart popup, showing raw price action context behind its rotation position." },
+          { title: "Read the Quadrant Breakdown", detail: "Below the chart, sectors are grouped by quadrant with their RS-Ratio and RS-Momentum values. Sectors with RS-Ratio > 100 and RS-Momentum > 100 are in the Leading quadrant." },
+          { title: "Check the Rotation Summary", detail: "The summary panel shows which sectors are entering Leading (strong buy) vs. entering Lagging (strong avoid) this week based on recent trajectory." },
+        ]}
+        howItWorks={[
+          { title: "JdK RS-Ratio Calculation", detail: "The RS-Ratio (x-axis) measures a sector's price relative to the S&P 500 benchmark, smoothed using a Jurik Moving Average-based algorithm. Values above 100 = sector is outperforming SPY." },
+          { title: "JdK RS-Momentum Calculation", detail: "The RS-Momentum (y-axis) measures the rate of change of the RS-Ratio itself. Above 100 = the relative performance is accelerating; below 100 = decelerating." },
+          { title: "Sector ETF Proxies", detail: "Each GICS sector is represented by its SPDR ETF: XLK (Tech), XLF (Financials), XLE (Energy), XLV (Healthcare), XLI (Industrials), XLY (Consumer Disc), XLP (Consumer Staples), XLU (Utilities), XLB (Materials), XLRE (Real Estate), XLC (Communication)." },
+          { title: "Benchmark", detail: "The S&P 500 (SPY) is the benchmark at the center (100, 100). All sector readings are relative to SPY." },
+        ]}
+        tips={[
+          "The best trades are sectors rotating from Improving into Leading with strong momentum.",
+          "Sectors in Lagging with downward trajectory are best to underweight or avoid entirely.",
+          "The rotation pattern is most reliable over 4-12 week periods; don't over-trade intraday signals on this chart.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { PageGuide } from "@/components/PageGuide";
 import {
   TrendingUp, FlaskConical, GitCompare, SigmaSquare,
   Wand2, FileDown, MonitorDot, Gem, Target,
@@ -58,6 +59,25 @@ export default function ResearchPage() {
           <h1 className="text-[15px] font-bold text-text-primary tracking-tight">Research</h1>
         </div>
       </header>
+
+      <PageGuide
+        title="Research Hub — Guide"
+        subtitle="Navigation hub for all quantitative and fundamental research tools"
+        steps={[
+          { title: "Browse by Research Category", detail: "Tools are organized into sections: Quantitative (Factor Analysis, Backtester, Portfolio Optimizer, Pairs Trading), Fundamental (Risk Model, Options Chain, Earnings), and Alternative Data. Each card shows the tool name and a brief description." },
+          { title: "Tap Any Tool Card", detail: "Click any card to go directly to that research tool. Each tool has its own guide section explaining how to use it and how it works." },
+          { title: "Start with Factor Analysis", detail: "For systematic research, start with Factor Analysis (IC/ICIR analysis) and Backtester to validate a signal, then use the Screener to find live candidates, then run risk analysis before trading." },
+          { title: "Use for Pre-Trade Workflow", detail: "A typical pre-trade workflow: (1) Screener to find candidates → (2) Individual Stock page for deep-dive → (3) Options Chain for hedging → (4) Risk Model to check portfolio impact." },
+        ]}
+        howItWorks={[
+          { title: "Tool Index", detail: "This page is a curated index of all research and analysis tools in the platform. It provides a birds-eye view of the analytical toolkit available without needing to navigate the full sidebar." },
+          { title: "All Tools Use Backend APIs", detail: "Every research tool fetches live data from the FastAPI backend, which aggregates Yahoo Finance, SEC filings, and computed factor databases. Data freshness varies by tool and is noted in each tool's guide." },
+        ]}
+        tips={[
+          "The Factor Analysis → Backtest → Screener workflow is the most rigorous way to find and validate trade ideas systematically.",
+          "Use the Pairs Trading tool for market-neutral ideas — it works in any market regime since you're long one stock and short another.",
+        ]}
+      />
 
       <div className="px-4 pt-4 space-y-6">
         {SECTIONS.map(({ title, color, items }) => (

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api, type AICapExDashboard, type AIStockSignal, type HyperscalerData } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -779,6 +780,32 @@ export default function AICapExPage() {
             Refresh
           </button>
         </div>
+      </div>
+
+      <div className="px-6 pt-4 shrink-0">
+        <PageGuide
+          title="AI CapEx Intelligence"
+          subtitle="Track hyperscaler AI infrastructure spending, data center buildout, semiconductor demand, and power infrastructure investment in the AI era."
+          steps={[
+            { title: "Overview Tab", detail: "The composite CapEx Score (0–100) synthesizes all signals into a single investment regime: Accelerating, Steady, or Decelerating. The score drives the overall investment posture shown here." },
+            { title: "Hyperscalers Tab", detail: "Deep-dive into each hyperscaler's AI capex: Microsoft, Amazon, Google, Meta, Oracle. Track quarterly capex, capex as % of revenue, YoY growth, and data center construction pipeline." },
+            { title: "Semiconductors Tab", detail: "Track AI chip demand: NVDA, AMD, custom silicon (TPU, Trainium, Inferentia). Revenue from AI accelerators, data center revenue, and supply availability are tracked." },
+            { title: "Power & Infrastructure Tab", detail: "AI data centers are massive electricity consumers. Track data center power demand (GW), utility company exposure (Constellation, Vistra), and grid infrastructure build needs." },
+            { title: "Stocks Tab", detail: "Investment signals for AI capex beneficiaries: direct (NVDA, ALAB, SMCI), indirect (VST, ETN, AME), and emerging (quantum annealers, edge AI). Composite score with entry triggers." },
+            { title: "Scenarios Tab", detail: "Scenario analysis: what happens to AI capex if LLM demand plateaus (bear), continues at current pace (base), or accelerates with agentic AI (bull). Revenue implications for key stocks in each scenario." },
+          ]}
+          howItWorks={[
+            { title: "Capex Tracking", detail: "Quarterly capex data is parsed from 10-Q and 10-K filings for all major hyperscalers. Data center square footage announcements from press releases and earnings calls are tracked separately to catch leading indicators." },
+            { title: "CapEx Score Model", detail: "The composite score weighs: QoQ capex growth acceleration (40%), order book signals from equipment makers (30%), utility power reservation applications (20%), and management guidance tone (10%). Score > 70 = accelerating; < 40 = decelerating." },
+            { title: "Power Infrastructure", detail: "Data center power demand is estimated from announced GW capacity, average PUE (Power Usage Effectiveness) ratios, and GPU TDP specifications. Utility company exposure is computed from data center customer concentration in their service territories." },
+            { title: "Stock Signal Generation", detail: "Beneficiary stocks are scored on: revenue growth correlated to AI capex (R² > 0.7), gross margin leverage to volume (operating leverage), competitive moat vs. new entrants, and valuation vs. 3-year normalized FCF." },
+          ]}
+          tips={[
+            "Hyperscaler capex announcements are the single biggest driver of AI supply chain stocks — set an alert for any hyperscaler earnings where capex guidance changes ±10%.",
+            "Power infrastructure stocks (Constellation, Vistra, Eaton, Vertiv) tend to lag the AI narrative but have multi-year earnings visibility from data center contracts — they're the 'picks and shovels' of the AI buildout.",
+            "Custom silicon (Google TPU, Amazon Trainium, Meta's chips) will gradually reduce NVDA's TAM within hyperscalers — track the % of AI compute that runs on custom vs. merchant silicon.",
+          ]}
+        />
       </div>
 
       {/* Tabs */}

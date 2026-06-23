@@ -6,6 +6,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
 import { api } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 const C = {
@@ -220,6 +221,30 @@ export default function CongressionalPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <PageGuide
+        title="Congressional Trading Intelligence"
+        subtitle="Track STOCK Act disclosures to identify political alpha — trades made by US senators and representatives before major legislation."
+        steps={[
+          { title: "Overview Tab", detail: "See the aggregate stats: total disclosed trades this period, most active traders, top-bought and top-sold stocks, and the political alpha composite score vs. S&P 500." },
+          { title: "Trades Tab", detail: "Browse individual trade disclosures: the member of Congress, stock traded, transaction type (buy/sell/exchange), amount range, and days to disclosure (STOCK Act requires 45-day reporting)." },
+          { title: "Buyers & Sellers Tab", detail: "See which congresspeople are consistently net buyers (bullish thesis) vs. net sellers. Concentrations in specific sectors often reveal forthcoming legislation or contract awards." },
+          { title: "Sectors Tab", detail: "Aggregate congressional trading activity by sector. Heavy buying in defense ahead of a budget vote, or tech buying ahead of a regulatory bill, are the most actionable patterns." },
+          { title: "Committees Tab", detail: "Members on the Armed Services, Financial Services, or Energy committees have information advantages in their respective sectors. Filter trades by committee membership to identify the highest-information trades." },
+          { title: "Performance Tab", detail: "Historical backtest: if you bought every congressional purchase within 10 days of disclosure, what was the performance vs. SPY? This tab shows the evidence for (or against) political alpha." },
+        ]}
+        howItWorks={[
+          { title: "STOCK Act Data", detail: "The STOCK Act (2012) requires members of Congress and their immediate families to disclose stock trades within 45 days of the transaction. Disclosures are filed with the House Clerk and Senate Secretary and are publicly available." },
+          { title: "Political Alpha Signal", detail: "Research has documented 6–12% annual alpha from mimicking congressional trades on a 10-day lag. The effect is strongest for committee members trading in their committee's sector, and for trades in the 30 days before major legislation." },
+          { title: "Trade Classification", detail: "Purchases, sales, and exchanges are classified by amount range (SEC uses ranges: <$15K, $15–50K, $50–100K, $100–250K, $250K–$500K, $500K–$1M, $1M+). The midpoint of each range is used for return calculations." },
+          { title: "Benchmark Comparison", detail: "Each disclosed trade is compared to SPY over the same holding period. Positive alpha = the congressional trade outperformed the S&P 500 by that amount." },
+        ]}
+        tips={[
+          "Focus on cluster trades: when 3+ congresspeople buy the same stock within 2 weeks of each other, especially from the same committee — this is the highest-conviction political signal.",
+          "Trades by members on the Appropriations or Armed Services committees in defense stocks often precede contract announcements — check recent disclosed purchases vs. upcoming DoD budget news.",
+          "The 45-day disclosure lag means you're always trading on 'old' information — use it as confirmation of a thesis rather than as a primary trade trigger.",
+        ]}
+      />
+
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>

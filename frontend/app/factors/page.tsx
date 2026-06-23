@@ -1,11 +1,16 @@
 "use client";
 import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api, FACTOR_OPTIONS, type ICStats } from "@/lib/api";
+import { api, FACTOR_OPTIONS, type ICStats, type FFPoint, type FFSummary } from "@/lib/api";
 import { FactorICChart } from "@/components/charts/FactorICChart";
 import { QuintileReturns } from "@/components/charts/QuintileReturns";
-import { RefreshCw, Plus, X, ChevronDown, Clock, Database } from "lucide-react";
+import { RefreshCw, Plus, X, ChevronDown, Clock, Database, TrendingUp } from "lucide-react";
 import { cn, formatPct } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  CartesianGrid, Legend, ReferenceLine,
+} from "recharts";
 
 // ── Universe selector ─────────────────────────────────────────────────────────
 
@@ -186,6 +191,188 @@ function FactorTabs({ selected, onChange }: { selected: string; onChange: (v: st
   );
 }
 
+// ── FF colour palette ─────────────────────────────────────────────────────────
+
+const FF_COLORS: Record<string, string> = {
+  spx:    "#a78bfa",
+  mkt_rf: "#6366f1",
+  smb:    "#22c55e",
+  hml:    "#f59e0b",
+  rmw:    "#3b82f6",
+  cma:    "#ec4899",
+  mom:    "#f97316",
+};
+
+const FF_ORDER = ["spx", "mkt_rf", "mom", "hml", "rmw", "smb", "cma"] as const;
+
+function pctFmt(v: number) {
+  return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+}
+
+// ── Long-run chart ────────────────────────────────────────────────────────────
+
+function FamaFrenchSection() {
+  const [visible, setVisible] = useState<Set<string>>(
+    new Set(["spx", "mkt_rf", "mom", "hml"])
+  );
+  const [view, setView] = useState<"cumulative" | "drawdown">("cumulative");
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["fama-french"],
+    queryFn:  api.getFamaFrench,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+
+  function toggleFactor(key: string) {
+    setVisible(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) { next.delete(key); } else { next.add(key); }
+      return next;
+    });
+  }
+
+  const series = view === "cumulative" ? data?.series : data?.drawdown;
+  const factors = data?.factors ?? {};
+
+  // Thin the series to monthly (already monthly) — but reduce label density
+  const thinned = useMemo(() => {
+    if (!series) return [];
+    // Show a tick every 5 years for X axis — still render all data points
+    return series;
+  }, [series]);
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
+      {/* Section header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <TrendingUp size={14} className="text-accent" />
+            <span className="text-sm font-medium">Long-Run Factor Performance</span>
+          </div>
+          <div className="text-xs text-text-muted mt-0.5">
+            Fama-French 5-Factor + Momentum · SPX benchmark · Monthly since 1963
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded border border-border overflow-hidden">
+            {(["cumulative", "drawdown"] as const).map(v => (
+              <button key={v} onClick={() => setView(v)}
+                className={cn("px-3 py-1 text-xs transition-colors capitalize",
+                  view === v ? "bg-accent text-white" : "text-text-muted hover:text-text-primary")}>
+                {v}
+              </button>
+            ))}
+          </div>
+          {isLoading && <RefreshCw size={12} className="animate-spin text-text-muted" />}
+        </div>
+      </div>
+
+      {/* Factor toggles */}
+      <div className="flex flex-wrap gap-1.5">
+        {FF_ORDER.map(key => {
+          const label = factors[key] ?? key;
+          const on = visible.has(key);
+          return (
+            <button key={key} onClick={() => toggleFactor(key)}
+              className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors border",
+                on ? "text-white border-transparent" : "text-text-muted border-border bg-surface")}
+              style={on ? { background: FF_COLORS[key] } : {}}
+            >
+              <span className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: FF_COLORS[key] }} />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Chart */}
+      {error ? (
+        <div className="h-72 flex items-center justify-center text-red-400 text-sm">
+          Failed to load Fama-French data
+        </div>
+      ) : !thinned.length ? (
+        <div className="h-72 flex items-center justify-center text-text-muted text-sm">
+          {isLoading ? "Loading historical data…" : "No data"}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={thinned} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a38" />
+            <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b6b80" }} tickLine={false}
+              interval={Math.floor(thinned.length / 12)}
+              tickFormatter={d => d.slice(0, 4)} />
+            <YAxis tick={{ fontSize: 9, fill: "#6b6b80" }} tickLine={false}
+              tickFormatter={view === "cumulative"
+                ? (v: number) => `${v.toFixed(0)}×`
+                : (v: number) => `${(v * 100).toFixed(0)}%`}
+            />
+            <Tooltip
+              contentStyle={{ background: "#111118", border: "1px solid #2a2a38", fontSize: 11 }}
+              formatter={(val: number, name: string) => [
+                view === "cumulative" ? `${val?.toFixed(2)}×` : pctFmt(val),
+                factors[name] ?? name,
+              ]}
+              labelFormatter={l => `${l}`}
+            />
+            {view === "drawdown" && <ReferenceLine y={0} stroke="#4b5563" strokeDasharray="3 3" />}
+            {FF_ORDER.filter(k => visible.has(k)).map(key => (
+              <Line key={key} type="monotone" dataKey={key}
+                stroke={FF_COLORS[key]} dot={false} strokeWidth={1.5}
+                name={key} connectNulls />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+
+      {/* Summary stats table */}
+      {data?.summaries && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-text-muted border-b border-border">
+                {["Factor", "Ann. Return", "Ann. Vol", "Sharpe", "Max DD", "Months"].map(h => (
+                  <th key={h} className="text-left py-1.5 pr-4 font-normal">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {FF_ORDER.filter(k => k in data.summaries).map(key => {
+                const s: FFSummary = data.summaries[key];
+                return (
+                  <tr key={key} className="border-b border-border/30 hover:bg-surface-2/50">
+                    <td className="py-1.5 pr-4">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: FF_COLORS[key] }} />
+                        {factors[key] ?? key}
+                      </span>
+                    </td>
+                    <td className={cn("py-1.5 pr-4 font-mono", s.ann_return >= 0 ? "text-emerald-400" : "text-red-400")}>
+                      {pctFmt(s.ann_return)}
+                    </td>
+                    <td className="py-1.5 pr-4 font-mono text-text-primary">{pctFmt(s.ann_vol)}</td>
+                    <td className={cn("py-1.5 pr-4 font-mono", s.sharpe >= 0.5 ? "text-emerald-400" : s.sharpe >= 0 ? "text-amber-400" : "text-red-400")}>
+                      {s.sharpe.toFixed(2)}
+                    </td>
+                    <td className="py-1.5 pr-4 font-mono text-red-400">{pctFmt(s.max_dd)}</td>
+                    <td className="py-1.5 pr-4 font-mono text-text-muted">{s.n_months}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="text-[10px] text-text-muted/60">
+        Source: Kenneth French Data Library · SPX: Yahoo Finance (^GSPC, price return) ·
+        Returns are in USD, not annualised in chart · Cumulative starts at 1.0 in January 1963
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function FactorsPage() {
@@ -219,6 +406,28 @@ export default function FactorsPage() {
 
   return (
     <div className="space-y-5 max-w-screen-xl">
+      <PageGuide
+        title="Factor Analysis — Guide"
+        subtitle="Information Coefficient analysis showing which factors predict future returns"
+        steps={[
+          { title: "Select One or More Factors", detail: "Add factors using the + button or the factor tag list. You can compare multiple factors side by side. Start with Momentum 12-1, Quality, and Value for a balanced view." },
+          { title: "Choose a Universe", detail: "S&P 500 tests the factor on large caps only. S&P 1500 includes mid and small caps. All Cached tests on every ticker in the database. Custom lets you paste your own list." },
+          { title: "Set Lookback and Forward Period", detail: "Lookback controls how much history to use for the IC calculation. Forward period (1M, 3M) sets how far ahead you're testing return predictability." },
+          { title: "Run and Interpret IC", detail: "Click Compute. IC (Information Coefficient) is the Spearman rank correlation between factor scores and forward returns. IC > 0.05 is meaningful; IC > 0.10 is excellent." },
+          { title: "Read the IC History Chart", detail: "The IC history chart shows how the factor's predictive power has varied over time. Stable positive IC = consistent factor. Volatile IC = factor works in some regimes but not others." },
+        ]}
+        howItWorks={[
+          { title: "Information Coefficient Definition", detail: "IC = Spearman correlation between today's factor rank and the stock's return over the forward period. A perfect IC of 1.0 means the factor perfectly predicts relative returns. Typical good factors have IC of 0.04-0.08." },
+          { title: "ICIR (IC Information Ratio)", detail: "ICIR = mean IC / standard deviation of IC. This measures how consistent the factor is — a high mean IC with low volatility is far more tradeable than an equally high mean IC with wild swings." },
+          { title: "Quintile Returns", detail: "Stocks are sorted into 5 buckets (quintiles) by factor score each month. The quintile return chart shows the average return of each bucket. A good factor shows monotonically increasing returns from Q1 to Q5." },
+          { title: "Universe Adjustment", detail: "Factor scores are z-scored within the selected universe before computing IC, ensuring the result reflects relative ordering within the investable universe rather than absolute values." },
+        ]}
+        tips={[
+          "IC above 0.05 with ICIR above 0.5 is a reliable signal worth including in a multi-factor model.",
+          "Compare IC across different forward windows — a factor that works at 1M but not 3M is a short-term signal, not a strategic one.",
+          "Momentum IC tends to be positive in trending markets and negative in choppy markets — always check the IC history chart, not just the summary.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -327,6 +536,9 @@ export default function FactorsPage() {
           </div>
         </>
       )}
+
+      {/* Long-run Fama-French historical factor returns */}
+      <FamaFrenchSection />
     </div>
   );
 }

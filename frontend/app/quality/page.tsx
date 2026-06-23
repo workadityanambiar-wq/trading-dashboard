@@ -11,6 +11,7 @@ import { api, QualityResult, SectorQuality } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Gem, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -424,6 +425,30 @@ export default function QualityPage() {
 
   return (
     <div className="p-6 space-y-5 max-w-[1600px]">
+      <PageGuide
+        title="Quality Factor Dashboard"
+        subtitle="Screen for high-quality businesses with durable competitive advantages — the Buffett/Munger framework applied systematically."
+        steps={[
+          { title: "Select Universe", detail: "Choose S&P 500, Nasdaq 100, or your Watchlist. The universe determines which stocks are quality-scored." },
+          { title: "Use Filter Tabs", detail: "All shows every scored stock. 'Quality + Momentum ★' is the key filter — high-quality companies with accelerating momentum, the highest-return combination. 'High Quality' filters by quality score alone. 'High Momentum' shows fast-moving names regardless of quality." },
+          { title: "Sort Columns", detail: "Click any column header to sort. Key columns: Quality Score (composite quality), ROIC (return on invested capital), Gross Margin, FCF Growth, and Earnings Growth." },
+          { title: "Read Quality Scores", detail: "The 0–100 quality score combines ROIC, gross margin stability, earnings growth consistency, FCF conversion, and debt/equity. Scores above 60 indicate high-quality businesses; above 80 are elite compounders." },
+          { title: "Check the Scatter Plot", detail: "The quality vs. momentum scatter shows how each stock ranks on both dimensions simultaneously. Top-right quadrant = Quality + Momentum — the sweet spot for long positions." },
+          { title: "Drill Into History", detail: "Click any row to open the History Drawer for a time-series view of the stock's quality metrics and price history." },
+        ]}
+        howItWorks={[
+          { title: "Quality Score Formula", detail: "Weighted composite: ROIC percentile (25%), gross margin trend (20%), earnings growth consistency (20%), FCF margin (20%), and debt/equity inverse (15%). All components are normalized within the universe." },
+          { title: "ROIC Focus", detail: "Return on Invested Capital is the single best measure of business quality — it measures how efficiently management converts capital into profit. Consistently high ROIC (>15%) for 5+ years signals a durable moat." },
+          { title: "Gross Margin Trend", detail: "A rising gross margin trend signals pricing power and competitive positioning. Declining margins signal commoditization or cost inflation — a quality red flag even if current margins are high." },
+          { title: "FCF Conversion", detail: "Free Cash Flow as a percentage of net income measures earnings quality. High FCF conversion (>90%) means earnings are real cash; low conversion suggests aggressive accounting or heavy working capital requirements." },
+        ]}
+        tips={[
+          "The Quality + Momentum combination historically outperforms pure quality or pure momentum alone — high-quality businesses tend to accelerate when the market recognizes their quality.",
+          "Don't just buy the highest quality score — check the price. An elite quality business trading at 50× earnings with decelerating growth is still a bad trade.",
+          "Use the quality screen as a long-term compounder list: stocks with quality scores >75 held for 3–5 years have historically generated 3–5% annual alpha over the benchmark.",
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>

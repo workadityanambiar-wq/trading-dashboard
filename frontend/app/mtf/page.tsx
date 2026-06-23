@@ -5,6 +5,7 @@ import { api, type MTFSignal } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, AlignCenter } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,30 @@ export default function MTFPage() {
           </button>
         </div>
       </div>
+
+      <PageGuide
+        title="Multi-Timeframe Alignment"
+        subtitle="Find stocks where weekly, daily, and short-term trends all agree — the highest-conviction long candidates."
+        steps={[
+          { title: "Select Universe", detail: "Choose your stock pool: S&P 500, S&P 1500, Nifty 50, Europe Top 40, Popular ETFs, or All Cached. The universe determines which stocks are screened for alignment." },
+          { title: "Set Minimum Alignment", detail: "Minimum Align of 2 shows stocks where at least 2 of 3 timeframes are bullish. Set to 3 for perfect triple alignment — the most powerful signal." },
+          { title: "Sort Results", detail: "Order by MTF Score (strongest overall trend), Alignment Count, Weekly RS, or individual timeframe strength to prioritize the most actionable setups." },
+          { title: "Read the Alignment Badges", detail: "Each row shows colored badges for W (weekly), D (daily), and S (short-term). Green = bullish trend on that timeframe; gray = neutral or bearish." },
+          { title: "Drill Into History", detail: "Click any ticker row to open the History Drawer, which shows the full alignment history and trend status over time." },
+          { title: "Refresh for Latest Data", detail: "Hit the refresh button to pull the most recent timeframe analysis. Data is cached per-universe for 60 seconds." },
+        ]}
+        howItWorks={[
+          { title: "Three Timeframes Defined", detail: "Weekly trend uses a 10-week EMA slope; Daily trend uses 21-day EMA above 50-day EMA with positive slope; Short-term trend uses a 5-day EMA above 13-day EMA." },
+          { title: "MTF Score", detail: "A 0–100 composite score that weights alignment count, the strength of each trend (EMA slope magnitude), and the weekly relative strength rank versus the universe." },
+          { title: "Relative Strength Component", detail: "Each stock's 12-month minus 1-month price momentum is ranked within the chosen universe. Higher RS gives a boost to the MTF score." },
+          { title: "Data Latency", detail: "Scores are computed from daily closing prices fetched via yfinance. The backend refreshes universe data nightly; intraday refreshes use the latest available close." },
+        ]}
+        tips={[
+          "Triple alignment (all 3 timeframes bullish) occurs in fewer than 10% of stocks in most market conditions — this is where the edge is.",
+          "In strong bull markets, filter for alignment = 3 AND weekly RS above 80 to catch institutional momentum names.",
+          "During corrections, even alignment = 2 setups can underperform. Use the Regime page first to confirm the macro backdrop is supportive.",
+        ]}
+      />
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">

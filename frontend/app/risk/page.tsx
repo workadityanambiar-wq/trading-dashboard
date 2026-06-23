@@ -12,6 +12,7 @@ import { RollingBetaChart } from "@/components/charts/RollingBetaChart";
 import { CorrelationHeatmap } from "@/components/charts/CorrelationHeatmap";
 import { cn, formatPct } from "@/lib/utils";
 import { Play, RefreshCw, ShieldAlert } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Default portfolio weights ─────────────────────────────────────────────────
 
@@ -199,6 +200,28 @@ export default function RiskPage() {
 
   return (
     <div className="space-y-5 max-w-screen-2xl">
+      <PageGuide
+        title="Portfolio Risk Model — Guide"
+        subtitle="VaR, CVaR, factor attribution, rolling beta, and correlation analysis"
+        steps={[
+          { title: "Enter Portfolio Weights", detail: "Type your portfolio in YAML format: one line per position, format is TICKER: WEIGHT. Weights must sum to 1.0. Example: AAPL: 0.20 means 20% allocation to Apple." },
+          { title: "Select Risk Model", detail: "Historical Simulation uses actual past returns to compute risk. Parametric uses the normal distribution assumption (faster but less accurate for fat-tailed assets)." },
+          { title: "Set Confidence Level", detail: "95% VaR means: 95% of the time, losses will be less than this amount in a single day. 99% VaR is a more extreme scenario — losses exceed this only 1% of days." },
+          { title: "Run the Model", detail: "Click Run Risk Model. The engine computes VaR, CVaR, factor attribution, rolling beta vs. SPY, and the full correlation heatmap of your holdings." },
+          { title: "Interpret Results", detail: "VaR tells you the typical bad day loss. CVaR tells you the average loss on the worst 5% of days. Factor attribution shows how much risk comes from Market, Size, Value, and Momentum factors. Rolling beta shows how your market sensitivity has changed over time." },
+        ]}
+        howItWorks={[
+          { title: "Historical VaR Calculation", detail: "The backend fetches 2 years of daily returns for each ticker, applies portfolio weights to compute portfolio-level daily P&L, then finds the Nth percentile worst day. This is the VaR figure." },
+          { title: "CVaR (Expected Shortfall)", detail: "CVaR averages all daily losses beyond the VaR threshold. It better captures tail risk because it asks 'how bad are the worst days on average?' rather than just marking the boundary." },
+          { title: "Factor Attribution via Regression", detail: "Portfolio returns are regressed against the Fama-French factors (Market, SMB, HML) and Momentum (UMD). R-squared shows how much variance is explained by these factors vs. idiosyncratic stock-specific risk." },
+          { title: "Rolling Beta", detail: "Beta is calculated in a 63-day rolling window vs. SPY. Rising beta means your portfolio is becoming more market-sensitive; falling beta means it's becoming more defensive." },
+        ]}
+        tips={[
+          "A portfolio with 95% VaR above 2% per day is aggressively positioned — consider adding bonds or reducing gross exposure.",
+          "If idiosyncratic risk (unexplained by factors) is above 50%, your portfolio is heavily stock-specific — more concentration risk.",
+          "Rolling beta rising above 1.3 near a market peak is a warning sign to reduce equity beta.",
+        ]}
+      />
       {/* Header */}
       <div>
         <h1 className="text-base font-semibold">Risk Dashboard</h1>

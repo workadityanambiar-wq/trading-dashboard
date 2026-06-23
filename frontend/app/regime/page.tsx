@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Minus, RefreshCw,
   CheckCircle2, XCircle, AlertTriangle, Zap,
 } from "lucide-react";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── colour helpers ─────────────────────────────────────────────────────────────
 
@@ -298,6 +299,29 @@ export default function RegimePage() {
       </header>
 
       <div className="flex flex-col gap-5 p-4">
+
+      <PageGuide
+        title="Market Regime — Guide"
+        subtitle="Multi-factor model classifying the current market environment"
+        steps={[
+          { title: "Read the Regime Label & Score", detail: "The large label at the top (e.g. 'Risk-On Bull — Expanding') tells you the current regime in plain language. The score bar shows composite model strength from -1 (full bear) to +1 (full bull)." },
+          { title: "Review Component Scores", detail: "Each factor contributing to the regime has its own score bar: Trend, Momentum, Breadth, Credit, and Volatility. Check which factors are driving the overall reading and which are diverging." },
+          { title: "Read the Sub-Regime Labels", detail: "Below the main regime, sub-regime chips classify the Trend, Volatility, and Cycle phase separately (e.g. 'Vol Compressing', 'Early Cycle'). These give granular context." },
+          { title: "Follow the Recommendations", detail: "The recommendations section lists the best sectors, factors to overweight, and sectors to avoid given the current regime. Use these to align your portfolio with the macro environment." },
+          { title: "Check the Signal List", detail: "Green checkmarks = bullish signals active. Red X marks = bearish signals. Yellow triangles = neutral/mixed. Count the ratio to gauge confidence." },
+        ]}
+        howItWorks={[
+          { title: "Five-Factor Scoring Model", detail: "Regime is scored across Trend (SPY vs. 200-day SMA), Momentum (12-1 return vs. cross-sectional peers), Breadth (% stocks above 50 & 200 MAs), Credit (HYG/LQD spread), and Volatility (VIX level and percentile)." },
+          { title: "Composite Score Calculation", detail: "Each component is normalized to [-1, +1]. The composite is an equal-weighted sum. Scores above +0.25 are Risk-On; below -0.25 are Risk-Off; between is Neutral/Transitioning." },
+          { title: "Regime Persistence", detail: "A regime change requires the composite to cross the threshold for 3 consecutive trading days to avoid whipsawing in choppy markets. This makes the signal more reliable but slightly lagging." },
+          { title: "Recommendations Engine", detail: "Sector and factor recommendations are hard-coded rules based on historical academic research (e.g. momentum and quality work in bull regimes; min-vol and defensive work in bear regimes)." },
+        ]}
+        tips={[
+          "A high-scoring regime with all 5 components aligned is a strong signal; mixed components (e.g. trend up but credit down) suggest caution.",
+          "Vol Compressing sub-regime is historically the best environment for trend-following strategies.",
+          "When regime score turns from -0.5 to +0.1, that transition period is often the best entry point for risk assets.",
+        ]}
+      />
 
       {/* Headline */}
       <RegimeHeadline data={data} />

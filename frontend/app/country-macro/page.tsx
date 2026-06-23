@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api, type CountryMacroResponse, type CountryListItem } from "@/lib/api";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1049,6 +1050,30 @@ export default function CountryMacroPage() {
           </select>
         </div>
       </div>
+
+      <PageGuide
+        title="Country Macro Dashboard"
+        subtitle="Hedge-fund style sovereign economic analysis: growth, inflation, employment, markets, debt, and trade for any country."
+        steps={[
+          { title: "Select a Country", detail: "Use the dropdown to choose any of 40+ countries. The list shows the country flag, name, and ISO code. Selection immediately triggers a data fetch." },
+          { title: "Wait for Data Load", detail: "The first load for a new country queries the World Bank API and equity data sources — this can take 10–20 seconds. Subsequent loads are cached for the session." },
+          { title: "Read the Overview Tab", detail: "The Overview tab shows the most important macro KPIs in card format: GDP growth, inflation, unemployment rate, current account balance, debt-to-GDP, and more." },
+          { title: "Explore Detailed Tabs", detail: "Tabs include Growth (GDP decomposition), Inflation (CPI series), Employment (labor market indicators), Markets (equity index and FX), Debt (government fiscal position), and Trade (exports/imports balance)." },
+          { title: "Review AI Insights", detail: "Scroll to the Insights section for an AI-generated macro narrative that synthesizes all dimensions into a concise investment thesis — similar to a hedge fund country brief." },
+          { title: "Switch Countries to Compare", detail: "Select a different country to instantly load its profile. Use back-to-back comparisons to identify relative macro divergences (e.g. India vs Brazil)." },
+        ]}
+        howItWorks={[
+          { title: "World Bank API", detail: "GDP, inflation, unemployment, current account, debt, and trade data are fetched from the World Bank Open Data API. Indicators are annual frequency; the dashboard shows the most recent 10-year trend." },
+          { title: "Equity & FX Market Data", detail: "The country's primary equity index ETF and USD/local currency FX rate are fetched via yfinance for up-to-date market prices and 1-year performance." },
+          { title: "Macro Scoring", detail: "Each macro dimension (growth, inflation, employment, etc.) is scored 0–10 relative to global peers. The composite Macro Health Score is a weighted average of all six dimensions." },
+          { title: "AI Narrative Generation", detail: "The backend assembles all fetched data into a structured context and sends it to the AI model (Anthropic/Ollama). The model returns a 3-paragraph investment brief covering macro outlook, risks, and opportunities." },
+        ]}
+        tips={[
+          "A country with high growth, low inflation, and a positive current account balance is the classic macro 'sweet spot' — look for these combinations.",
+          "Compare the debt-to-GDP trend (rising vs falling) to assess fiscal sustainability — it matters more than the absolute level.",
+          "The FX performance metric is especially important for international equity investors — a depreciating currency erodes returns even when the local market rises.",
+        ]}
+      />
 
       {/* Loading */}
       {isLoading && (

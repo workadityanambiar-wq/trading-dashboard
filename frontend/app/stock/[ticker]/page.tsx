@@ -8,6 +8,7 @@ import { RefreshCw, TrendingUp, TrendingDown, Minus, Star, CalendarDays, Chevron
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useWatchlist } from "@/hooks/useWatchlist";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,30 @@ export default function StockDetailPage({ params }: { params: Promise<{ ticker: 
           </button>
         </div>
       </div>
+
+      <PageGuide
+        title="Stock Detail"
+        subtitle="A deep-dive view of an individual stock: technical setup, price chart, factor scores, risk metrics, and AI-generated analysis."
+        steps={[
+          { title: "Read the Setup Badge", detail: "The colored badge (Early Breakout, Volatility Squeeze, etc.) next to the ticker shows the current technical setup. The Stage label (S1 Base, S2 Uptrend, S3 Topping, S4 Downtrend) indicates the Minervini stage." },
+          { title: "View the Price Chart", detail: "The TradingView interactive chart is embedded above. Use the toolbar to switch between candlestick/bar/line views, change timeframes, or add technical indicators. The fallback OHLCV chart shows 1-year daily data with volume." },
+          { title: "Review Technical Metrics", detail: "Scroll down to see the technical scorecard: RS vs SPY, ATR%, distance to 52-week high, volume ratio, and all moving average relationships. These power the setup detection." },
+          { title: "Check Earnings Context", detail: "If earnings are within 21 days, a badge appears at the top. Red badge = earnings within 2 days (high risk/reward). Always check earnings dates before entering positions." },
+          { title: "Add to Watchlist", detail: "Click the star icon next to the ticker to add this stock to your Watchlist. It will then appear with live setup context in the Watchlist page." },
+          { title: "Navigate Back", detail: "Use the back arrow (←) to return to the Setup Engine page that referred you here. The browser back button also works." },
+        ]}
+        howItWorks={[
+          { title: "Data Pipeline", detail: "Stock detail data is fetched from the backend which calls yfinance for OHLCV history, then computes all technical indicators (MAs, ATR, Bollinger Bands, RSI, MACD, volume ratios) in real time." },
+          { title: "Setup Detection", detail: "The same setup detection engine as the Setup Engine page is applied to this single stock. The 6 setup templates are evaluated and the most applicable is shown. 'No Setup' means no pattern currently qualifies." },
+          { title: "Relative Strength", detail: "RS vs SPY measures the stock's 20-day and 63-day price performance relative to the SPY ETF. Positive RS means the stock is outperforming the market. RS rank positions this stock within its universe." },
+          { title: "TradingView Widget", detail: "The TradingView chart is a full-featured professional charting widget. It connects to real-time data from TradingView's servers. If the widget fails to load (e.g. no internet), the local OHLCV candlestick chart is shown as a fallback." },
+        ]}
+        tips={[
+          "Stocks with Setup = 'Early Breakout' AND RS > 80% AND Stage 2 uptrend represent the highest-probability long setups — these align technical, momentum, and trend all at once.",
+          "Never enter a position within 3 days of earnings unless you're specifically trading the earnings event — the setup doesn't predict what earnings will do.",
+          "Use the TradingView chart to draw your own support/resistance levels and check if the machine-detected setup aligns with your manual analysis.",
+        ]}
+      />
 
       {/* Earnings badge */}
       {data.days_to_earnings != null && data.days_to_earnings <= 21 && (

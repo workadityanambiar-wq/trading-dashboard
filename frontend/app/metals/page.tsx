@@ -6,6 +6,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell, PolarRadiusAxis,
 } from "recharts";
 import { HistoryDrawer, DrawerConfig } from "@/components/HistoryDrawer";
+import { PageGuide } from "@/components/PageGuide";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface MetalData {
@@ -1432,6 +1433,27 @@ export default function MetalsPage() {
 
   return (
     <div className="p-6 space-y-6 min-h-screen">
+      <PageGuide
+        title="Metals Tracker — Guide"
+        subtitle="Gold, silver, copper, platinum and industrial metals — prices, fundamentals, and quant models"
+        steps={[
+          { title: "Read the Overview Tab", detail: "The Overview tab shows all metals with current prices, daily/weekly/monthly/YTD returns, and a summary of best and worst performers. Color-coded performance bars make it easy to spot leaders and laggards at a glance." },
+          { title: "Check the Gold/Silver Ratio", detail: "The gold/silver ratio (how many ounces of silver = 1 ounce of gold) is a classic macro signal. Above 80 = gold outperforming (risk-off). Below 65 = silver outperforming (risk-on/industrial demand)." },
+          { title: "Navigate the Tabs", detail: "Each tab provides a different analytical lens: Performance (returns heatmap), Supply (production data), Demand (end-use breakdown), Inventory (LME stocks), Central Bank (gold buying), Macro (correlations), China (demand drivers), Miners (equity analysis), Futures (term structure), Positioning (COT), Technical (chart signals), and Signals." },
+          { title: "Monitor Copper as a Leading Indicator", detail: "Copper is called 'Dr. Copper' because its price historically leads global economic activity. Rising copper with rising stocks = broad expansion. Copper falling while stocks rise = potential divergence warning." },
+          { title: "Read Mining Stock Performance", detail: "The Miners tab shows GDX (gold miners ETF) and GDXJ (junior miners) along with individual major miners. Miners have 2–3x beta to metal prices but also carry operational and political risk." },
+        ]}
+        howItWorks={[
+          { title: "Price Data", detail: "GLD and SLV ETFs proxy for gold and silver spot prices. Copper uses the HG=F futures ticker. Platinum uses PL=F. All fetched from Yahoo Finance with daily updates." },
+          { title: "Gold/Silver Ratio", detail: "Computed as gold spot price / silver spot price. Historical average is approximately 65–70x. Extreme readings (>90) have historically preceded strong silver outperformance periods." },
+          { title: "Supply & Demand Data", detail: "Supply data (mine production, recycling) and demand data (jewelry, industrial, investment, central bank) are sourced from World Gold Council reports and LME published inventories, updated quarterly." },
+        ]}
+        tips={[
+          "Gold breaking above its 200-day MA after prolonged consolidation is one of the strongest technical signals across any asset class.",
+          "When both gold AND copper are rising simultaneously, it signals broad reflation — ideal for commodity-heavy portfolios.",
+          "Mining stocks underperforming gold despite rising gold prices is a distribution warning — institutions may be selling miners into metal strength.",
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

@@ -7,6 +7,7 @@ import {
   Settings2, PlusCircle, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageGuide } from "@/components/PageGuide";
 
 const ICONS: Record<string, React.ReactNode> = {
   portfolio: <BarChart3 size={14} />,
@@ -208,6 +209,30 @@ export default function ReportsPage() {
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 max-w-2xl space-y-5">
+
+            <PageGuide
+              title="Report Generator"
+              subtitle="Generate institutional-quality PDF or Excel reports for any portfolio — covering performance, risk, attribution, and AI commentary."
+              steps={[
+                { title: "Choose Report Type", detail: "Use the left sidebar to select a report template: Portfolio Performance, Backtest Analysis, Stock Report, Risk Report, Pair Trading, Momentum, Factor, Regime, Options, or Custom. Each template includes a preset set of sections." },
+                { title: "Set Output Format", detail: "Toggle between PDF (rich visual report with charts, cover page, and AI commentary) or Excel (raw data across 7 structured sheets for further analysis)." },
+                { title: "Choose Theme", detail: "PDF reports can be rendered in Light (white background, professional look) or Dark (dark background, terminal aesthetic). Excel format ignores the theme setting." },
+                { title: "Enter Report Details", detail: "Set a report name (used in the filename and cover page), comma-separated tickers, date range (start/end), benchmark ticker (default SPY), and total portfolio value in USD." },
+                { title: "Add Custom Weights (Optional)", detail: "Expand 'Custom Portfolio Weights' to assign specific allocation percentages to each ticker. If left empty, equal-weight is assumed for all positions." },
+                { title: "Generate and Download", detail: "Click 'Generate PDF' or 'Generate EXCEL'. The backend computes all metrics, renders charts, generates AI commentary, and returns the file for automatic download." },
+              ]}
+              howItWorks={[
+                { title: "PDF Generation Pipeline", detail: "The backend fetches historical prices, computes 50+ performance and risk metrics, renders Matplotlib charts at 150 DPI, generates AI commentary via the configured LLM, then assembles everything into a multi-page PDF using ReportLab with Bloomberg/Morningstar-style layout." },
+                { title: "Excel Generation Pipeline", detail: "Data is organized across 7 sheets: Trade History, Portfolio Statistics, Risk Metrics, Performance Metrics, Monthly Heatmap, Factor Exposure + Correlations, and Strategy Attribution. Each sheet is formatted with proper headers, number formatting, and conditional color coding." },
+                { title: "AI Commentary", detail: "After computing metrics, the backend sends a structured data summary to the AI model (Anthropic Claude or local Ollama). The model returns 3–5 paragraphs of executive commentary that are embedded in the report's Executive Summary section." },
+                { title: "Chart Rendering", detail: "All charts (equity curve, drawdown, annual returns bar, monthly heatmap, rolling Sharpe, attribution waterfall) are rendered server-side with Matplotlib and embedded as high-resolution images in the PDF." },
+              ]}
+              tips={[
+                "Use the dark theme PDF for presentations on screens — it's much easier on the eyes in a dark conference room.",
+                "For attribution accuracy, provide custom weights that reflect your actual allocation — equal-weight will misrepresent concentrated portfolios.",
+                "The Excel format is ideal for further quant analysis: import Sheet 3 (Risk Metrics) into Python or R for custom calculations.",
+              ]}
+            />
 
             {/* Report name */}
             <div className="flex flex-col gap-1.5">
