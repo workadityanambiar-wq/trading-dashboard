@@ -467,9 +467,13 @@ _FF_QPORT_BASE = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp"
 #   reverse=True  → Lo20=best factor (low-vol); Q1↔Q5 swapped
 #   use_deciles=True → file only has 10 decile cols; average pairs → quintiles
 _FF_QUINTILE_MAP: dict[str, tuple[str, bool, bool]] = {
-    "momentum_12_1":  (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",  False, True),
-    "momentum_6_1":   (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",  False, True),
-    "low_volatility": (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_VAR_CSV.zip",  True,  False),
+    "momentum_12_1": (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",   False, True),
+    "momentum_6_1":  (f"{_FF_QPORT_BASE}/10_Portfolios_Prior_12_2_CSV.zip",   False, True),
+    "low_vol":       (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_VAR_CSV.zip",    True,  False),
+    "value":         (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_BE-ME_CSV.zip",  False, False),
+    "size":          (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_ME_CSV.zip",     True,  False),
+    "quality":       (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_OP_CSV.zip",     False, False),
+    "profitability": (f"{_FF_QPORT_BASE}/Portfolios_Formed_on_OP_CSV.zip",     False, False),
 }
 _FF_QPORT_CACHE: dict[str, dict] = {}
 _FF_QPORT_CACHE_TS: dict[str, datetime] = {}

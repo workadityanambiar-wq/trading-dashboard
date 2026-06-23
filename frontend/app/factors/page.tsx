@@ -376,7 +376,11 @@ function FamaFrenchSection() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 // Factors that have a Fama-French long-run quintile portfolio equivalent
-const FF_QUINTILE_FACTORS = new Set(["momentum_12_1", "momentum_6_1", "low_volatility"]);
+const FF_QUINTILE_FACTORS = new Set([
+  "momentum_12_1", "momentum_6_1",
+  "low_vol",
+  "value", "size", "quality", "profitability",
+]);
 
 export default function FactorsPage() {
   const [factor, setFactor]           = useState("momentum_12_1");
@@ -412,7 +416,7 @@ export default function FactorsPage() {
     queryKey: ["ff-quintiles", factor],
     queryFn: () => api.getFFQuintiles(factor),
     staleTime: 24 * 60 * 60 * 1000,
-    enabled: hasPriceHistory && hasFFQuintile,
+    enabled: hasFFQuintile,
   });
 
   const { data: ffICData, isLoading: ffICLoading } = useQuery({
@@ -526,8 +530,33 @@ export default function FactorsPage() {
       )}
 
       {/* Content area */}
-      {!hasPriceHistory ? (
+      {!hasPriceHistory && !hasFFQuintile ? (
         <NoHistoryCard factor={factor} />
+      ) : !hasPriceHistory && hasFFQuintile ? (
+        /* Fundamental factor with FF quintile data — show longrun chart only */
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div>
+              <div className="text-sm font-medium">Quintile Cumulative Returns</div>
+              <div className="text-xs text-text-muted mt-0.5">
+                Kenneth French portfolio quintiles · Equal-weight · Since 1963
+              </div>
+            </div>
+            {ffQLoading && <RefreshCw size={13} className="animate-spin text-text-muted" />}
+          </div>
+          {ffQData?.series?.length ? (
+            <QuintileReturns data={ffQData.series} height={360} logScale showBrush />
+          ) : (
+            <div className="h-72 flex items-center justify-center text-text-muted text-sm">
+              {ffQLoading ? "Loading historical data…" : "No data"}
+            </div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-4 text-xs text-text-muted">
+            <span><span className="text-green-400">Q5</span> = highest factor score</span>
+            <span><span className="text-red-400">Q1</span> = lowest factor score</span>
+            <span className="text-text-muted/60">Log scale · Source: Kenneth French Data Library · No transaction costs</span>
+          </div>
+        </div>
       ) : !ready ? (
         <div className="rounded-lg border border-border bg-surface p-12 text-center text-sm text-text-muted">
           Add 10+ tickers to compute IC
@@ -551,7 +580,7 @@ export default function FactorsPage() {
             </div>
             {icMode === "live" ? (
               icData?.series?.length ? (
-                <FactorICChart data={icData.series} height={260} />
+                <FactorICChart data={icData.series} height={280} />
               ) : (
                 <div className="h-64 flex items-center justify-center text-text-muted text-sm">
                   {icLoading ? "Computing IC…" : "No data — price history may still be loading"}
@@ -559,7 +588,12 @@ export default function FactorsPage() {
               )
             ) : (
               ffICData?.series?.length ? (
-                <FactorICChart data={ffICData.series} height={260} yDomain={[-1, 1]} />
+                <FactorICChart
+                  data={ffICData.series}
+                  height={310}
+                  showBrush
+                  hideMonthlySeries
+                />
               ) : (
                 <div className="h-64 flex items-center justify-center text-text-muted text-sm">
                   {ffICLoading ? "Loading historical IC…" : "No data"}
@@ -576,7 +610,7 @@ export default function FactorsPage() {
                 <div className="text-xs text-text-muted mt-0.5">
                   {quintileMode === "live"
                     ? "Equal-weight, monthly rebalanced · Q5 = top 20% by factor score"
-                    : "Kenneth French portfolio quintiles (Lo20→Q1, Hi20→Q5) · Equal-weight · Since 1963"}
+                    : "Kenneth French portfolio quintiles (Lo20→Q1, Hi20→Q5) · Log scale · Since 1963"}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -609,7 +643,7 @@ export default function FactorsPage() {
               )
             ) : (
               ffQData?.series?.length ? (
-                <QuintileReturns data={ffQData.series} height={300} />
+                <QuintileReturns data={ffQData.series} height={360} logScale showBrush />
               ) : (
                 <div className="h-72 flex items-center justify-center text-text-muted text-sm">
                   {ffQLoading ? "Loading historical quintile data…" : "No data"}
@@ -620,7 +654,7 @@ export default function FactorsPage() {
               <span><span className="text-green-400">Q5</span> = highest factor score (long)</span>
               <span><span className="text-red-400">Q1</span> = lowest factor score (short)</span>
               {quintileMode === "longrun" && (
-                <span className="text-text-muted/60">Source: Kenneth French Data Library · No transaction costs</span>
+                <span className="text-text-muted/60">Log scale · Source: Kenneth French Data Library · No transaction costs</span>
               )}
               {quintileMode === "live" && <span>No transaction costs applied</span>}
             </div>
