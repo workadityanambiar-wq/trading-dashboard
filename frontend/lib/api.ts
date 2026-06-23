@@ -1680,6 +1680,12 @@ export const api = {
   getCopilotPMCommand:    () => apiFetch<any>("/copilot/pm-command"),
   getCopilotStatus:       () => apiFetch<any>("/copilot/status"),
   getCopilotModels:       () => apiFetch<any>("/copilot/models"),
+
+  // ── Breadth Intelligence Platform ────────────────────────────────────────────
+  getBreadthDashboard: (universe = "sp500") =>
+    apiFetch<BreadthDashboard>(`/breadth/dashboard?universe=${universe}`),
+  refreshBreadthDashboard: (universe = "sp500") =>
+    apiFetch<any>(`/breadth/refresh?universe=${universe}`, { method: "POST" }),
 };
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
@@ -2505,3 +2511,123 @@ export interface RECompositeResponse { composite: RECompositeScore; signals: RES
 export interface RESupercycle { score: number; regime: string; components: Record<string, number> }
 export interface REKPIs { global_re_prod_kt: number; china_share_pct: number; china_refining_pct: number; deficit_minerals: number; ev_demand_re_kt_2024: number; magnet_demand_index: number; active_export_controls: number }
 export interface REOverviewResponse { supercycle: RESupercycle; composite: RECompositeScore; kpis: REKPIs; as_of: string }
+
+// ── Breadth Intelligence Platform types ───────────────────────────────────────
+
+export interface BreadthSnapshotFull {
+  pct_above_20ma:   number | null;
+  pct_above_50ma:   number | null;
+  pct_above_100ma:  number | null;
+  pct_above_200ma:  number | null;
+  ad_ratio:         number | null;
+  advancing:        number;
+  declining:        number;
+  pct_new_highs:    number | null;
+  pct_new_lows:     number | null;
+  net_new_highs_pct: number | null;
+  mcclellan:        number | null;
+  summation_index:  number | null;
+  bpi:              number | null;
+  breadth_thrust:   number | null;
+  breadth_health_score: number | null;
+  median_return_1m: number | null;
+  mean_return_1m:   number | null;
+  rsp_vs_spy_1m:    number | null;
+  rsp_vs_spy_3m:    number | null;
+  n_stocks:         number;
+}
+
+export interface BreadthHistoryPoint {
+  date:          string;
+  ma20:          number | null;
+  ma50:          number | null;
+  ma100:         number | null;
+  ma200:         number | null;
+  mcclellan:     number | null;
+  summation:     number | null;
+  ad_ratio:      number | null;
+  new_highs_net: number | null;
+  breadth_thrust: number | null;
+}
+
+export interface BreadthSector {
+  sector:        string;
+  above_50ma:    number;
+  above_200ma:   number;
+  count:         number;
+  breadth_score: number;
+  rating:        string;
+  rs_1m:         number | null;
+  rs_3m:         number | null;
+}
+
+export interface BreadthSignal {
+  name:                string;
+  type:                "bullish" | "bearish" | "neutral";
+  strength:            number;
+  description:         string;
+  historical_win_rate: number | null;
+  risk_reward:         string;
+  action:              string;
+}
+
+export interface BreadthDivergence {
+  type:        "Bullish" | "Bearish";
+  severity:    string;
+  description: string;
+}
+
+export interface MarketHealthComponent {
+  score:  number;
+  weight: number;
+}
+
+export interface MarketHealth {
+  composite_score: number;
+  grade:           "Green" | "Yellow" | "Orange" | "Red";
+  components: {
+    breadth:    MarketHealthComponent;
+    liquidity:  MarketHealthComponent;
+    momentum:   MarketHealthComponent;
+    volatility: MarketHealthComponent;
+    flows:      MarketHealthComponent;
+    macro:      MarketHealthComponent;
+  };
+}
+
+export interface RegimeState {
+  state:           string;
+  color:           string;
+  description:     string;
+  score:           number;
+  probabilities:   Record<string, number>;
+  expected_returns: Record<string, number>;
+}
+
+export interface RiskMetrics {
+  vix:                 number | null;
+  vix_1m_change:       number | null;
+  vix_percentile_1y:   number | null;
+  hy_spread_score:     number;
+  yield_curve:         number | null;
+  credit_stress:       string;
+  market_risk_score:   number;
+  crash_probability:   number;
+  liquidity_score:     number;
+}
+
+export interface BreadthDashboard {
+  universe:   string;
+  n_stocks:   number;
+  as_of:      string | null;
+  market_health: MarketHealth;
+  regime:     RegimeState;
+  snapshot:   BreadthSnapshotFull;
+  hindenburg: { active: boolean; signals_30d: string[]; last_signal: string | null };
+  zweig:      { signals: string[]; last_signal: string | null; current_thrust: number | null };
+  history:    BreadthHistoryPoint[];
+  sectors:    BreadthSector[];
+  risk:       RiskMetrics;
+  divergences: BreadthDivergence[];
+  signals:    BreadthSignal[];
+}
