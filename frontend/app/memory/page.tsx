@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HistoryDrawer, DrawerConfig } from "@/components/HistoryDrawer";
+import { TickerChip } from "@/components/TickerChip";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, CartesianGrid, ReferenceLine, Area, AreaChart,
@@ -747,7 +748,7 @@ function SupplyChainTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold">{e.ticker}</span>
+                    <TickerChip ticker={e.ticker} showDetail={false} className="text-[12px] font-bold" />
                     <span className="text-[10px] text-text-muted">{e.name}</span>
                   </div>
                   <div className="text-[10px] text-text-muted">{e.role}</div>
@@ -1238,7 +1239,7 @@ function SignalsTab({ data }: { data: any }) {
           <div className="flex items-start justify-between mb-3">
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[14px] font-black">{s.ticker}</span>
+                <TickerChip ticker={s.ticker} showDetail={false} className="text-[14px] font-black" />
                 <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", signalColor(s.signal))}>
                   {s.signal}
                 </span>

@@ -7,6 +7,7 @@ import {
   Search, ScanLine, RefreshCw, TrendingUp, TrendingDown,
   Activity, Shield, Zap, ChevronUp, ChevronDown, ExternalLink,
 } from "lucide-react";
+import { TickerChip } from "@/components/TickerChip";
 import Link from "next/link";
 import { TradeModal } from "@/components/mt5/TradeModal";
 import { PageGuide } from "@/components/PageGuide";
@@ -341,9 +342,9 @@ export default function PairsPage() {
                     className="border-b border-border/50 hover:bg-surface-2/30 transition-colors">
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-text-primary">{p.ticker1}</span>
+                        <TickerChip ticker={p.ticker1} showDetail={false} className="font-mono font-bold text-text-primary" />
                         <span className="text-text-muted">/</span>
-                        <span className="font-mono font-bold text-text-primary">{p.ticker2}</span>
+                        <TickerChip ticker={p.ticker2} showDetail={false} className="font-mono font-bold text-text-primary" />
                       </div>
                     </td>
                     <td className="px-3 py-2.5 text-text-muted text-[11px]">{p.sector1 || "—"}</td>

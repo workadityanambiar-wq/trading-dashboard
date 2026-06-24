@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { api } from "@/lib/api";
 import { PageGuide } from "@/components/PageGuide";
+import { TickerChip } from "@/components/TickerChip";
 
 // ── Colour palette ────────────────────────────────────────────────────────────
 const C = {
@@ -346,7 +347,7 @@ export default function CongressionalPage() {
                             <span style={{ color: "var(--text-primary)" }}>{t.politician.split(" ").slice(-1)[0]}</span>
                           </div>
                         </td>
-                        <td className="py-1.5 font-mono font-bold" style={{ color: C.cyan }}>{t.ticker}</td>
+                        <td className="py-1.5 font-mono font-bold" style={{ color: C.cyan }}><TickerChip ticker={t.ticker} showDetail={false} /></td>
                         <td className="py-1.5"><ActionBadge action={t.action} /></td>
                         <td className="py-1.5 font-mono text-[10px]" style={{ color: "var(--text-primary)" }}>{t.size}</td>
                         <td className="py-1.5"><ConvBar score={t.conviction} /></td>
@@ -370,7 +371,9 @@ export default function CongressionalPage() {
                       <div className="flex gap-1 mt-1.5 flex-wrap">
                         {a.tickers.map(tkr => (
                           <span key={tkr} className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                            style={{ background: "#1a2a3f", color: C.cyan }}>{tkr}</span>
+                            style={{ background: "#1a2a3f", color: C.cyan }}>
+                            <TickerChip ticker={tkr} showDetail={false} />
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -394,7 +397,7 @@ export default function CongressionalPage() {
                   <tbody>
                     {Object.entries(overview.data.markets).map(([tkr, m]) => (
                       <tr key={tkr} style={{ borderTop: `1px solid ${C.border}` }}>
-                        <td className="py-1.5 font-mono font-bold px-2" style={{ color: C.cyan }}>{tkr}</td>
+                        <td className="py-1.5 font-mono font-bold px-2" style={{ color: C.cyan }}><TickerChip ticker={tkr} showDetail={false} /></td>
                         <td className="py-1.5 font-mono text-right px-2" style={{ color: "var(--text-primary)" }}>${m.price.toFixed(2)}</td>
                         <td className="py-1.5 font-mono text-right px-2" style={{ color: m.chg_pct >= 0 ? C.green : C.red }}>
                           {m.chg_pct >= 0 ? "+" : ""}{m.chg_pct.toFixed(2)}%
@@ -446,7 +449,7 @@ export default function CongressionalPage() {
                         </div>
                       </td>
                       <td className="py-2 px-3" style={{ color: C.muted }}>{t.chamber}</td>
-                      <td className="py-2 px-3 font-mono font-bold" style={{ color: C.cyan }}>{t.ticker}</td>
+                      <td className="py-2 px-3 font-mono font-bold" style={{ color: C.cyan }}><TickerChip ticker={t.ticker} showDetail={false} /></td>
                       <td className="py-2 px-3" style={{ color: C.muted }}>{t.asset_type}</td>
                       <td className="py-2 px-3"><ActionBadge action={t.action} /></td>
                       <td className="py-2 px-3 font-mono text-[10px]" style={{ color: "var(--text-primary)" }}>{t.size_label}</td>
@@ -501,7 +504,9 @@ export default function CongressionalPage() {
                       <div className="flex gap-1 mt-1.5 flex-wrap">
                         {b.tickers.map(tkr => (
                           <span key={tkr} className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                            style={{ background: "#14402a", color: C.green }}>{tkr}</span>
+                            style={{ background: "#14402a", color: C.green }}>
+                            <TickerChip ticker={tkr} showDetail={false} />
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -529,7 +534,8 @@ export default function CongressionalPage() {
                         <div className="flex gap-1 mt-1 flex-wrap">
                           {s.tickers.map(tkr => (
                             <span key={tkr} className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                              style={{ background: "#3f1515", color: C.red }}>{tkr}</span>
+                              style={{ background: "#3f1515", color: C.red }}>
+                              <TickerChip ticker={tkr} showDetail={false} /></span>
                           ))}
                         </div>
                       </div>
@@ -544,7 +550,7 @@ export default function CongressionalPage() {
                       <div key={r.ticker} className="flex items-start justify-between gap-3 py-2"
                         style={{ borderBottom: `1px solid ${C.border}` }}>
                         <div>
-                          <span className="text-xs font-mono font-bold" style={{ color: C.red }}>{r.ticker}</span>
+                          <TickerChip ticker={r.ticker} showDetail={false} />
                           <span className="text-[10px] ml-2" style={{ color: C.muted }}>{r.reason}</span>
                         </div>
                         <div className="shrink-0">
@@ -619,7 +625,7 @@ export default function CongressionalPage() {
                         </div>
                       </td>
                       <td className="py-1.5 pr-3" style={{ color: C.muted }}>{o.state}</td>
-                      <td className="py-1.5 pr-3 font-mono font-bold" style={{ color: C.cyan }}>{o.ticker}</td>
+                      <td className="py-1.5 pr-3 font-mono font-bold" style={{ color: C.cyan }}><TickerChip ticker={o.ticker} showDetail={false} /></td>
                       <td className="py-1.5 pr-3">
                         <span className="font-bold text-[10px] px-1.5 py-0.5 rounded"
                           style={{ background: o.option_type === "Call" ? "#14402a" : "#3f1515", color: o.option_type === "Call" ? C.green : C.red }}>
@@ -704,7 +710,9 @@ export default function CongressionalPage() {
                     <div className="flex gap-1 flex-wrap">
                       {s.top_tickers.map(tkr => (
                         <span key={tkr} className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ background: "#1a2a3f", color: C.cyan }}>{tkr}</span>
+                          style={{ background: "#1a2a3f", color: C.cyan }}>
+                          <TickerChip ticker={tkr} showDetail={false} />
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -847,7 +855,7 @@ export default function CongressionalPage() {
                   {government.data.contracts.map((c, i) => (
                     <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
                       <td className="py-2 pr-3" style={{ color: "var(--text-primary)" }}>{c.company}</td>
-                      <td className="py-2 pr-3 font-mono font-bold" style={{ color: C.cyan }}>{c.ticker}</td>
+                      <td className="py-2 pr-3 font-mono font-bold" style={{ color: C.cyan }}><TickerChip ticker={c.ticker} showDetail={false} /></td>
                       <td className="py-2 pr-3" style={{ color: C.muted }}>{c.sector}</td>
                       <td className="py-2 pr-3 font-mono" style={{ color: C.amber }}>{fmt$(c.total_fy)}</td>
                       <td className="py-2 pr-3 font-mono" style={{ color: C.green }}>+{(c.yoy_growth * 100).toFixed(1)}%</td>
@@ -912,7 +920,9 @@ export default function CongressionalPage() {
                         <span className="text-[10px]" style={{ color: C.green }}>Beneficiaries:</span>
                         {b.beneficiaries.map(t => (
                           <span key={t} className="text-[10px] font-mono px-1 py-0.5 rounded"
-                            style={{ background: "#14402a", color: C.green }}>{t}</span>
+                            style={{ background: "#14402a", color: C.green }}>
+                            <TickerChip ticker={t} showDetail={false} />
+                          </span>
                         ))}
                       </div>
                     )}
@@ -921,7 +931,9 @@ export default function CongressionalPage() {
                         <span className="text-[10px]" style={{ color: C.red }}>At Risk:</span>
                         {b.at_risk.map(t => (
                           <span key={t} className="text-[10px] font-mono px-1 py-0.5 rounded"
-                            style={{ background: "#3f1515", color: C.red }}>{t}</span>
+                            style={{ background: "#3f1515", color: C.red }}>
+                            <TickerChip ticker={t} showDetail={false} />
+                          </span>
                         ))}
                       </div>
                     )}
@@ -945,7 +957,7 @@ export default function CongressionalPage() {
                   {legislation.data.lobbying.map((l, i) => (
                     <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
                       <td className="py-2 pr-4" style={{ color: "var(--text-primary)" }}>{l.company}</td>
-                      <td className="py-2 pr-4 font-mono font-bold" style={{ color: C.cyan }}>{l.ticker}</td>
+                      <td className="py-2 pr-4 font-mono font-bold" style={{ color: C.cyan }}><TickerChip ticker={l.ticker} showDetail={false} /></td>
                       <td className="py-2 pr-4" style={{ color: C.muted }}>{l.sector}</td>
                       <td className="py-2 pr-4 font-mono" style={{ color: C.amber }}>{fmt$(l.annual_spend)}</td>
                       <td className="py-2 pr-4 font-mono" style={{ color: C.purple }}>{fmt$(l.pac_contributions)}</td>
@@ -1116,7 +1128,7 @@ export default function CongressionalPage() {
                   <div className="space-y-2">
                     {composite.data.best_longs.map(l => (
                       <div key={l.ticker} className="flex items-start gap-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
-                        <span className="font-mono font-bold text-sm shrink-0" style={{ color: C.green }}>{l.ticker}</span>
+                        <TickerChip ticker={l.ticker} showDetail={false} />
                         <span className="text-[10px] flex-1" style={{ color: C.muted }}>{l.reason}</span>
                         <ConvBar score={l.conviction} />
                       </div>
@@ -1128,7 +1140,7 @@ export default function CongressionalPage() {
                   <div className="space-y-2">
                     {composite.data.short_candidates.map(s => (
                       <div key={s.ticker} className="flex items-start gap-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
-                        <span className="font-mono font-bold text-sm shrink-0" style={{ color: C.red }}>{s.ticker}</span>
+                        <TickerChip ticker={s.ticker} showDetail={false} />
                         <span className="text-[10px] flex-1" style={{ color: C.muted }}>{s.reason}</span>
                         <div className="shrink-0 text-xs font-mono font-bold" style={{ color: s.risk > 70 ? C.red : C.amber }}>{s.risk}</div>
                       </div>
@@ -1153,7 +1165,9 @@ export default function CongressionalPage() {
                     <div className="flex gap-1 flex-wrap">
                       {e.beneficiaries.map(t => (
                         <span key={t} className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ background: "#14402a", color: C.green }}>{t}</span>
+                          style={{ background: "#14402a", color: C.green }}>
+                          <TickerChip ticker={t} showDetail={false} />
+                        </span>
                       ))}
                     </div>
                   </div>

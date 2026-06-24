@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { PageGuide } from "@/components/PageGuide";
+import { TickerChip } from "@/components/TickerChip";
 import type {
   CryptoAsset, CryptoBTCETF, CryptoETHETF, DeFiProtocol, Stablecoin,
   ListedMiner, L1L2Ecosystem, InstitutionalHolding,
@@ -533,7 +534,7 @@ function ETFTab() {
               {data.btc_etfs.map((e: CryptoBTCETF) => (
                 <tr key={e.ticker} style={{ borderBottom: `1px solid ${C.border}22` }}>
                   <td style={{ padding: "7px 4px", color: C.text, fontWeight: 600 }}>{e.name}</td>
-                  <td style={{ padding: "7px 4px", color: C.accent, fontFamily: "monospace", fontWeight: 700 }}>{e.ticker}</td>
+                  <td style={{ padding: "7px 4px", color: C.accent, fontFamily: "monospace", fontWeight: 700 }}><TickerChip ticker={e.ticker} showDetail={false} /></td>
                   <td style={{ padding: "7px 4px", color: C.muted, fontSize: 11 }}>{e.issuer}</td>
                   <td style={{ padding: "7px 4px", color: C.text, fontFamily: "monospace" }}>{fmtB(e.aum_b)}</td>
                   <td style={{ padding: "7px 4px", color: C.amber, fontFamily: "monospace" }}>{e.btc_held.toLocaleString()}</td>
@@ -561,7 +562,7 @@ function ETFTab() {
               {data.eth_etfs.map((e: CryptoETHETF) => (
                 <tr key={e.ticker} style={{ borderBottom: `1px solid ${C.border}22` }}>
                   <td style={{ padding: "7px 4px", color: C.text, fontWeight: 600 }}>{e.name}</td>
-                  <td style={{ padding: "7px 4px", color: C.blue, fontFamily: "monospace", fontWeight: 700 }}>{e.ticker}</td>
+                  <td style={{ padding: "7px 4px", color: C.blue, fontFamily: "monospace", fontWeight: 700 }}><TickerChip ticker={e.ticker} showDetail={false} /></td>
                   <td style={{ padding: "7px 4px", color: C.muted, fontSize: 11 }}>{e.issuer}</td>
                   <td style={{ padding: "7px 4px", color: C.text, fontFamily: "monospace" }}>{fmtB(e.aum_b)}</td>
                   <td style={{ padding: "7px 4px", color: C.blue, fontFamily: "monospace" }}>{e.eth_held.toLocaleString()}</td>
@@ -683,7 +684,7 @@ function MiningTab() {
             {data.miners.map((m: ListedMiner) => (
               <tr key={m.ticker} style={{ borderBottom: `1px solid ${C.border}22` }}>
                 <td style={{ padding: "7px 4px", color: C.text, fontWeight: 600 }}>{m.name}</td>
-                <td style={{ padding: "7px 4px", color: C.amber, fontFamily: "monospace", fontWeight: 700 }}>{m.ticker}</td>
+                <td style={{ padding: "7px 4px", color: C.amber, fontFamily: "monospace", fontWeight: 700 }}><TickerChip ticker={m.ticker} showDetail={false} /></td>
                 <td style={{ padding: "7px 4px", color: C.text, fontFamily: "monospace" }}>{m.hash_rate_eh.toFixed(1)} EH</td>
                 <td style={{ padding: "7px 4px", color: C.accent, fontFamily: "monospace" }}>{m.share_pct.toFixed(1)}%</td>
                 <td style={{ padding: "7px 4px", color: C.amber, fontFamily: "monospace" }}>{m.btc_held.toLocaleString()}</td>
@@ -880,7 +881,7 @@ function InstitutionalTab() {
             <tbody>
               {data.proxies.map((p) => (
                 <tr key={p.ticker} style={{ borderBottom: `1px solid ${C.border}22` }}>
-                  <td style={{ padding: "6px 4px", color: C.accent, fontFamily: "monospace", fontWeight: 700 }}>{p.ticker}</td>
+                  <td style={{ padding: "6px 4px", color: C.accent, fontFamily: "monospace", fontWeight: 700 }}><TickerChip ticker={p.ticker} showDetail={false} /></td>
                   <td style={{ padding: "6px 4px", color: C.text, fontFamily: "monospace" }}>${p.price.toFixed(2)}</td>
                   <td style={{ padding: "6px 4px", color: chgColor(p.chg_1d), fontFamily: "monospace" }}>{pct(p.chg_1d)}</td>
                   <td style={{ padding: "6px 4px" }}>
@@ -941,7 +942,7 @@ function CompositeTab() {
           <tbody>
             {data.signals.map((s) => (
               <tr key={s.ticker} style={{ borderBottom: `1px solid ${C.border}22` }}>
-                <td style={{ padding: "8px 4px", color: C.accent, fontWeight: 700, fontFamily: "monospace" }}>{s.ticker}</td>
+                <td style={{ padding: "8px 4px", color: C.accent, fontWeight: 700, fontFamily: "monospace" }}><TickerChip ticker={s.ticker} showDetail={false} /></td>
                 <td style={{ padding: "8px 4px", color: C.text, fontFamily: "monospace" }}>{s.price > 1000 ? `$${s.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `$${s.price.toFixed(2)}`}</td>
                 <td style={{ padding: "8px 4px" }}><SigBadge sig={s.signal} /></td>
                 <td style={{ padding: "8px 4px", color: scoreColor(s.score), fontFamily: "monospace" }}>{s.score}</td>
@@ -963,7 +964,7 @@ function CompositeTab() {
           {data.best_longs.map((b) => (
             <div key={b.ticker} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: C.accent, fontWeight: 700, fontFamily: "monospace" }}>{b.ticker}</span>
+                <TickerChip ticker={b.ticker} showDetail={false} />
                 <span style={{ color: C.muted, fontSize: 11 }}>Conv: {b.conviction}</span>
               </div>
               <div style={{ color: C.text, fontSize: 11, marginTop: 2 }}>{b.reason}</div>
@@ -978,7 +979,7 @@ function CompositeTab() {
           {data.short_candidates.map((s) => (
             <div key={s.ticker} style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: C.red, fontWeight: 700, fontFamily: "monospace" }}>{s.ticker}</span>
+                <TickerChip ticker={s.ticker} showDetail={false} />
                 <span style={{ color: C.muted, fontSize: 11 }}>Risk: {s.risk}</span>
               </div>
               <div style={{ color: C.text, fontSize: 11, marginTop: 2 }}>{s.reason}</div>

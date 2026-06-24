@@ -42,7 +42,15 @@ export function CorrelationHeatmap({ data }: Props) {
                 style={{ width: cellSize, maxWidth: cellSize, padding: 2 }}
                 title={t}
               >
-                {t.length > 5 ? t.slice(0, 4) : t}
+                <a
+                  href={`https://www.tradingview.com/chart/?symbol=${t}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-accent transition-colors cursor-pointer"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {t.length > 5 ? t.slice(0, 4) : t}
+                </a>
               </th>
             ))}
           </tr>
@@ -55,7 +63,15 @@ export function CorrelationHeatmap({ data }: Props) {
                 style={{ fontSize: 10, maxWidth: cellSize * 1.5 }}
                 title={rowTicker}
               >
-                {rowTicker.length > 6 ? rowTicker.slice(0, 5) : rowTicker}
+                <a
+                  href={`https://www.tradingview.com/chart/?symbol=${rowTicker}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-accent transition-colors cursor-pointer"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {rowTicker.length > 6 ? rowTicker.slice(0, 5) : rowTicker}
+                </a>
               </td>
               {tickers.map((_, c) => {
                 const val = matrix[r][c];

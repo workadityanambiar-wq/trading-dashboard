@@ -13,6 +13,7 @@ import {
   PolarAngleAxis, PolarRadiusAxis, Legend,
 } from "recharts";
 import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Lock, Zap, Globe, Search } from "lucide-react";
+import { TickerChip } from "@/components/TickerChip";
 import { PageGuide } from "@/components/PageGuide";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -316,7 +317,7 @@ export default function IPOPage() {
                     : calendar.data?.upcoming.map(ipo => (
                         <tr key={ipo.ticker} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--surface2))] transition-colors">
                           <td className="px-3 py-2 font-semibold text-[rgb(var(--text-primary))]">{ipo.company}</td>
-                          <td className="px-3 py-2 text-cyan-400">{ipo.ticker}</td>
+                          <td className="px-3 py-2 text-cyan-400"><TickerChip ticker={ipo.ticker} showDetail={false} /></td>
                           <td className="px-3 py-2 text-[rgb(var(--text-muted))]">{ipo.exchange}</td>
                           <td className="px-3 py-2">{ipo.expected_date}</td>
                           <td className="px-3 py-2">
@@ -379,7 +380,7 @@ export default function IPOPage() {
                   : perf.data?.performance.map((p: IPOPerf) => (
                       <tr key={p.ticker} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--surface2))] transition-colors">
                         <td className="px-2 py-1.5 font-semibold text-[rgb(var(--text-primary))] whitespace-nowrap">{p.company}</td>
-                        <td className="px-2 py-1.5 text-cyan-400">{p.ticker}</td>
+                        <td className="px-2 py-1.5 text-cyan-400"><TickerChip ticker={p.ticker} showDetail={false} /></td>
                         <td className="px-2 py-1.5 text-[rgb(var(--text-muted))]">{p.ipo_date}</td>
                         <td className="px-2 py-1.5 text-right">${p.ipo_price.toFixed(2)}</td>
                         <td className={cn("px-2 py-1.5 text-right font-semibold", p.current_price && p.current_price > p.ipo_price ? "text-emerald-400" : "text-red-400")}>
@@ -449,7 +450,7 @@ export default function IPOPage() {
                           className={cn("border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--surface2))] transition-colors",
                             l.risk === "CRITICAL" ? "bg-red-500/5" : l.risk === "HIGH" ? "bg-orange-500/3" : "")}>
                           <td className="px-2 py-1.5 font-semibold text-[rgb(var(--text-primary))] whitespace-nowrap">{l.company}</td>
-                          <td className="px-2 py-1.5 text-cyan-400">{l.ticker}</td>
+                          <td className="px-2 py-1.5 text-cyan-400"><TickerChip ticker={l.ticker} showDetail={false} /></td>
                           <td className={cn("px-2 py-1.5 font-bold text-right tabular-nums",
                             l.days_left < 0 ? "text-[rgb(var(--text-muted))]" :
                             l.days_left < 30 ? "text-red-400" : l.days_left < 60 ? "text-orange-400" : l.days_left < 90 ? "text-amber-400" : "text-emerald-400")}>
@@ -719,7 +720,7 @@ export default function IPOPage() {
                     ))
                   : screener.data?.composite_scores.map((s: IPOComposite) => (
                       <tr key={s.ticker} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--surface2))] transition-colors">
-                        <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{s.company} <span className="text-cyan-400 font-normal">({s.ticker})</span></td>
+                        <td className="px-2 py-1.5 font-semibold whitespace-nowrap">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</td>
                         <td className="px-2 py-1.5 text-right text-emerald-400">{s.scores.demand}</td>
                         <td className="px-2 py-1.5 text-right text-emerald-400">{s.scores.momentum}</td>
                         <td className="px-2 py-1.5 text-right">{s.scores.market}</td>
@@ -747,7 +748,7 @@ export default function IPOPage() {
               <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest mb-3">▲ Best Long IPOs</div>
               {screener.data?.best_longs.map((s: IPOComposite) => (
                 <div key={s.ticker} className="flex justify-between items-center py-1.5 border-b border-[rgb(var(--border))] last:border-b-0">
-                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} <span className="text-cyan-400">({s.ticker})</span></div>
+                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</div>
                   <div className="text-xs font-mono font-bold text-emerald-400">Score {s.composite}</div>
                 </div>
               ))}
@@ -761,7 +762,7 @@ export default function IPOPage() {
                 ? <div className="text-xs font-mono text-[rgb(var(--text-muted))]">No imminent lockups</div>
                 : screener.data?.lockup_shorts.map((s: IPOComposite) => (
                     <div key={s.ticker} className="flex justify-between items-center py-1.5 border-b border-[rgb(var(--border))] last:border-b-0">
-                      <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} <span className="text-cyan-400">({s.ticker})</span></div>
+                      <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</div>
                       <div className="text-xs font-mono font-bold text-red-400">{s.lockup_days}d to unlock</div>
                     </div>
                   ))}
@@ -773,7 +774,7 @@ export default function IPOPage() {
               <div className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-widest mb-3">◆ High Conviction Institutional</div>
               {screener.data?.high_conviction.map((s: IPOComposite) => (
                 <div key={s.ticker} className="flex justify-between items-center py-1.5 border-b border-[rgb(var(--border))] last:border-b-0">
-                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} <span className="text-cyan-400">({s.ticker})</span></div>
+                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</div>
                   <div className="text-xs font-mono font-bold text-purple-400">Demand {s.scores.demand}</div>
                 </div>
               ))}
@@ -785,7 +786,7 @@ export default function IPOPage() {
               <div className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest mb-3">⚠ Overvalued (High Val $B)</div>
               {screener.data?.overvalued.map((s: IPOComposite) => (
                 <div key={s.ticker} className="flex justify-between items-center py-1.5 border-b border-[rgb(var(--border))] last:border-b-0">
-                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} <span className="text-cyan-400">({s.ticker})</span></div>
+                  <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</div>
                   <div className="text-xs font-mono font-bold text-amber-400">${s.val_b.toFixed(0)}B val</div>
                 </div>
               ))}
@@ -799,7 +800,7 @@ export default function IPOPage() {
                 ? <div className="text-xs font-mono text-[rgb(var(--text-muted))]">None meeting criteria</div>
                 : screener.data?.undervalued.map((s: IPOComposite) => (
                     <div key={s.ticker} className="flex justify-between items-center py-1.5 border-b border-[rgb(var(--border))] last:border-b-0">
-                      <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} <span className="text-cyan-400">({s.ticker})</span></div>
+                      <div className="text-xs font-mono text-[rgb(var(--text-primary))]">{s.company} (<TickerChip ticker={s.ticker} showDetail={false} />)</div>
                       <div className="text-xs font-mono font-bold text-cyan-400">Score {s.composite}</div>
                     </div>
                   ))}

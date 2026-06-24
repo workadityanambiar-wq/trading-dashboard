@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import { PageGuide } from "@/components/PageGuide";
+import { TickerChip } from "@/components/TickerChip";
 
 // ── Types & constants ─────────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ function SummaryTab({ data }: { data: AIComputeData }) {
           <div className="space-y-0">
             {best_longs.map(s => (
               <div key={s.ticker} className="flex items-center gap-3 py-2 border-b border-surface-2 last:border-0">
-                <span className="text-xs font-mono font-bold text-text-primary w-12">{s.ticker}</span>
+                <TickerChip ticker={s.ticker} showDetail={false} className="text-xs font-mono font-bold text-text-primary w-12" />
                 <span className="text-xs text-text-muted flex-1 truncate">{s.name}</span>
                 <span className="text-[10px] text-text-muted font-mono">{pct(s.m3)}</span>
                 <span className="text-[10px] font-mono" style={{ color: rsiColor(s.rsi) }}>RSI {s.rsi.toFixed(0)}</span>
@@ -688,7 +689,7 @@ function SignalsTab({ data }: { data: AIComputeData }) {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-text-primary">{s.ticker}</span>
+                  <TickerChip ticker={s.ticker} showDetail={false} className="font-mono font-bold text-text-primary" />
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-medium"
                     style={{ background: `${CAT_COLORS[s.cat] ?? "#94a3b8"}20`, color: CAT_COLORS[s.cat] ?? "#94a3b8" }}>
                     {s.cat}
@@ -798,7 +799,7 @@ function ScenariosTab({ data }: { data: AIComputeData }) {
                   .sort((a, b) => Math.abs(b[1].stk) - Math.abs(a[1].stk))
                   .map(([ticker, imp]) => (
                     <tr key={ticker} className="border-b border-surface-2 last:border-0 hover:bg-surface-2/30">
-                      <td className="py-2 font-mono font-bold text-text-primary">{ticker}</td>
+                      <td className="py-2 font-mono font-bold text-text-primary"><TickerChip ticker={ticker} showDetail={false} /></td>
                       <td className="py-2 text-right font-mono font-bold" style={{ color: impColor(imp.rev) }}>
                         {imp.rev >= 0 ? "+" : ""}{imp.rev}%
                       </td>

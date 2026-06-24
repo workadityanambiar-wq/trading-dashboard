@@ -16,6 +16,7 @@ import {
   Activity, Zap, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronRight,
   LayoutDashboard, Flame,
 } from "lucide-react";
+import { TickerChip } from "@/components/TickerChip";
 
 // ── Score helpers ─────────────────────────────────────────────────────────────
 
@@ -169,7 +170,7 @@ function EmergingRow({
       <MiniRing score={r.crowding_score} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-[13px] font-bold text-accent">{r.ticker}</span>
+          <TickerChip ticker={r.ticker} showDetail={false} className="text-[13px] font-bold text-accent" />
           {mo != null && mo > 2 && <ArrowUpRight size={11} className="text-positive" />}
           {mo != null && mo < -2 && <ArrowDownRight size={11} className="text-negative" />}
         </div>
@@ -206,7 +207,7 @@ function EmergingCard({ r, rank }: { r: CrowdingResult; rank: number }) {
             <Flame size={9} className="text-orange-400" /> #{rank} Emerging
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[16px] font-bold text-accent">{r.ticker}</span>
+            <TickerChip ticker={r.ticker} showDetail={false} className="text-[16px] font-bold text-accent" />
             <CrowdingBadge score={r.crowding_score} />
           </div>
           <div className="text-[10px] text-text-muted truncate max-w-[130px]">{r.name}</div>
@@ -307,12 +308,12 @@ function SectorCard({ s, all }: { s: SectorCrowding; all: CrowdingResult[] }) {
         <div className="border-t border-border pt-2.5 space-y-1">
           <div className="flex justify-between items-center">
             <span className="text-[10px] text-text-faint">Most Crowded</span>
-            <span className="text-[11px] font-bold text-red-400">{top.ticker}</span>
+            <TickerChip ticker={top.ticker} showDetail={false} className="text-[11px] font-bold text-red-400" />
           </div>
           {bottom && bottom.ticker !== top.ticker && (
             <div className="flex justify-between items-center">
               <span className="text-[10px] text-text-faint">Least Crowded</span>
-              <span className="text-[11px] font-bold text-emerald-400">{bottom.ticker}</span>
+              <TickerChip ticker={bottom.ticker} showDetail={false} className="text-[11px] font-bold text-emerald-400" />
             </div>
           )}
         </div>
@@ -437,7 +438,7 @@ function HeatmapView({
                       </div>
                       {top3.map(r => (
                         <div key={r.ticker} className="flex justify-between items-center">
-                          <span className="text-[11px] font-bold text-accent">{r.ticker}</span>
+                          <TickerChip ticker={r.ticker} showDetail={false} className="text-[11px] font-bold text-accent" />
                           <span className="text-[11px] font-bold" style={{ color: scoreHex(r.crowding_score) }}>
                             {r.crowding_score?.toFixed(0)}
                           </span>
@@ -464,14 +465,14 @@ function HeatmapView({
               <div
                 key={r.ticker}
                 title={`${r.ticker}: ${r.crowding_score?.toFixed(0)} — ${r.crowding_label}`}
-                className="h-9 rounded flex items-center justify-center text-[9px] font-bold cursor-pointer hover:opacity-75 transition-opacity"
+                className="h-9 rounded flex items-center justify-center text-[9px] font-bold hover:opacity-75 transition-opacity"
                 style={{
                   backgroundColor: `${c}22`,
                   color: c,
                   border: `1px solid ${c}30`,
                 }}
               >
-                {r.ticker}
+                <TickerChip ticker={r.ticker} showDetail={false} className="text-[9px] font-bold" />
               </div>
             );
           })}
@@ -940,7 +941,7 @@ export default function CrowdingPage() {
                         <MiniRing score={r.crowding_score} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-bold text-accent">{r.ticker}</span>
+                            <TickerChip ticker={r.ticker} showDetail={false} className="text-[13px] font-bold text-accent" />
                             <CrowdingBadge score={r.crowding_score} />
                           </div>
                           <div className="text-[10px] text-text-faint truncate">{r.sector}</div>

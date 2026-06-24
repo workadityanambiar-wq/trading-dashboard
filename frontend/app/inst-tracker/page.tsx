@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageGuide } from "@/components/PageGuide";
+import { TickerChip } from "@/components/TickerChip";
 
 // ── API base ─────────────────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ function HoldingsTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-text-primary">{p.ticker}</span>
+                    <TickerChip ticker={p.ticker} showDetail={false} className="text-[13px] font-bold text-text-primary" />
                     <span className="text-[10px] text-text-muted">{p.name}</span>
                   </div>
                   <div className="text-[10px] text-text-muted mt-0.5">{p.institution}</div>
@@ -236,7 +237,7 @@ function HoldingsTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-text-primary">{p.ticker}</span>
+                    <TickerChip ticker={p.ticker} showDetail={false} className="text-[13px] font-bold text-text-primary" />
                     <span className="text-[10px] text-text-muted">{p.name}</span>
                   </div>
                   <div className="text-[10px] text-text-muted mt-0.5">{p.institution}</div>
@@ -259,7 +260,7 @@ function HoldingsTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-text-primary">{p.ticker}</span>
+                    <TickerChip ticker={p.ticker} showDetail={false} className="text-[13px] font-bold text-text-primary" />
                     <span className="text-[10px] text-text-muted">{p.name}</span>
                   </div>
                   <div className="text-[10px] text-text-muted mt-0.5">{p.institution} · {p.impact}</div>
@@ -282,7 +283,7 @@ function HoldingsTab({ data }: { data: any }) {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-text-primary">{p.ticker}</span>
+                    <TickerChip ticker={p.ticker} showDetail={false} className="text-[13px] font-bold text-text-primary" />
                     <span className="text-[10px] text-text-muted">{p.name}</span>
                   </div>
                   <div className="text-[10px] text-text-muted mt-0.5">{p.institution}</div>
@@ -421,7 +422,7 @@ function SmartMoneyTab({ data }: { data: any }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-text-primary">{item.ticker}</span>
+                  <TickerChip ticker={item.ticker} showDetail={false} className="text-[12px] font-bold text-text-primary" />
                   <span className="text-[10px] text-text-muted truncate">{item.name}</span>
                 </div>
                 <div className="text-[10px] text-text-muted">{item.sector} · {buyers} {isBuy ? "buyers" : "sellers"}</div>
@@ -489,7 +490,7 @@ function HedgeFundsTab({ data }: { data: any }) {
               {selectedFund.top_holdings?.map((h: any) => (
                 <div key={h.ticker} className="flex items-center justify-between py-1.5 border-b border-surface-2 last:border-0">
                   <div>
-                    <span className="text-[12px] font-semibold text-text-primary">{h.ticker}</span>
+                    <TickerChip ticker={h.ticker} showDetail={false} className="text-[12px] font-semibold text-text-primary" />
                     <span className="text-[10px] text-text-muted ml-2">{h.name}</span>
                   </div>
                   <div className="text-right">
@@ -781,7 +782,7 @@ function CrowdedTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold">{t.ticker}</span>
+                    <TickerChip ticker={t.ticker} showDetail={false} className="text-[12px] font-bold" />
                     {t.crowding_score >= 80 && (
                       <AlertTriangle size={11} className="text-negative" />
                     )}
@@ -810,7 +811,7 @@ function CrowdedTab({ data }: { data: any }) {
             <div key={t.ticker} className="rounded-xl border border-border bg-surface p-3">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <span className="text-[12px] font-bold">{t.ticker}</span>
+                  <TickerChip ticker={t.ticker} showDetail={false} className="text-[12px] font-bold" />
                   <div className="text-[10px] text-text-muted">{t.inst_count} institutions · {t.pct_of_float}% of float</div>
                 </div>
                 <div className="text-right">
@@ -968,7 +969,7 @@ function InsiderTab({ data }: { data: any }) {
               <div className="flex items-start justify-between mb-1">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-bold text-text-primary">{t.ticker}</span>
+                    <TickerChip ticker={t.ticker} showDetail={false} className="text-[12px] font-bold text-text-primary" />
                     <span className={cn("text-[10px] font-semibold", isBuy ? "text-positive" : "text-negative")}>
                       {t.type}
                     </span>

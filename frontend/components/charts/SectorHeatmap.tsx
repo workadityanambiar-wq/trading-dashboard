@@ -47,7 +47,15 @@ export function SectorHeatmap({ sectors, period = "change_1d" }: Props) {
               style={{ backgroundColor: bg + "22", border: `1px solid ${bg}44` }}
               title={s.sector}
             >
-              <span className="text-[10px] text-text-muted font-medium">{s.ticker}</span>
+              <a
+                href={`https://www.tradingview.com/chart/?symbol=${s.ticker}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-text-muted font-medium hover:text-accent transition-colors cursor-pointer"
+                onClick={e => e.stopPropagation()}
+              >
+                {s.ticker}
+              </a>
               <span className="text-xs font-semibold" style={{ color: bg }}>
                 {formatPct(val)}
               </span>
