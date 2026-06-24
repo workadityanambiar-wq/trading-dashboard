@@ -2,48 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Premium Design System ─────────────────────────────────────────────────── */
+/* ── Institutional Design System — QuantDesk Terminal ─────────────────────── */
 
 :root {
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Base surface tokens — RGB triplets for alpha support */
-  --bg:           8 8 12;         /* #08080c — deepest background */
-  --surface:      14 14 20;       /* #0e0e14 — card surface */
-  --surface2:     22 22 32;       /* #161620 — elevated surface */
-  --surface3:     30 30 44;       /* #1e1e2c — hover / selected */
-  --border:       38 38 56;       /* #262638 — subtle border */
-  --border2:      56 56 80;       /* #383850 — stronger border */
+  /* Surface tokens — institutional dark palette */
+  --bg:       7  10 16;        /* #070A10 */
+  --surface:  11 15 23;        /* #0B0F17 */
+  --surface2: 17 21 32;        /* #111520 */
+  --surface3: 23 28 42;        /* #171C2A */
+  --border:   32 38 58;        /* #20263A */
+  --border2:  46 54 78;        /* #2E364E */
 
   /* Text */
-  --text-primary: 236 236 246;    /* #ececf6 */
-  --text-muted:   100 100 124;    /* #64647c */
-  --text-faint:   56 56 76;       /* #38384c */
+  --text-primary: 210 216 228; /* #D2D8E4 */
+  --text-muted:   104 112 130; /* #687082 */
+  --text-faint:   52  58  76;  /* #343A4C */
 
-  /* Semantic accent */
-  --accent:       99 102 241;     /* indigo-500 */
-  --accent-dim:   99 102 241;
+  /* Semantic — institutional palette */
+  --accent:   59  130 246;     /* #3B82F6 — institutional blue */
+  --accent-dim: 59 130 246;
 
-  /* Glow colors (used in box-shadow) */
-  --glow-green:  34 197 94;
-  --glow-red:    239 68 68;
-  --glow-blue:   59 130 246;
-  --glow-purple: 168 85 247;
-  --glow-amber:  245 158 11;
-  --glow-accent: 99 102 241;
+  /* Glow — kept for backward compat, very subtle */
+  --glow-green:  22  163 74;
+  --glow-red:    220 38  38;
+  --glow-blue:   59  130 246;
+  --glow-purple: 99  102 241;
+  --glow-amber:  202 138 4;
+  --glow-accent: 59  130 246;
 }
 
-/* Light mode */
 html.light {
-  --bg:           248 248 252;
-  --surface:      255 255 255;
-  --surface2:     242 242 248;
-  --surface3:     234 234 244;
-  --border:       220 220 234;
-  --border2:      200 200 218;
-  --text-primary: 16 16 36;
-  --text-muted:   100 100 124;
-  --text-faint:   180 180 200;
+  --bg:       245 247 250;
+  --surface:  255 255 255;
+  --surface2: 238 241 246;
+  --surface3: 226 230 238;
+  --border:   204 210 220;
+  --border2:  168 178 194;
+  --text-primary: 14 20 36;
+  --text-muted:   80  90 110;
+  --text-faint:  168 178 194;
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -52,178 +52,112 @@ html, body {
   overflow-x: hidden;
   background-color: rgb(var(--bg));
   color: rgb(var(--text-primary));
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 * { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 
+/* Monospace for all data/numbers */
+.font-mono, .tabular-nums { font-family: var(--font-mono) !important; }
+
 /* ── Keyframes ─────────────────────────────────────────────────────────────── */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-
-@keyframes glowPulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
-}
-
+@keyframes fadeIn    { from { opacity: 0; }               to { opacity: 1; }              }
+@keyframes slideUp   { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn   { from { opacity: 0; transform: scale(0.98); }  to { opacity: 1; transform: scale(1); }  }
+@keyframes countUp   { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer   { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes spin      { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes ping      { 75%, 100% { transform: scale(2); opacity: 0; } }
 @keyframes livePulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-  50%       { opacity: 0.8; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(22,163,74,0.4); }
+  50%       { opacity: 0.8; box-shadow: 0 0 0 4px rgba(22,163,74,0); }
 }
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
-@keyframes ping {
-  75%, 100% { transform: scale(2); opacity: 0; }
-}
-
-@keyframes borderGlow {
-  0%, 100% { border-color: rgba(99,102,241,0.3); }
-  50%       { border-color: rgba(99,102,241,0.7); }
-}
-
-@keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+@keyframes glowPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* ── Animation classes ─────────────────────────────────────────────────────── */
-.fade-in       { animation: fadeIn    0.3s ease forwards; }
-.slide-up      { animation: slideUp   0.35s ease forwards; }
-.slide-down    { animation: slideDown 0.25s ease forwards; }
-.scale-in      { animation: scaleIn   0.25s ease forwards; }
-.num-anim      { animation: countUp   0.3s ease forwards; }
-.card-enter    { animation: slideUp   0.35s ease forwards; }
-.live-dot      { animation: livePulse 2s ease-in-out infinite; }
-.glow-pulse    { animation: glowPulse 2s ease-in-out infinite; }
-.animate-spin  { animation: spin 1s linear infinite; }
-.animate-ping  { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
+.fade-in      { animation: fadeIn    0.15s ease forwards; }
+.slide-up     { animation: slideUp   0.2s  ease forwards; }
+.slide-down   { animation: slideDown 0.15s ease forwards; }
+.scale-in     { animation: scaleIn   0.15s ease forwards; }
+.num-anim     { animation: countUp   0.2s  ease forwards; }
+.card-enter   { animation: slideUp   0.2s  ease forwards; }
+.live-dot     { animation: livePulse 2.5s ease-in-out infinite; }
+.glow-pulse   { animation: glowPulse 2s   ease-in-out infinite; }
+.animate-spin { animation: spin 0.8s linear infinite; }
+.animate-ping { animation: ping 1.2s cubic-bezier(0,0,0.2,1) infinite; }
 
-/* Staggered children */
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 60ms; }
-.stagger > *:nth-child(3) { animation-delay: 120ms; }
-.stagger > *:nth-child(4) { animation-delay: 180ms; }
-.stagger > *:nth-child(5) { animation-delay: 240ms; }
-.stagger > *:nth-child(6) { animation-delay: 300ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
 
-/* ── Glassmorphism ─────────────────────────────────────────────────────────── */
-.glass {
-  background: rgba(var(--surface), 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(var(--border), 0.8);
+/* ── Core panel (replaces glass, premium-card, gradient-border) ────────────── */
+.panel {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  border-radius: 4px;
 }
 
-.glass-heavy {
-  background: rgba(var(--surface), 0.85);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(var(--border2), 0.6);
+/* Backward-compat: glass and glass-heavy become clean panels */
+.glass, .glass-heavy {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  border-radius: 4px;
 }
 
-/* ── Gradient text ─────────────────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-green {
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-red {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Glow box shadows ──────────────────────────────────────────────────────── */
-.glow-green  { box-shadow: 0 0 20px rgba(var(--glow-green), 0.25); }
-.glow-red    { box-shadow: 0 0 20px rgba(var(--glow-red), 0.25); }
-.glow-blue   { box-shadow: 0 0 20px rgba(var(--glow-blue), 0.25); }
-.glow-purple { box-shadow: 0 0 20px rgba(var(--glow-purple), 0.25); }
-.glow-accent { box-shadow: 0 0 20px rgba(var(--glow-accent), 0.3); }
-.glow-amber  { box-shadow: 0 0 20px rgba(var(--glow-amber), 0.25); }
-
-/* ── Premium card ──────────────────────────────────────────────────────────── */
+/* ── Premium card — institutional clean panel ─────────────────────────────── */
 .premium-card {
   background: rgb(var(--surface));
   border: 1px solid rgb(var(--border));
-  border-radius: 12px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  border-radius: 4px;
+  transition: border-color 0.12s ease;
 }
 .premium-card:hover {
   border-color: rgb(var(--border2));
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
 }
 
-/* Gradient border card */
+/* Gradient border — becomes plain border */
 .gradient-border {
-  position: relative;
-  border-radius: 12px;
   background: rgb(var(--surface));
-}
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, rgba(99,102,241,0.5) 0%, rgba(168,85,247,0.3) 50%, rgba(59,130,246,0.4) 100%);
-  z-index: -1;
+  border: 1px solid rgb(var(--border));
+  border-radius: 4px;
 }
 
-/* ── Shimmer skeleton ──────────────────────────────────────────────────────── */
+/* ── Gradient text — institutional (very subtle, almost white) ─────────────── */
+.gradient-text {
+  color: rgb(var(--text-primary));
+}
+.gradient-text-green { color: #16a34a; }
+.gradient-text-red   { color: #dc2626; }
+
+/* ── Glow — institutional (very subtle, used for data indicators only) ──────── */
+.glow-green  { box-shadow: 0 0 8px rgba(22,163,74,0.15); }
+.glow-red    { box-shadow: 0 0 8px rgba(220,38,38,0.15); }
+.glow-blue   { box-shadow: 0 0 8px rgba(59,130,246,0.15); }
+.glow-purple { box-shadow: 0 0 8px rgba(99,102,241,0.12); }
+.glow-accent { box-shadow: 0 0 8px rgba(59,130,246,0.15); }
+.glow-amber  { box-shadow: 0 0 8px rgba(202,138,4,0.15); }
+
+/* ── Skeleton ──────────────────────────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(
-    90deg,
+  background: linear-gradient(90deg,
     rgb(var(--surface2)) 25%,
     rgb(var(--surface3)) 50%,
     rgb(var(--surface2)) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.2s infinite;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--border2)); }
@@ -231,7 +165,7 @@ a { color: inherit; text-decoration: none; }
 /* ── Mobile layout ─────────────────────────────────────────────────────────── */
 .pb-safe  { padding-bottom: env(safe-area-inset-bottom); }
 .pt-safe  { padding-top: env(safe-area-inset-top); }
-.page-scroll { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+.page-scroll { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 
 .snap-x-mandatory {
   scroll-snap-type: x mandatory;
@@ -242,61 +176,71 @@ a { color: inherit; text-decoration: none; }
 .snap-start  { scroll-snap-align: start; }
 .snap-center { scroll-snap-align: center; }
 
-/* ── Recharts overrides ────────────────────────────────────────────────────── */
-html.light .recharts-cartesian-axis-tick text { fill: rgb(var(--text-muted)); }
-html.light .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: rgb(var(--surface)) !important;
-  border-color: rgb(var(--border)) !important;
+/* ── Recharts overrides — institutional chart styling ──────────────────────── */
+.recharts-cartesian-axis-tick text { fill: rgb(var(--text-muted)); font-family: var(--font-mono); font-size: 10px; }
+.recharts-cartesian-grid line      { stroke: rgb(var(--border)); stroke-opacity: 0.6; }
+.recharts-tooltip-cursor           { stroke: rgb(var(--border2)) !important; }
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgb(var(--surface2)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 3px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
   color: rgb(var(--text-primary)) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
 }
-.recharts-tooltip-cursor { stroke: rgba(var(--border2), 0.8) !important; }
+html.light .recharts-cartesian-axis-tick text { fill: rgb(var(--text-muted)); }
 
-/* ── Command palette backdrop ──────────────────────────────────────────────── */
+/* ── Command palette ───────────────────────────────────────────────────────── */
 .cmd-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
   z-index: 100;
 }
 
-/* ── Dot grid background (subtle) ─────────────────────────────────────────── */
-.dot-grid {
-  background-image: radial-gradient(rgba(99,102,241,0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* ── Gradient line ─────────────────────────────────────────────────────────── */
+/* ── Gradient line — institutional divider ─────────────────────────────────── */
 .gradient-line {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+  background: rgb(var(--border));
+  opacity: 0.6;
 }
 
-/* ── Insight banner gradient ───────────────────────────────────────────────── */
+/* ── Insight/Intelligence card ─────────────────────────────────────────────── */
 .insight-gradient {
-  background: linear-gradient(135deg,
-    rgba(99,102,241,0.08) 0%,
-    rgba(168,85,247,0.06) 50%,
-    rgba(59,130,246,0.08) 100%
-  );
-  border: 1px solid rgba(99,102,241,0.2);
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border));
+  border-left: 2px solid rgb(var(--accent));
+  border-radius: 3px;
 }
 
-/* Animated gradient for special states */
-.animated-gradient {
-  background-size: 300% 300%;
-  animation: gradientShift 8s ease infinite;
+/* ── Terminal data row ─────────────────────────────────────────────────────── */
+.data-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid rgb(var(--border));
+  font-size: 11px;
 }
+.data-row:last-child { border-bottom: none; }
 
-/* ── Focus ring ────────────────────────────────────────────────────────────── */
+/* ── Focus ─────────────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid rgba(99,102,241,0.6);
-  outline-offset: 2px;
+  outline: 1px solid rgba(59,130,246,0.5);
+  outline-offset: 1px;
 }
 
-/* ── Prose overrides for insight text ─────────────────────────────────────── */
+/* ── Insight text ──────────────────────────────────────────────────────────── */
 .insight-text {
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
   color: rgb(var(--text-primary));
+  font-family: var(--font-sans);
+}
+
+/* ── Dot grid (very subtle) ────────────────────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
 }

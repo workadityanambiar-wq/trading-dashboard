@@ -18,8 +18,6 @@ import {
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
 
-// ── Nav definition ────────────────────────────────────────────────────────────
-
 const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: React.ElementType }[] }[] = [
   {
     label: "Core",
@@ -115,21 +113,19 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
 ];
 
 export function Sidebar() {
-  const pathname  = usePathname();
-  const router    = useRouter();
+  const pathname = usePathname();
+  const router   = useRouter();
   const { user, loading, signOut } = useAuth();
   const { theme, toggleTheme, layoutMode, setLayoutMode } = useAppSettings();
   const [isOpen, setIsOpen] = useState(false);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
 
   useEffect(() => { setIsOpen(false); }, [pathname]);
-
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") setIsOpen(false); }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
-
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -143,56 +139,50 @@ export function Sidebar() {
 
   const sidebar = (
     <aside className={cn(
-      "fixed inset-y-0 left-0 z-40 w-56 flex flex-col",
+      "fixed inset-y-0 left-0 z-40 w-52 flex flex-col",
       "bg-surface border-r border-border",
-      "transition-transform duration-300 ease-in-out",
+      "transition-transform duration-200 ease-in-out",
       "md:relative md:shrink-0 md:translate-x-0 md:transition-none",
-      isOpen ? "translate-x-0" : "-translate-x-full"
+      isOpen ? "translate-x-0" : "-translate-x-full",
     )}>
-      {/* Top highlight */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
       {/* Header */}
-      <div className="px-3 py-4 border-b border-border shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
-              <Sparkles size={12} className="text-accent" />
-            </div>
-            <div className="flex items-center gap-0.5">
-              <span className="text-[13px] font-bold tracking-[0.1em] text-accent uppercase">Quant</span>
-              <span className="text-[13px] font-bold tracking-[0.1em] text-text-muted uppercase">Desk</span>
-            </div>
+      <div className="px-3 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-bold tracking-[0.08em] text-text-primary font-sans">QUANT</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] text-text-muted font-sans">DESK</span>
+            <span className="text-[9px] font-mono text-text-faint ml-0.5">v3</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <NotificationBell />
             <button
               onClick={() => setIsOpen(false)}
               className="md:hidden p-1 rounded text-text-muted hover:text-text-primary transition-colors"
             >
-              <X size={14} />
+              <X size={13} />
             </button>
           </div>
         </div>
 
-        {/* Search / Command palette trigger */}
+        {/* Search trigger */}
         <button
           onClick={() => setCmdOpen(true)}
-          className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg border border-border bg-surface-2 hover:border-border-2 transition-colors text-left group"
+          className="flex items-center gap-2 w-full px-2 py-1.5 rounded border border-border bg-surface-2 hover:border-border-2 transition-colors text-left"
         >
-          <Search size={11} className="text-text-muted group-hover:text-text-primary transition-colors" />
-          <span className="text-[11px] text-text-muted flex-1">Search pages…</span>
-          <div className="flex items-center gap-0.5 text-[9px] text-text-faint">
-            <Command size={9} />K
+          <Search size={10} className="text-text-faint" />
+          <span className="text-[10px] text-text-faint flex-1 font-sans">Search…</span>
+          <div className="flex items-center gap-0.5 text-[9px] text-text-faint font-mono">
+            <Command size={8} />K
           </div>
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <nav className="flex-1 py-1 overflow-y-auto">
         {NAV_GROUPS.map(({ label, items }) => (
-          <div key={label} className="mb-0.5">
-            <div className="px-3 pt-3 pb-1 text-[9px] font-bold uppercase tracking-[0.16em] text-text-faint">
+          <div key={label} className="mb-0">
+            <div className="px-3 pt-3 pb-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-text-faint font-sans">
               {label}
             </div>
             {items.map(({ href, label: itemLabel, icon: Icon }) => {
@@ -202,15 +192,14 @@ export function Sidebar() {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-2.5 mx-1.5 px-2.5 py-2 rounded-lg text-[12px] transition-all duration-150",
+                    "flex items-center gap-2 mx-1 px-2 py-1.5 text-[11px] transition-colors duration-100 relative font-sans",
                     active
-                      ? "bg-accent/15 text-accent border border-accent/20"
-                      : "text-text-muted hover:text-text-primary hover:bg-surface-2 border border-transparent"
+                      ? "text-accent bg-accent/8 border-l-2 border-accent"
+                      : "text-text-muted hover:text-text-primary hover:bg-surface-2 border-l-2 border-transparent",
                   )}
                 >
-                  <Icon size={13} strokeWidth={active ? 2.5 : 1.8} className={active ? "text-accent" : ""} />
-                  <span className={active ? "font-semibold" : "font-medium"}>{itemLabel}</span>
-                  {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent" />}
+                  <Icon size={11} strokeWidth={active ? 2.5 : 1.8} />
+                  <span className={active ? "font-semibold" : "font-normal"}>{itemLabel}</span>
                 </Link>
               );
             })}
@@ -219,58 +208,54 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-2 py-3 border-t border-border space-y-1.5 shrink-0">
+      <div className="px-2 py-2 border-t border-border space-y-1 shrink-0">
         {!loading && (
           user ? (
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-                <div className="w-5 h-5 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center">
-                  <UserCircle size={11} className="text-accent" />
-                </div>
-                <span className="text-[11px] text-text-muted truncate flex-1" title={user.email}>
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <UserCircle size={10} className="text-text-faint shrink-0" />
+                <span className="text-[10px] text-text-faint font-mono truncate flex-1" title={user.email}>
                   {user.email}
                 </span>
               </div>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-[11px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-2 w-full px-2 py-1 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors font-sans"
               >
-                <LogOut size={11} /> Sign out
+                <LogOut size={10} /> Sign out
               </button>
             </div>
           ) : (
             <Link
               href="/login"
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+              className="flex items-center gap-2 px-2 py-1 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors font-sans"
             >
-              <LogIn size={11} /> Sign in
+              <LogIn size={10} /> Sign in
             </Link>
           )
         )}
 
-        {/* Settings row */}
         <div className="flex items-center gap-1">
           <button
             onClick={toggleTheme}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
-            className="flex items-center gap-1 flex-1 px-2 py-1.5 rounded-lg text-[11px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+            className="flex items-center gap-1 flex-1 px-2 py-1 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors font-sans"
           >
-            {theme === "dark" ? <Sun size={11} /> : <Moon size={11} />}
+            {theme === "dark" ? <Sun size={10} /> : <Moon size={10} />}
             {theme === "dark" ? "Light" : "Dark"}
           </button>
           <button
             onClick={() => setLayoutMode(layoutMode === "desktop" ? "mobile" : "desktop")}
-            title={layoutMode === "desktop" ? "Mobile layout" : "Desktop layout"}
-            className="flex items-center gap-1 flex-1 px-2 py-1.5 rounded-lg text-[11px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors"
+            className="flex items-center gap-1 flex-1 px-2 py-1 rounded text-[10px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition-colors font-sans"
           >
-            {layoutMode === "desktop" ? <Smartphone size={11} /> : <Monitor size={11} />}
+            {layoutMode === "desktop" ? <Smartphone size={10} /> : <Monitor size={10} />}
             {layoutMode === "desktop" ? "Mobile" : "Desktop"}
           </button>
         </div>
 
-        <div className="px-2 text-[9px] text-text-faint flex items-center justify-between">
-          <span>Data: yfinance</span>
-          <span className="opacity-50">v3.0</span>
+        <div className="px-2 text-[9px] text-text-faint font-mono flex items-center justify-between">
+          <span>yfinance</span>
+          <span className="opacity-40">2026</span>
         </div>
       </div>
     </aside>
@@ -278,26 +263,23 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm md:hidden" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setIsOpen(false)} />
       )}
 
-      {/* Mobile hamburger */}
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "md:hidden fixed top-3 left-3 z-50 p-2 rounded-xl",
-          "bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2 transition-all shadow-card",
-          isOpen && "hidden"
+          "md:hidden fixed top-3 left-3 z-50 p-1.5 rounded",
+          "bg-surface border border-border text-text-muted hover:text-text-primary transition-all",
+          isOpen && "hidden",
         )}
       >
-        <Menu size={16} />
+        <Menu size={14} />
       </button>
 
       {sidebar}
 
-      {/* Command palette */}
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </>
   );
