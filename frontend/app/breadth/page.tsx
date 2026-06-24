@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { api, type BreadthHistoryPoint, type BreadthSector, type BreadthSignal, type BreadthSnapshotFull } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { GlassCard, AIInsightBanner, SectionHeader, RegimeBadge, ProgressRing, PulsingDot } from "@/components/ui/premium";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,8 +116,10 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick(): voi
     <button
       onClick={onClick}
       className={cn(
-        "px-3 py-1.5 text-xs rounded transition-colors whitespace-nowrap",
-        active ? "bg-accent text-white" : "text-text-muted hover:text-text-primary"
+        "px-3.5 py-2 text-[12px] font-medium rounded-t transition-all whitespace-nowrap relative",
+        active
+          ? "text-accent border-b-2 border-accent -mb-px bg-accent/5"
+          : "text-text-muted hover:text-text-primary"
       )}
     >
       {children}
@@ -400,126 +403,135 @@ export default function BreadthPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-base font-semibold">Market Breadth Intelligence</h1>
-          <p className="text-xs text-text-muted mt-0.5">
-            {data ? `${data.n_stocks} stocks · as of ${data.as_of ?? "—"}` : "Loading…"}
+          <h1 className="text-xl font-bold text-text-primary">Market Breadth Intelligence</h1>
+          <p className="text-[12px] text-text-muted mt-0.5 flex items-center gap-2">
+            {data ? (
+              <>
+                <PulsingDot size={6} />
+                {data.n_stocks} stocks · as of {data.as_of ?? "—"}
+              </>
+            ) : "Loading universe…"}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {UNIVERSES.map((u) => (
             <button key={u.value} onClick={() => setUniverse(u.value)}
-              className={cn("px-2.5 py-1 rounded text-xs transition-colors",
-                universe === u.value ? "bg-accent text-white" : "bg-surface border border-border text-text-muted hover:text-text-primary")}
+              className={cn("px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all",
+                universe === u.value
+                  ? "bg-accent text-white shadow-glow-sm"
+                  : "bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2")}
             >{u.label}</button>
           ))}
           <button onClick={() => refetch()} disabled={isFetching}
-            className="p-1.5 rounded bg-surface border border-border text-text-muted hover:text-text-primary disabled:opacity-50">
+            className="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2 disabled:opacity-50 transition-all">
             <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
           </button>
         </div>
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-24 gap-2 text-text-muted text-sm">
-          <RefreshCw size={14} className="animate-spin" /> Computing breadth intelligence…
+        <div className="flex items-center justify-center py-24 gap-3 text-text-muted text-sm">
+          <RefreshCw size={14} className="animate-spin text-accent" />
+          <span>Computing breadth intelligence…</span>
         </div>
       )}
 
       {data && (
         <>
+          {/* ── AI Insight ── */}
+          {snap && regime && (
+            <AIInsightBanner
+              insight={`${regime.state} regime with composite health score of ${health?.composite_score?.toFixed(0)}/100 (${health?.grade}). ${Math.round((snap.pct_above_50ma ?? 0.5) * 100)}% of stocks trade above 50-MA${snap.mcclellan != null ? `, McClellan at ${snap.mcclellan.toFixed(0)}` : ""}. ${data.signals?.[0]?.description ?? ""}`}
+              bullCase={data.signals?.find(s => s.type === "bullish")?.description}
+              bearCase={data.signals?.find(s => s.type === "bearish")?.description}
+              risk={data.divergences?.[0]?.description}
+              sentiment={regime.state?.toLowerCase().includes("bull") ? "bullish" : regime.state?.toLowerCase().includes("bear") ? "bearish" : regime.state?.toLowerCase().includes("side") ? "warning" : "neutral"}
+              confidence={0.75}
+            />
+          )}
+
           {/* ── Top KPIs ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Market Health Score */}
-            <div className="bg-surface border border-border rounded-xl p-4 col-span-2 lg:col-span-1">
-              <div className="text-[10px] text-text-muted uppercase tracking-wide mb-2">Market Health Score</div>
+            <GlassCard className="p-4 col-span-2 lg:col-span-1" glow={gradeColor === "#22c55e" ? "green" : gradeColor === "#ef4444" ? "red" : gradeColor === "#f97316" ? "amber" : "accent"}>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-3">Market Health Score</div>
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <ScoreRing score={health?.composite_score ?? 50} color={gradeColor} size={72} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold font-mono" style={{ color: gradeColor }}>
-                      {health?.composite_score?.toFixed(0) ?? "—"}
-                    </span>
-                  </div>
-                </div>
+                <ProgressRing score={health?.composite_score ?? 50} color={gradeColor} size={72} strokeWidth={5} label={health?.composite_score?.toFixed(0) ?? "—"} />
                 <div>
-                  <div className="text-lg font-bold" style={{ color: gradeColor }}>{health?.grade}</div>
+                  <div className="text-xl font-bold" style={{ color: gradeColor }}>{health?.grade}</div>
                   <div className="text-[10px] text-text-muted mt-0.5">out of 100</div>
                   {data.divergences.length > 0 && (
-                    <div className="flex items-center gap-1 text-[10px] text-yellow-500 mt-1.5">
+                    <div className="flex items-center gap-1 text-[10px] text-warning mt-2">
                       <AlertTriangle size={9} />
-                      {data.divergences.length} divergence{data.divergences.length > 1 ? "s" : ""} detected
+                      {data.divergences.length} divergence{data.divergences.length > 1 ? "s" : ""}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </GlassCard>
 
             {/* Regime */}
-            <div className="bg-surface border border-border rounded-xl p-4">
-              <div className="text-[10px] text-text-muted uppercase tracking-wide mb-2">Market Regime</div>
-              <div className="text-xl font-bold mb-0.5" style={{ color: REGIME_COLORS[regime?.state ?? ""] ?? "#6b6b80" }}>
-                {regime?.state ?? "—"}
-              </div>
-              <div className="text-[10px] text-text-muted leading-relaxed">{regime?.description}</div>
-              <div className="mt-2 flex gap-2 text-[10px]">
+            <GlassCard className="p-4" glow={REGIME_COLORS[regime?.state ?? ""] === "#22c55e" ? "green" : REGIME_COLORS[regime?.state ?? ""] === "#ef4444" ? "red" : undefined}>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Market Regime</div>
+              <RegimeBadge label={regime?.state ?? "—"} />
+              <div className="text-[10px] text-text-muted leading-relaxed mt-2">{regime?.description}</div>
+              <div className="mt-3 flex gap-3 text-[10px]">
                 {Object.entries(regime?.expected_returns ?? {}).map(([k, v]) => (
-                  <span key={k} className={cn("font-mono", (v as number) >= 0 ? "text-emerald-400" : "text-red-400")}>
-                    {k}: {fmtPct(v as number)}
-                  </span>
+                  <div key={k}>
+                    <div className="text-text-faint">{k}</div>
+                    <div className={cn("font-bold font-mono", (v as number) >= 0 ? "text-positive" : "text-negative")}>
+                      {fmtPct(v as number)}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
+            </GlassCard>
 
             {/* Hindenburg / Zweig */}
-            <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
-              <div className="text-[10px] text-text-muted uppercase tracking-wide">Special Indicators</div>
-              <div className="flex items-center gap-2">
-                <span className={cn("w-2 h-2 rounded-full", data.hindenburg.active ? "bg-red-500 animate-pulse" : "bg-surface-2")} />
-                <span className="text-xs text-text-primary">Hindenburg Omen</span>
-                <span className={cn("text-[10px] font-medium", data.hindenburg.active ? "text-red-400" : "text-text-muted")}>
-                  {data.hindenburg.active ? "ACTIVE" : data.hindenburg.last_signal ? `last: ${data.hindenburg.last_signal}` : "Not active"}
+            <GlassCard className="p-4 space-y-3">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Special Indicators</div>
+              <div className="flex items-center gap-2.5">
+                {data.hindenburg.active
+                  ? <PulsingDot color="#ef4444" size={7} />
+                  : <span className="w-1.5 h-1.5 rounded-full bg-surface-3" />
+                }
+                <span className="text-[12px] text-text-primary">Hindenburg Omen</span>
+                <span className={cn("text-[10px] font-bold ml-auto", data.hindenburg.active ? "text-negative" : "text-text-muted")}>
+                  {data.hindenburg.active ? "ACTIVE" : data.hindenburg.last_signal ? data.hindenburg.last_signal : "Clear"}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={cn("w-2 h-2 rounded-full", (data.zweig.current_thrust ?? 0) > 0.615 ? "bg-green-500 animate-pulse" : "bg-surface-2")} />
-                <span className="text-xs text-text-primary">Zweig Thrust</span>
-                <span className="text-[10px] font-mono text-accent">{fmt(data.zweig.current_thrust)}</span>
+              <div className="flex items-center gap-2.5">
+                {(data.zweig.current_thrust ?? 0) > 0.615
+                  ? <PulsingDot color="#22c55e" size={7} />
+                  : <span className="w-1.5 h-1.5 rounded-full bg-surface-3" />
+                }
+                <span className="text-[12px] text-text-primary">Zweig Thrust</span>
+                <span className="text-[11px] font-bold font-mono text-accent ml-auto">{fmt(data.zweig.current_thrust)}</span>
               </div>
               {data.zweig.last_signal && (
-                <div className="text-[10px] text-text-muted">Last Zweig signal: {data.zweig.last_signal}</div>
+                <div className="text-[10px] text-text-muted pt-1 border-t border-border">Last signal: {data.zweig.last_signal}</div>
               )}
-            </div>
+            </GlassCard>
 
             {/* VIX & Risk */}
-            <div className="bg-surface border border-border rounded-xl p-4 space-y-1.5">
-              <div className="text-[10px] text-text-muted uppercase tracking-wide">Liquidity & Risk</div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">VIX</span>
-                <span className="text-sm font-mono font-semibold" style={{ color: (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e" }}>
-                  {risk?.vix?.toFixed(1) ?? "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">Credit Stress</span>
-                <span className="text-xs font-medium" style={{ color: { Low: "#22c55e", Moderate: "#eab308", High: "#f97316", Extreme: "#ef4444", Unknown: "#6b6b80" }[risk?.credit_stress ?? "Unknown"] }}>
-                  {risk?.credit_stress}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">Crash Prob</span>
-                <span className="text-xs font-mono text-text-primary">{(( risk?.crash_probability ?? 0) * 100).toFixed(1)}%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">Risk Score</span>
-                <span className="text-xs font-mono" style={{ color: (risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308" }}>
-                  {risk?.market_risk_score?.toFixed(0) ?? "—"}/100
-                </span>
-              </div>
-            </div>
+            <GlassCard className="p-4 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Liquidity & Risk</div>
+              {[
+                { label: "VIX", value: risk?.vix?.toFixed(1) ?? "—", color: (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e" },
+                { label: "Credit Stress", value: risk?.credit_stress ?? "—", color: ({ Low: "#22c55e", Moderate: "#eab308", High: "#f97316", Extreme: "#ef4444", Unknown: "#6b6b80" } as Record<string,string>)[risk?.credit_stress ?? "Unknown"] ?? "#6b6b80" },
+                { label: "Crash Prob", value: `${((risk?.crash_probability ?? 0) * 100).toFixed(1)}%`, color: "rgb(var(--text-primary))" },
+                { label: "Risk Score", value: `${risk?.market_risk_score?.toFixed(0) ?? "—"}/100`, color: (risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308" },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="flex items-center justify-between py-0.5 border-b border-surface-2 last:border-0">
+                  <span className="text-[11px] text-text-muted">{label}</span>
+                  <span className="text-[13px] font-bold tabular-nums" style={{ color }}>{value}</span>
+                </div>
+              ))}
+            </GlassCard>
           </div>
 
           {/* ── Tabs ── */}
-          <div className="flex gap-1 border-b border-border pb-0 overflow-x-auto">
+          <div className="flex gap-1 border-b border-border overflow-x-auto pb-px">
             {TABS.map((t) => (
               <TabBtn key={t} active={tab === t} onClick={() => setTab(t)}>{t}</TabBtn>
             ))}
@@ -527,10 +539,10 @@ export default function BreadthPage() {
 
           {/* ────────── OVERVIEW TAB ────────── */}
           {tab === "Overview" && (
-            <div className="space-y-4">
+            <div className="space-y-4 slide-up">
               {/* Composite component breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-border bg-surface p-4">
+                <GlassCard className="p-4">
                   <div className="text-sm font-medium mb-3">Health Score Breakdown</div>
                   {health && (
                     <div className="space-y-2">
@@ -549,24 +561,24 @@ export default function BreadthPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </GlassCard>
                 {health && (
-                  <div className="rounded-lg border border-border bg-surface p-4">
+                  <GlassCard className="p-4">
                     <div className="text-sm font-medium mb-1">Radar</div>
                     <HealthRadar components={health.components} />
-                  </div>
+                  </GlassCard>
                 )}
               </div>
 
               {/* Regime probabilities */}
-              <div className="rounded-lg border border-border bg-surface p-4">
+              <GlassCard className="p-4">
                 <div className="text-sm font-medium mb-3">Regime Probability Matrix</div>
                 {regime?.probabilities && <RegimeProbabilities probs={regime.probabilities} />}
-              </div>
+              </GlassCard>
 
               {/* Divergences */}
               {data.divergences.length > 0 && (
-                <div className="rounded-lg border border-border bg-surface p-4">
+                <GlassCard className="p-4">
                   <div className="text-sm font-medium mb-3 flex items-center gap-2">
                     <AlertTriangle size={13} className="text-yellow-500" />
                     Divergence Alerts
@@ -587,7 +599,7 @@ export default function BreadthPage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </GlassCard>
               )}
 
               {/* Key breadth snapshot */}
