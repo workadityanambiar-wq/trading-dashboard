@@ -33,6 +33,11 @@ def _conn():
         yield _get_shared_conn()
 
 
+def get_db() -> duckdb.DuckDBPyConnection:
+    """Return shared DuckDB connection. Thread-safe for read queries."""
+    return _get_shared_conn()
+
+
 def init_db() -> None:
     with _conn() as con:
         con.execute("""

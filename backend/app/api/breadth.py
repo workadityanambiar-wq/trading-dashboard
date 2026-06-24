@@ -15,7 +15,8 @@ import pandas as pd
 import yfinance as yf
 from fastapi import APIRouter, Query
 
-from app.core.data.cache import get_db
+from app.core.data import cache
+from app.core.data import universe as uni_module
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -42,61 +43,44 @@ def _set_cached(key: str, val: dict):
 
 # ── SP500 Universe ────────────────────────────────────────────────────────────
 
+_TODAY = datetime.today().strftime("%Y-%m-%d")
+_START_310D = (datetime.today() - timedelta(days=310)).strftime("%Y-%m-%d")
+
+
 def _get_sp500_meta() -> tuple[list[str], dict[str, str]]:
     """Returns (tickers, {ticker: sector})"""
     try:
-        db = get_db()
-        rows = db.execute(
-            "SELECT ticker, gics_sector FROM sp500_universe WHERE ticker IS NOT NULL"
-        ).fetchall()
-        tickers = [r[0] for r in rows]
-        sector_map = {r[0]: (r[1] or "") for r in rows}
+        df = uni_module.get_sp500()
+        tickers = df["ticker"].tolist()
+        sector_map = df.set_index("ticker")["sector"].to_dict()
         return tickers, sector_map
-    except Exception:
-        try:
-            db = get_db()
-            rows = db.execute(
-                "SELECT ticker, sector FROM sp500_universe WHERE ticker IS NOT NULL"
-            ).fetchall()
-            tickers = [r[0] for r in rows]
-            sector_map = {r[0]: (r[1] or "") for r in rows}
-            return tickers, sector_map
-        except Exception:
-            return [], {}
+    except Exception as exc:
+        logger.warning("SP500 meta load failed: %s", exc)
+        return [], {}
 
 
 def _load_prices_from_db(tickers: list[str], days: int = 310) -> pd.DataFrame:
-    """Wide adj_close DataFrame (rows=date, cols=ticker) from DuckDB."""
+    """Wide adj_close DataFrame (rows=date, cols=ticker) via cache."""
     if not tickers:
         return pd.DataFrame()
-    cutoff = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
-    batch = 200
-    all_rows = []
-    db = get_db()
-    for i in range(0, len(tickers), batch):
-        chunk = tickers[i : i + batch]
-        ph = ",".join(["?" for _ in chunk])
-        try:
-            rows = db.execute(
-                f"SELECT date, ticker, adj_close FROM prices "
-                f"WHERE ticker IN ({ph}) AND date >= ? AND adj_close IS NOT NULL "
-                f"ORDER BY date",
-                chunk + [cutoff],
-            ).fetchall()
-            all_rows.extend(rows)
-        except Exception as exc:
-            logger.warning("DB price load error: %s", exc)
-    if not all_rows:
+    start = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+    try:
+        ohlcv = cache.get_ohlcv_wide(tickers, start, _TODAY)
+        return ohlcv.get("adj_close", pd.DataFrame())
+    except Exception as exc:
+        logger.warning("Price load error: %s", exc)
         return pd.DataFrame()
-    df = pd.DataFrame(all_rows, columns=["date", "ticker", "close"])
-    df["date"] = pd.to_datetime(df["date"])
-    wide = df.pivot(index="date", columns="ticker", values="close").sort_index()
-    return wide
 
 
 def _load_etf_prices(tickers: list[str], days: int = 310) -> pd.DataFrame:
-    """Try DuckDB first, fetch from yfinance for missing."""
-    db_df = _load_prices_from_db(tickers, days)
+    """Load ETF prices via cache, fallback to yfinance for missing."""
+    start = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+    try:
+        ohlcv = cache.get_ohlcv_wide(tickers, start, _TODAY)
+        db_df = ohlcv.get("adj_close", pd.DataFrame())
+    except Exception:
+        db_df = pd.DataFrame()
+
     present = set(db_df.columns.tolist()) if not db_df.empty else set()
     missing = [t for t in tickers if t not in present]
     if missing:
@@ -110,10 +94,7 @@ def _load_etf_prices(tickers: list[str], days: int = 310) -> pd.DataFrame:
                 if isinstance(yf_close, pd.Series):
                     yf_close = yf_close.to_frame(name=missing[0])
                 yf_close.index = pd.to_datetime(yf_close.index)
-                if db_df.empty:
-                    db_df = yf_close
-                else:
-                    db_df = db_df.join(yf_close, how="outer")
+                db_df = yf_close if db_df.empty else db_df.join(yf_close, how="outer")
         except Exception as exc:
             logger.warning("yfinance fallback failed: %s", exc)
     return db_df
