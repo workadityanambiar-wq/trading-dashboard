@@ -157,7 +157,7 @@ export default function ScannerPage() {
         <div className="flex items-center gap-2.5">
           <Zap size={14} className="text-amber-400 shrink-0" />
           <span className="text-[13px] font-bold tracking-wider text-text-primary">PATTERN SCANNER</span>
-          <span className="text-[9px] font-mono text-text-faint uppercase tracking-widest mt-0.5">37 patterns · MT5</span>
+          <span className="text-[9px] font-mono text-text-faint uppercase tracking-widest mt-0.5">37 patterns · Yahoo Finance</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -383,7 +383,7 @@ export default function ScannerPage() {
               {!isLoading && results.length === 0 && (
                 <tr>
                   <td colSpan={13} className="px-4 py-16 text-center text-text-faint text-[11px]">
-                    No patterns detected. Click "Full Scan" to run MT5 scan, or scan a specific symbol above.
+                    No patterns detected. Click "Full Scan" to scan all symbols via Yahoo Finance, or enter a symbol above.
                   </td>
                 </tr>
               )}
