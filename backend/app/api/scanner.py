@@ -58,17 +58,13 @@ def update_result(result_id: str, body: UpdateBody):
 
 @router.post("/scan")
 def trigger_scan(body: ScanBody, background_tasks: BackgroundTasks):
-    if not _mt5_available():
-        raise HTTPException(503, "MT5 terminal not connected")
     background_tasks.add_task(sc.run_scan, body.symbols, body.timeframes, body.min_score)
     return {"status": "scan_started", "symbols": body.symbols or sc.DEFAULT_SYMBOLS,
             "timeframes": body.timeframes or sc.DEFAULT_TIMEFRAMES}
 
 
 @router.get("/scan/{symbol}")
-def scan_single(symbol: str, timeframes: str = Query("M15,H1,H4,D1"), min_score: float = Query(40.0)):
-    if not _mt5_available():
-        raise HTTPException(503, "MT5 terminal not connected")
+def scan_single(symbol: str, timeframes: str = Query("H1,H4,D1"), min_score: float = Query(40.0)):
     tfs = [t.strip() for t in timeframes.split(",") if t.strip()]
     results = sc.scan_symbol(symbol.upper(), tfs, min_score)
     sc.init_scanner_db()
@@ -108,6 +104,3 @@ def purge_results():
     return {"deleted": n}
 
 
-def _mt5_available() -> bool:
-    from app.core.mt5 import client as mt5c
-    return mt5c.is_available() and mt5c._ensure_connected()

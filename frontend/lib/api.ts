@@ -1707,8 +1707,8 @@ export const api = {
   },
   triggerScan: (body: { symbols?: string[]; timeframes?: string[]; min_score?: number }) =>
     apiFetch<any>("/scanner/scan", { method: "POST", body: JSON.stringify(body) }),
-  scanSymbol: (symbol: string, timeframes?: string) =>
-    apiFetch<any>(`/scanner/scan/${encodeURIComponent(symbol)}${timeframes ? "?timeframes=" + timeframes : ""}`),
+  scanSymbol: (symbol: string, timeframes = "H1,H4,D1") =>
+    apiFetch<any>(`/scanner/scan/${encodeURIComponent(symbol)}?timeframes=${timeframes}`),
   getScannerAlerts: (unread_only = false) =>
     apiFetch<{ alerts: ScannerAlert[]; unread_count: number }>(`/scanner/alerts?unread_only=${unread_only}`),
   markAlertsRead: (ids: string[]) =>
