@@ -33,12 +33,14 @@ from app.api import ai_capex as ai_capex_api
 from app.api import space as space_api
 from app.api import copilot as copilot_api
 from app.api import breadth as breadth_api
+from app.api import scanner as scanner_api
 from app.core.data.cache import init_db
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
 from app.core.alerts.models import init_alert_tables
 from app.core.alerts.scanner import scanner_loop
 from app.core.alerts.notifier import Notifier
+from app.core.scanner.scanner import init_scanner_db
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -79,6 +81,7 @@ async def _auto_refresh_loop():
 async def lifespan(app: FastAPI):
     init_db()
     init_alert_tables()
+    init_scanner_db()
     _notifier = Notifier()
     task = asyncio.create_task(_auto_refresh_loop())
     scan_task = asyncio.create_task(scanner_loop(_notifier))
@@ -141,6 +144,7 @@ app.include_router(ai_capex_api.router,      prefix="/api/ai-capex")
 app.include_router(space_api.router,         prefix="/api/space")
 app.include_router(copilot_api.router,       prefix="/api/copilot")
 app.include_router(breadth_api.router,       prefix="/api/breadth")
+app.include_router(scanner_api.router,       prefix="/api/scanner")
 
 
 @app.get("/health")

@@ -1686,7 +1686,87 @@ export const api = {
     apiFetch<BreadthDashboard>(`/breadth/dashboard?universe=${universe}`),
   refreshBreadthDashboard: (universe = "sp500") =>
     apiFetch<any>(`/breadth/refresh?universe=${universe}`, { method: "POST" }),
+
+  // ── Pattern Scanner ───────────────────────────────────────────────────────
+  getScannerResults: (params?: {
+    direction?: string; category?: string; timeframe?: string;
+    asset_class?: string; status?: string; min_score?: number;
+    sort_by?: string; sort_dir?: string; limit?: number;
+  }) => {
+    const q = new URLSearchParams();
+    if (params?.direction)   q.set("direction",   params.direction);
+    if (params?.category)    q.set("category",    params.category);
+    if (params?.timeframe)   q.set("timeframe",   params.timeframe);
+    if (params?.asset_class) q.set("asset_class", params.asset_class);
+    if (params?.status)      q.set("status",      params.status);
+    if (params?.min_score != null) q.set("min_score", String(params.min_score));
+    if (params?.sort_by)     q.set("sort_by",     params.sort_by);
+    if (params?.sort_dir)    q.set("sort_dir",    params.sort_dir);
+    if (params?.limit != null) q.set("limit",     String(params.limit));
+    return apiFetch<ScannerResult[]>(`/scanner/results?${q}`);
+  },
+  triggerScan: (body: { symbols?: string[]; timeframes?: string[]; min_score?: number }) =>
+    apiFetch<any>("/scanner/scan", { method: "POST", body: JSON.stringify(body) }),
+  scanSymbol: (symbol: string, timeframes?: string) =>
+    apiFetch<any>(`/scanner/scan/${encodeURIComponent(symbol)}${timeframes ? "?timeframes=" + timeframes : ""}`),
+  getScannerAlerts: (unread_only = false) =>
+    apiFetch<{ alerts: ScannerAlert[]; unread_count: number }>(`/scanner/alerts?unread_only=${unread_only}`),
+  markAlertsRead: (ids: string[]) =>
+    apiFetch<any>("/scanner/alerts/read", { method: "PATCH", body: JSON.stringify(ids) }),
+  updateScannerResult: (id: string, data: { status?: string; is_starred?: boolean; commentary?: string }) =>
+    apiFetch<ScannerResult>(`/scanner/results/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  getScannerPerformance: () => apiFetch<any>("/scanner/performance"),
+  purgeScannerResults: () => apiFetch<any>("/scanner/results", { method: "DELETE" }),
 };
+
+// ── Pattern Scanner types ──────────────────────────────────────────────────────
+
+export interface ScannerResult {
+  id: string;
+  symbol: string;
+  asset_class: string;
+  pattern: string;
+  category: "CANDLESTICK" | "CHART" | "INDICATOR" | "BREAKOUT";
+  direction: "LONG" | "SHORT";
+  timeframe: string;
+  tf_label: string;
+  current_price: number;
+  entry: number;
+  stop: number;
+  target1: number;
+  target2: number;
+  target3: number;
+  rr_ratio: number;
+  pattern_score: number;
+  pattern_quality: number;
+  trend_quality: number;
+  volume_conf: number;
+  breakout_prob: number;
+  rr_score: number;
+  classification: "HIGH_CONVICTION" | "MODERATE" | "LOW_PROBABILITY";
+  status: "WATCH" | "TRIGGERED" | "CONFIRMED" | "FAILED" | "EXPIRED";
+  is_starred: boolean;
+  commentary: string | null;
+  atr: number | null;
+  rsi: number | null;
+  adx: number | null;
+  detected_at: string;
+  created_at: string;
+}
+
+export interface ScannerAlert {
+  id: string;
+  result_id: string;
+  alert_type: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  symbol?: string;
+  pattern?: string;
+  timeframe?: string;
+  direction?: string;
+  pattern_score?: number;
+}
 
 // ── Quality Factor types ───────────────────────────────────────────────────────
 

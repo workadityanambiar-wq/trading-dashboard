@@ -13,7 +13,7 @@ import {
   MonitorDot, SigmaSquare, Radar, Landmark, Users, Milestone, LogIn,
   LogOut, UserCircle, Wand2, Sparkles, BellRing, FileDown, DollarSign,
   FlameKindling, Gem, Droplets, CircleDollarSign, Sun, Moon, Smartphone,
-  Monitor, Menu, X, Search, Command,
+  Monitor, Menu, X, Search, Command, ScanLine,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
@@ -30,15 +30,16 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
   {
     label: "Markets",
     items: [
-      { href: "/setups",        label: "Setups",        icon: Zap },
-      { href: "/rotation",      label: "Rotation",      icon: RotateCcw },
-      { href: "/prebreakout",   label: "Pre-Breakout",  icon: Crosshair },
-      { href: "/mtf",           label: "Multi-TF",      icon: AlignCenter },
-      { href: "/ipo",           label: "IPO Intel",     icon: TrendingUp },
-      { href: "/earnings",      label: "Earnings",      icon: CalendarDays },
-      { href: "/rs",            label: "RS Rankings",   icon: BarChart3 },
-      { href: "/breadth",       label: "Breadth Intel", icon: Gauge },
-      { href: "/regime",        label: "Regime",        icon: Radar },
+      { href: "/scanner",       label: "Pattern Scanner", icon: ScanLine },
+      { href: "/setups",        label: "Setups",          icon: Zap },
+      { href: "/rotation",      label: "Rotation",        icon: RotateCcw },
+      { href: "/prebreakout",   label: "Pre-Breakout",    icon: Crosshair },
+      { href: "/mtf",           label: "Multi-TF",        icon: AlignCenter },
+      { href: "/ipo",           label: "IPO Intel",       icon: TrendingUp },
+      { href: "/earnings",      label: "Earnings",        icon: CalendarDays },
+      { href: "/rs",            label: "RS Rankings",     icon: BarChart3 },
+      { href: "/breadth",       label: "Breadth Intel",   icon: Gauge },
+      { href: "/regime",        label: "Regime",          icon: Radar },
     ],
   },
   {
