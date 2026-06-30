@@ -204,7 +204,7 @@ function ChatTab({ role }: { role: string }) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      content: "## Welcome to QuantDesk AI Copilot\n\nI'm your institutional-grade investment intelligence assistant. I have real-time access to all platform dashboards including Space Intel, Defense, Crypto, Oil, Treasury, Regime, and more.\n\n**Ask me anything:**\n- Trade ideas with specific entry/target/stop\n- Macro regime analysis and positioning\n- Sector rotation and factor performance\n- Scenario analysis (\"What if the Fed cuts 50bps?\")\n- Portfolio construction for any theme\n- Real-time dashboard data synthesis\n\nWhat would you like to explore?",
+      content: "## Welcome to AlphaEngine AI Copilot\n\nI'm your institutional-grade investment intelligence assistant. I have real-time access to all platform dashboards including Space Intel, Defense, Crypto, Oil, Treasury, Regime, and more.\n\n**Ask me anything:**\n- Trade ideas with specific entry/target/stop\n- Macro regime analysis and positioning\n- Sector rotation and factor performance\n- Scenario analysis (\"What if the Fed cuts 50bps?\")\n- Portfolio construction for any theme\n- Real-time dashboard data synthesis\n\nWhat would you like to explore?",
     },
   ]);
   const [input, setInput]   = useState("");

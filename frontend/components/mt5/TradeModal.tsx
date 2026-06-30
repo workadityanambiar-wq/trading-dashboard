@@ -35,7 +35,7 @@ export function TradeModal({ isOpen, onClose, title, legs }: TradeModalProps) {
           volume:     parseFloat(volume),
           sl:         leg.stopLoss  ?? 0,
           tp:         leg.takeProfit ?? 0,
-          comment:    "QuantDesk",
+          comment:    "AlphaEngine",
         });
         results.push(r);
       }

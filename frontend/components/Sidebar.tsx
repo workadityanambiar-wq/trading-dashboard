@@ -22,15 +22,15 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
   {
     label: "Core",
     items: [
-      { href: "/copilot",   label: "AI Copilot",   icon: Sparkles },
-      { href: "/watchlist", label: "Watchlist",    icon: Star },
-      { href: "/",          label: "Overview",     icon: LayoutDashboard },
+      { href: "/copilot",   label: "AI Copilot",      icon: Sparkles },
+      { href: "/watchlist", label: "Watchlist",       icon: Star },
+      { href: "/",          label: "Overview",        icon: LayoutDashboard },
+      { href: "/scanner",   label: "Pattern Scanner", icon: ScanLine },
     ],
   },
   {
     label: "Markets",
     items: [
-      { href: "/scanner",       label: "Pattern Scanner", icon: ScanLine },
       { href: "/setups",        label: "Setups",          icon: Zap },
       { href: "/rotation",      label: "Rotation",        icon: RotateCcw },
       { href: "/prebreakout",   label: "Pre-Breakout",    icon: Crosshair },
@@ -151,8 +151,8 @@ export function Sidebar() {
       <div className="px-3 py-3 border-b border-border shrink-0">
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-bold tracking-[0.08em] text-text-primary font-sans">QUANT</span>
-            <span className="text-[13px] font-bold tracking-[0.08em] text-text-muted font-sans">DESK</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] text-text-primary font-sans">ALPHA</span>
+            <span className="text-[13px] font-bold tracking-[0.08em] text-text-muted font-sans">ENGINE</span>
             <span className="text-[9px] font-mono text-text-faint ml-0.5">v3</span>
           </div>
           <div className="flex items-center gap-1">

@@ -8,7 +8,7 @@ import { ThemeLayoutWrapper } from "@/components/ThemeLayoutWrapper";
 import { LayoutShell } from "@/components/LayoutShell";
 
 export const metadata: Metadata = {
-  title: "QuantDesk",
+  title: "AlphaEngine",
   description: "Institutional macro & quant research",
 };
 
