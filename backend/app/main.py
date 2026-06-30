@@ -81,7 +81,10 @@ async def _auto_refresh_loop():
 async def lifespan(app: FastAPI):
     init_db()
     init_alert_tables()
-    init_scanner_db()
+    try:
+        init_scanner_db()
+    except Exception as e:
+        logger.warning(f"Scanner DB init failed (non-fatal): {e}")
     _notifier = Notifier()
     task = asyncio.create_task(_auto_refresh_loop())
     scan_task = asyncio.create_task(scanner_loop(_notifier))
