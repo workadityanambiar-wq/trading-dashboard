@@ -40,6 +40,7 @@ from app.core.data.cache import get_tickers_with_prices
 from app.core.alerts.models import init_alert_tables
 from app.core.alerts.scanner import scanner_loop
 from app.core.alerts.notifier import Notifier
+from app.core.scanner import scanner as sc
 from app.core.scanner.scanner import init_scanner_db
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -83,8 +84,10 @@ async def lifespan(app: FastAPI):
     init_alert_tables()
     try:
         init_scanner_db()
+        sc.launch_startup_scan()
+        logger.info("Scanner: startup scan launched in background")
     except Exception as e:
-        logger.warning(f"Scanner DB init failed (non-fatal): {e}")
+        logger.warning(f"Scanner init failed (non-fatal): {e}")
     _notifier = Notifier()
     task = asyncio.create_task(_auto_refresh_loop())
     scan_task = asyncio.create_task(scanner_loop(_notifier))

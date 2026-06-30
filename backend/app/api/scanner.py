@@ -67,12 +67,12 @@ def trigger_scan(body: ScanBody, background_tasks: BackgroundTasks):
 def scan_single(symbol: str, timeframes: str = Query("H1,H4,D1"), min_score: float = Query(40.0)):
     tfs = [t.strip() for t in timeframes.split(",") if t.strip()]
     results = sc.scan_symbol(symbol.upper(), tfs, min_score)
-    sc.init_scanner_db()
-    import duckdb
-    with duckdb.connect(sc._DB_PATH) as con:
-        for r in results:
-            sc._upsert_result(con, symbol.upper(), r["timeframe"], r)
     return {"symbol": symbol.upper(), "patterns": results, "count": len(results)}
+
+
+@router.get("/status")
+def get_status():
+    return sc.scanner_status()
 
 
 @router.get("/symbols")

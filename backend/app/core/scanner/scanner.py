@@ -1,9 +1,9 @@
 """
-Multi-symbol, multi-timeframe pattern scanner with DuckDB persistence.
-Data source: Yahoo Finance (yfinance) — no MT5 dependency.
+Multi-symbol, multi-timeframe pattern scanner.
+Results cached in-memory (survives Railway filesystem wipes) + persisted to DuckDB.
+Data source: Yahoo Finance — no MT5 dependency.
 """
 from __future__ import annotations
-import math
 import uuid
 import logging
 import threading
@@ -27,6 +27,12 @@ _DB_PATH = str(_DATA_DIR / "scanner.duckdb")
 
 _db_lock = threading.Lock()
 _db_conn: duckdb.DuckDBPyConnection | None = None
+
+# In-memory cache — populated by run_scan(), survives Railway filesystem wipes
+_mem_results: list[dict] = []
+_mem_lock = threading.Lock()
+_is_scanning = False
+_last_scan_time: float = 0
 
 
 def _get_conn() -> duckdb.DuckDBPyConnection:
@@ -69,7 +75,8 @@ DEFAULT_SYMBOLS = [
     "USOIL", "UKOIL",
     "US30", "US500", "NAS100", "NASDAQ", "GER40",
     "BTCUSD", "ETHUSD",
-    "AAPL", "TSLA", "NVDA", "MSFT", "SPY",
+    "AAPL", "TSLA", "NVDA", "MSFT", "AMZN", "GOOGL", "META",
+    "SPY", "QQQ", "GLD",
 ]
 
 DEFAULT_TIMEFRAMES = ["H1", "H4", "D1"]
@@ -182,11 +189,6 @@ def init_scanner_db() -> None:
         """)
 
 
-def _row_to_dict(result, rows: list) -> list[dict]:
-    cols = [d[0] for d in result.description]
-    return [dict(zip(cols, row)) for row in rows]
-
-
 def _upsert_result(con: duckdb.DuckDBPyConnection, symbol: str, timeframe: str, r: dict) -> str:
     res = con.execute(
         "SELECT id FROM scanner_results WHERE symbol=? AND pattern=? AND timeframe=?",
@@ -241,6 +243,24 @@ def _upsert_result(con: duckdb.DuckDBPyConnection, symbol: str, timeframe: str, 
         return rid
 
 
+def _enrich(p: dict, symbol: str, timeframe: str) -> dict:
+    """Add all DB-like fields to an in-memory pattern result."""
+    now = datetime.now(timezone.utc).isoformat()
+    return {
+        **p,
+        "id":           str(uuid.uuid4()),
+        "symbol":       symbol,
+        "timeframe":    timeframe,
+        "tf_label":     TF_LABEL.get(timeframe, timeframe),
+        "asset_class":  ASSET_CLASS_MAP.get(symbol, "OTHER"),
+        "status":       "WATCH",
+        "is_starred":   False,
+        "commentary":   None,
+        "detected_at":  now,
+        "created_at":   now,
+    }
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def scan_symbol(symbol: str, timeframes: list[str] | None = None, min_score: float = 40.0) -> list[dict]:
@@ -253,11 +273,15 @@ def scan_symbol(symbol: str, timeframes: list[str] | None = None, min_score: flo
                 continue
             patterns = scan_bars(bars, min_score=min_score)
             for p in patterns:
-                p["symbol"] = symbol
-                p["timeframe"] = tf
-                p["tf_label"] = TF_LABEL.get(tf, tf)
-                p["asset_class"] = ASSET_CLASS_MAP.get(symbol, "OTHER")
-                all_results.append(p)
+                enriched = _enrich(p, symbol, tf)
+                all_results.append(enriched)
+                # Persist to DB
+                try:
+                    with _db_lock:
+                        con = _get_conn()
+                        _upsert_result(con, symbol, tf, p)
+                except Exception:
+                    pass
         except Exception as e:
             logger.warning(f"scan_symbol {symbol} {tf}: {e}")
     return all_results
@@ -268,9 +292,12 @@ def run_scan(
     timeframes: list[str] | None = None,
     min_score: float = 40.0,
 ) -> dict[str, Any]:
+    global _mem_results, _last_scan_time
     syms = symbols or DEFAULT_SYMBOLS
     tfs = timeframes or DEFAULT_TIMEFRAMES
     total_new, total_updated, errors = 0, 0, 0
+    fresh: list[dict] = []
+
     init_scanner_db()
     for symbol in syms:
         for tf in tfs:
@@ -280,6 +307,8 @@ def run_scan(
                     errors += 1
                     continue
                 patterns = scan_bars(bars, min_score=min_score)
+                for p in patterns:
+                    fresh.append(_enrich(p, symbol, tf))
                 with _db_lock:
                     con = _get_conn()
                     for p in patterns:
@@ -297,14 +326,69 @@ def run_scan(
             except Exception as e:
                 logger.warning(f"run_scan {symbol} {tf}: {e}")
                 errors += 1
+
+    with _mem_lock:
+        _mem_results = fresh
+        _last_scan_time = time.time()
+
+    logger.info(f"run_scan complete: {len(fresh)} patterns in memory, {total_new} new DB rows")
     return {
-        "scanned_symbols": len(syms),
+        "scanned_symbols":    len(syms),
         "scanned_timeframes": len(tfs),
-        "new_patterns": total_new,
-        "updated_patterns": total_updated,
-        "errors": errors,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "new_patterns":       total_new,
+        "updated_patterns":   total_updated,
+        "errors":             errors,
+        "in_memory_count":    len(fresh),
+        "timestamp":          datetime.now(timezone.utc).isoformat(),
     }
+
+
+def launch_startup_scan() -> None:
+    """Background-thread scan on startup so the page has data immediately."""
+    def _worker():
+        global _is_scanning
+        _is_scanning = True
+        try:
+            logger.info("Scanner: startup auto-scan beginning…")
+            run_scan(min_score=40.0)
+        except Exception as e:
+            logger.warning(f"Scanner: startup scan failed: {e}")
+        finally:
+            _is_scanning = False
+    t = threading.Thread(target=_worker, daemon=True, name="scanner-startup")
+    t.start()
+
+
+def scanner_status() -> dict:
+    return {
+        "is_scanning":    _is_scanning,
+        "cached_count":   len(_mem_results),
+        "last_scan_time": datetime.fromtimestamp(_last_scan_time, tz=timezone.utc).isoformat() if _last_scan_time else None,
+    }
+
+
+def _apply_filters(
+    rows: list[dict],
+    direction: str | None,
+    category: str | None,
+    timeframe: str | None,
+    asset_class: str | None,
+    status: str | None,
+    min_score: float | None,
+    sort_by: str,
+    sort_dir: str,
+    limit: int,
+) -> list[dict]:
+    if direction:   rows = [r for r in rows if r.get("direction") == direction]
+    if category:    rows = [r for r in rows if r.get("category") == category]
+    if timeframe:   rows = [r for r in rows if r.get("timeframe") == timeframe]
+    if asset_class: rows = [r for r in rows if r.get("asset_class") == asset_class]
+    if status:      rows = [r for r in rows if r.get("status") == status]
+    if min_score is not None:
+        rows = [r for r in rows if (r.get("pattern_score") or 0) >= min_score]
+    reverse = sort_dir.lower() == "desc"
+    rows.sort(key=lambda r: r.get(sort_by) or 0, reverse=reverse)
+    return rows[:limit]
 
 
 def get_results(
@@ -319,6 +403,11 @@ def get_results(
     limit: int = 200,
 ) -> list[dict]:
     init_scanner_db()
+
+    allowed = {"pattern_score", "rr_ratio", "detected_at", "symbol", "pattern", "created_at"}
+    col = sort_by if sort_by in allowed else "pattern_score"
+    dir_sql = "DESC" if sort_dir.lower() == "desc" else "ASC"
+
     conditions: list[str] = []
     params: list[Any] = []
     if direction:   conditions.append("direction=?");    params.append(direction)
@@ -328,10 +417,6 @@ def get_results(
     if status:      conditions.append("status=?");       params.append(status)
     if min_score is not None:
         conditions.append("pattern_score>=?"); params.append(min_score)
-
-    allowed = {"pattern_score", "rr_ratio", "detected_at", "symbol", "pattern", "created_at"}
-    col = sort_by if sort_by in allowed else "pattern_score"
-    dir_sql = "DESC" if sort_dir.lower() == "desc" else "ASC"
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     params.append(limit)
 
@@ -343,7 +428,18 @@ def get_results(
         )
         rows = res.fetchall()
         cols = [d[0] for d in res.description]
-    return [dict(zip(cols, row)) for row in rows]
+    db_rows = [dict(zip(cols, row)) for row in rows]
+
+    if db_rows:
+        return db_rows
+
+    # DB empty (ephemeral filesystem) — serve from in-memory cache
+    with _mem_lock:
+        cache = list(_mem_results)
+    if not cache:
+        return []
+
+    return _apply_filters(cache, direction, category, timeframe, asset_class, status, min_score, sort_by, sort_dir, limit)
 
 
 def get_result_by_id(result_id: str) -> dict | None:
@@ -432,6 +528,8 @@ def get_performance_stats() -> dict:
     recent_cols = ["symbol", "pattern", "tf_label", "pattern_score", "classification", "direction", "detected_at"]
     return {
         "total_detected":    total,
+        "in_memory_count":   len(_mem_results),
+        "is_scanning":       _is_scanning,
         "by_direction":      [{"direction": r[0],      "count": r[1], "avg_score": round(r[2] or 0, 1)} for r in by_dir],
         "by_category":       [{"category": r[0],       "count": r[1], "avg_score": round(r[2] or 0, 1)} for r in by_cat],
         "by_timeframe":      [{"timeframe": r[0],      "count": r[1], "avg_score": round(r[2] or 0, 1)} for r in by_tf],
@@ -448,4 +546,6 @@ def delete_all_results() -> int:
         n = con.execute("SELECT COUNT(*) FROM scanner_results").fetchone()[0]
         con.execute("DELETE FROM scanner_results")
         con.execute("DELETE FROM scanner_alerts")
+    with _mem_lock:
+        _mem_results.clear()
     return n

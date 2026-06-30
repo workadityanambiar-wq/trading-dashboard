@@ -104,7 +104,13 @@ export default function ScannerPage() {
       sort_dir:    filters.sort_dir,
       limit: 500,
     }),
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
+  });
+
+  const { data: scanStatus } = useQuery({
+    queryKey: ["scanner-status"],
+    queryFn: () => api.getScannerStatus(),
+    refetchInterval: 10_000,
   });
 
   const { data: alertsData } = useQuery({
@@ -236,7 +242,17 @@ export default function ScannerPage() {
             <span className={cn("text-[13px] font-bold font-mono", s.color)}>{s.value}</span>
           </div>
         ))}
-        {isLoading && <span className="text-[10px] text-text-faint font-mono ml-auto animate-pulse">loading…</span>}
+        {(isLoading || scanStatus?.is_scanning) && (
+          <span className="text-[10px] text-amber-400 font-mono ml-auto animate-pulse flex items-center gap-1">
+            <RefreshCw size={9} className="animate-spin" />
+            {scanStatus?.is_scanning ? "scanning markets…" : "loading…"}
+          </span>
+        )}
+        {!isLoading && !scanStatus?.is_scanning && scanStatus?.last_scan_time && (
+          <span className="text-[9px] text-text-faint font-mono ml-auto">
+            last scan {new Date(scanStatus.last_scan_time).toLocaleTimeString()}
+          </span>
+        )}
       </div>
 
       {/* Filter panel */}
@@ -383,7 +399,10 @@ export default function ScannerPage() {
               {!isLoading && results.length === 0 && (
                 <tr>
                   <td colSpan={13} className="px-4 py-16 text-center text-text-faint text-[11px]">
-                    No patterns detected. Click "Full Scan" to scan all symbols via Yahoo Finance, or enter a symbol above.
+                    {scanStatus?.is_scanning
+                      ? <span className="text-amber-400 animate-pulse">Scanning markets for patterns… results will appear shortly.</span>
+                      : <span>No patterns found. Click <strong className="text-text-primary">Full Scan</strong> to scan all symbols, or type a ticker above (e.g. AAPL).</span>
+                    }
                   </td>
                 </tr>
               )}

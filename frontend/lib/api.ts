@@ -1716,6 +1716,7 @@ export const api = {
   updateScannerResult: (id: string, data: { status?: string; is_starred?: boolean; commentary?: string }) =>
     apiFetch<ScannerResult>(`/scanner/results/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   getScannerPerformance: () => apiFetch<any>("/scanner/performance"),
+  getScannerStatus: () => apiFetch<{ is_scanning: boolean; cached_count: number; last_scan_time: string | null }>("/scanner/status"),
   purgeScannerResults: () => apiFetch<any>("/scanner/results", { method: "DELETE" }),
 };
 
