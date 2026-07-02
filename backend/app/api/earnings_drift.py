@@ -239,6 +239,8 @@ async def earnings_drift_scan(
     for ticker, d in raw.items():
         if not d.get("earn_date"):
             continue
+        if (d.get("days_since") or 999) > 180:
+            continue
         rows.append({
             "ticker":           ticker,
             "name":             name_map.get(ticker, ticker),
@@ -252,7 +254,7 @@ async def earnings_drift_scan(
         df = pd.DataFrame(rows)
 
         def pctile(col: str, invert: bool = False) -> pd.Series:
-            s = df[col].fillna(df[col].median() if df[col].notna().any() else 0.0)
+            s = df[col].fillna(0.0)
             return (-s if invert else s).rank(pct=True)
 
         net_rev = (df["revisions_up"].fillna(0) - df["revisions_down"].fillna(0))

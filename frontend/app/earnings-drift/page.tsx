@@ -432,7 +432,7 @@ export default function EarningsDriftPage() {
         ]}
         howItWorks={[
           { title: "PEAD Phenomenon", detail: "Post-Earnings Announcement Drift is one of the most well-documented market anomalies: stocks with large positive EPS surprises continue to outperform for up to 6 months after the announcement. The effect persists due to institutional under-reaction and slow information diffusion." },
-          { title: "PEAD Score Formula", detail: "Score = 0.4 × EPS_surprise_percentile + 0.3 × revision_momentum + 0.2 × price_drift_percentile + 0.1 × beat_streak_bonus. All components are normalized 0–100 relative to the universe." },
+          { title: "PEAD Score Formula", detail: "Score = 0.4 × EPS_surprise_percentile + 0.3 × price_drift_percentile + 0.2 × net_revision_rank + 0.1 × revenue_growth_percentile. All components are cross-sectional percentile ranks normalized 0–100 relative to the universe. Missing data scores as 0 on that component." },
           { title: "Revision Momentum", detail: "Analysts systematically under-revise estimates after beats — they anchor on prior estimates. A stock with 3+ upward EPS revisions after a beat is more likely to continue drifting than one with no revisions." },
           { title: "Drift Decay", detail: "PEAD alpha decays with time: the average outperformance is 4–8% in the first 30 days, 8–15% by 90 days, and begins to fade past 180 days as the market fully incorporates the new information." },
         ]}
