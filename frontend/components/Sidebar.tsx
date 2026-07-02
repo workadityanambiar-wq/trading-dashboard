@@ -13,7 +13,7 @@ import {
   MonitorDot, SigmaSquare, Radar, Landmark, Users, Milestone, LogIn,
   LogOut, UserCircle, Wand2, Sparkles, BellRing, FileDown, DollarSign,
   FlameKindling, Gem, Droplets, CircleDollarSign, Sun, Moon, Smartphone,
-  Monitor, Menu, X, Search, Command, ScanLine,
+  Monitor, Menu, X, Search, Command, ScanLine, Database,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
@@ -22,6 +22,7 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
   {
     label: "Core",
     items: [
+      { href: "/universe",  label: "Inv. Universe",   icon: Database },
       { href: "/copilot",   label: "AI Copilot",      icon: Sparkles },
       { href: "/watchlist", label: "Watchlist",       icon: Star },
       { href: "/",          label: "Overview",        icon: LayoutDashboard },

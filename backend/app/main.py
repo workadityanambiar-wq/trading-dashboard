@@ -34,7 +34,9 @@ from app.api import space as space_api
 from app.api import copilot as copilot_api
 from app.api import breadth as breadth_api
 from app.api import scanner as scanner_api
+from app.api import universe as universe_api
 from app.core.data.cache import init_db
+from app.core.universe.db import init_universe_tables
 from app.core.data import fetcher, universe
 from app.core.data.cache import get_tickers_with_prices
 from app.core.alerts.models import init_alert_tables
@@ -81,6 +83,7 @@ async def _auto_refresh_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    init_universe_tables()
     init_alert_tables()
     try:
         init_scanner_db()
@@ -151,6 +154,7 @@ app.include_router(space_api.router,         prefix="/api/space")
 app.include_router(copilot_api.router,       prefix="/api/copilot")
 app.include_router(breadth_api.router,       prefix="/api/breadth")
 app.include_router(scanner_api.router,       prefix="/api/scanner")
+app.include_router(universe_api.router,      prefix="/api/universe")
 
 
 @app.get("/health")
