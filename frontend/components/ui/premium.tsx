@@ -21,18 +21,24 @@ export function GlassCard({
   className,
   glow,
   hover = true,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   glow?: "green" | "red" | "accent" | "amber" | "purple";
   hover?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className={cn(
-      "bg-surface border border-border rounded",
-      hover && "transition-colors duration-100 hover:border-border-2",
-      className,
-    )}>
+    <div
+      className={cn(
+        "bg-surface border border-border rounded",
+        hover && "transition-colors duration-100 hover:border-border-2",
+        onClick && "cursor-pointer",
+        className,
+      )}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

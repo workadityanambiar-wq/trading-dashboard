@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { api, type BreadthHistoryPoint, type BreadthSector, type BreadthSignal, type BreadthSnapshotFull } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { BreadthDrillDrawer, type DrillConfig } from "@/components/BreadthDrillDrawer";
 import { GlassCard, AIInsightBanner, SectionHeader, RegimeBadge, ProgressRing, PulsingDot } from "@/components/ui/premium";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -94,11 +95,14 @@ function ScoreRing({ score, color, size = 80 }: { score: number; color: string; 
   );
 }
 
-function MetricCard({ label, value, color, bar, sub }: {
-  label: string; value: string; color: string; bar?: number; sub?: string;
+function MetricCard({ label, value, color, bar, sub, onClick }: {
+  label: string; value: string; color: string; bar?: number; sub?: string; onClick?: () => void;
 }) {
   return (
-    <div className="bg-surface border border-border rounded-lg p-3 space-y-1.5">
+    <div
+      className={cn("bg-surface border border-border rounded-lg p-3 space-y-1.5", onClick && "cursor-pointer hover:border-border-2 transition-colors")}
+      onClick={onClick}
+    >
       <div className="text-[10px] text-text-muted uppercase tracking-wide">{label}</div>
       <div className="text-xl font-semibold font-mono" style={{ color }}>{value}</div>
       {bar != null && (
@@ -232,7 +236,7 @@ const RATING_COLORS: Record<string, string> = {
   "Strong Sell": "#ef4444",
 };
 
-function SectorTable({ sectors }: { sectors: BreadthSector[] }) {
+function SectorTable({ sectors, onSectorClick }: { sectors: BreadthSector[]; onSectorClick?: (sec: string) => void }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
@@ -245,7 +249,7 @@ function SectorTable({ sectors }: { sectors: BreadthSector[] }) {
         </thead>
         <tbody>
           {sectors.map((s) => (
-            <tr key={s.sector} className="border-b border-border/30 hover:bg-surface-2/50">
+            <tr key={s.sector} className={cn("border-b border-border/30 hover:bg-surface-2/50", onSectorClick && "cursor-pointer")} onClick={() => onSectorClick?.(s.sector)}>
               <td className="py-1.5 pr-3 font-medium text-text-primary truncate max-w-[140px]">{s.sector}</td>
               <td className="py-1.5 pr-3">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ color: RATING_COLORS[s.rating] ?? "#6b6b80", background: `${RATING_COLORS[s.rating] ?? "#6b6b80"}18` }}>
@@ -375,6 +379,11 @@ export default function BreadthPage() {
   const [tab,      setTab]      = useState<Tab>("Overview");
   const [universe, setUniverse] = useState("sp500");
   const [chartMetrics, setChartMetrics] = useState<(keyof BreadthHistoryPoint)[]>(["ma50", "ma200"]);
+  const [activeDrill, setActiveDrill] = useState<DrillConfig | null>(null);
+
+  function d(key: string, label: string, color: string, historyKey?: string): () => void {
+    return () => setActiveDrill({ key, label, color, historyKey });
+  }
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey:        ["breadth-dashboard", universe],
@@ -436,6 +445,8 @@ export default function BreadthPage() {
         </div>
       )}
 
+      <BreadthDrillDrawer drill={activeDrill} onClose={() => setActiveDrill(null)} universe={universe} history={history} />
+
       {data && (
         <>
           {/* ── AI Insight ── */}
@@ -453,7 +464,7 @@ export default function BreadthPage() {
           {/* ── Top KPIs ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Market Health Score */}
-            <GlassCard className="p-4 col-span-2 lg:col-span-1" glow={gradeColor === "#22c55e" ? "green" : gradeColor === "#ef4444" ? "red" : gradeColor === "#f97316" ? "amber" : "accent"}>
+            <GlassCard className="p-4 col-span-2 lg:col-span-1" glow={gradeColor === "#22c55e" ? "green" : gradeColor === "#ef4444" ? "red" : gradeColor === "#f97316" ? "amber" : "accent"} onClick={d("health_score", "Market Health Score", gradeColor, "ma50")}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-3">Market Health Score</div>
               <div className="flex items-center gap-4">
                 <ProgressRing score={health?.composite_score ?? 50} color={gradeColor} size={72} strokeWidth={5} label={health?.composite_score?.toFixed(0) ?? "—"} />
@@ -471,7 +482,7 @@ export default function BreadthPage() {
             </GlassCard>
 
             {/* Regime */}
-            <GlassCard className="p-4" glow={REGIME_COLORS[regime?.state ?? ""] === "#22c55e" ? "green" : REGIME_COLORS[regime?.state ?? ""] === "#ef4444" ? "red" : undefined}>
+            <GlassCard className="p-4" glow={REGIME_COLORS[regime?.state ?? ""] === "#22c55e" ? "green" : REGIME_COLORS[regime?.state ?? ""] === "#ef4444" ? "red" : undefined} onClick={d("regime", `Regime: ${regime?.state ?? "—"}`, REGIME_COLORS[regime?.state ?? ""] ?? "#6b6b80", "ma200")}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Market Regime</div>
               <RegimeBadge label={regime?.state ?? "—"} />
               <div className="text-[10px] text-text-muted leading-relaxed mt-2">{regime?.description}</div>
@@ -488,7 +499,7 @@ export default function BreadthPage() {
             </GlassCard>
 
             {/* Hindenburg / Zweig */}
-            <GlassCard className="p-4 space-y-3">
+            <GlassCard className="p-4 space-y-3" onClick={d(data.hindenburg.active ? "hindenburg" : "zweig", data.hindenburg.active ? "Hindenburg Omen" : "Zweig Breadth Thrust", data.hindenburg.active ? "#ef4444" : "#22c55e", "breadth_thrust")}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Special Indicators</div>
               <div className="flex items-center gap-2.5">
                 {data.hindenburg.active
@@ -514,7 +525,7 @@ export default function BreadthPage() {
             </GlassCard>
 
             {/* VIX & Risk */}
-            <GlassCard className="p-4 space-y-2">
+            <GlassCard className="p-4 space-y-2" onClick={d("vix", "VIX & Risk Overview", (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e")}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Liquidity & Risk</div>
               {[
                 { label: "VIX", value: risk?.vix?.toFixed(1) ?? "—", color: (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e" },
@@ -604,12 +615,12 @@ export default function BreadthPage() {
 
               {/* Key breadth snapshot */}
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                <MetricCard label="Above 20 MA"  value={fmt(snap?.pct_above_20ma, 0)}  color={pcolor(snap?.pct_above_20ma)}  bar={snap?.pct_above_20ma  ?? undefined} />
-                <MetricCard label="Above 50 MA"  value={fmt(snap?.pct_above_50ma, 0)}  color={pcolor(snap?.pct_above_50ma)}  bar={snap?.pct_above_50ma  ?? undefined} />
-                <MetricCard label="Above 100 MA" value={fmt(snap?.pct_above_100ma, 0)} color={pcolor(snap?.pct_above_100ma)} bar={snap?.pct_above_100ma ?? undefined} />
-                <MetricCard label="Above 200 MA" value={fmt(snap?.pct_above_200ma, 0)} color={pcolor(snap?.pct_above_200ma)} bar={snap?.pct_above_200ma ?? undefined} />
-                <MetricCard label="McClellan"    value={fmtN(snap?.mcclellan, 0)}       color={(snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444"} />
-                <MetricCard label="BPI"          value={fmt(snap?.bpi, 0)}              color={pcolor(snap?.bpi)}           bar={snap?.bpi ?? undefined} sub="% > 50 MA proxy" />
+                <MetricCard label="Above 20 MA"  value={fmt(snap?.pct_above_20ma, 0)}  color={pcolor(snap?.pct_above_20ma)}  bar={snap?.pct_above_20ma  ?? undefined} onClick={d("above_20ma",  "Stocks Above 20 MA",  pcolor(snap?.pct_above_20ma),  "ma20")} />
+                <MetricCard label="Above 50 MA"  value={fmt(snap?.pct_above_50ma, 0)}  color={pcolor(snap?.pct_above_50ma)}  bar={snap?.pct_above_50ma  ?? undefined} onClick={d("above_50ma",  "Stocks Above 50 MA",  pcolor(snap?.pct_above_50ma),  "ma50")} />
+                <MetricCard label="Above 100 MA" value={fmt(snap?.pct_above_100ma, 0)} color={pcolor(snap?.pct_above_100ma)} bar={snap?.pct_above_100ma ?? undefined} onClick={d("above_100ma", "Stocks Above 100 MA", pcolor(snap?.pct_above_100ma), "ma100")} />
+                <MetricCard label="Above 200 MA" value={fmt(snap?.pct_above_200ma, 0)} color={pcolor(snap?.pct_above_200ma)} bar={snap?.pct_above_200ma ?? undefined} onClick={d("above_200ma", "Stocks Above 200 MA", pcolor(snap?.pct_above_200ma), "ma200")} />
+                <MetricCard label="McClellan"    value={fmtN(snap?.mcclellan, 0)}       color={(snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444"} onClick={d("mcclellan", "McClellan Oscillator", (snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444", "mcclellan")} />
+                <MetricCard label="BPI"          value={fmt(snap?.bpi, 0)}              color={pcolor(snap?.bpi)} bar={snap?.bpi ?? undefined} sub="% > 50 MA proxy" onClick={d("bpi", "Bullish Percent Index", pcolor(snap?.bpi), "ma50")} />
               </div>
 
               {/* Quick MA breadth chart */}
@@ -633,21 +644,21 @@ export default function BreadthPage() {
             <div className="space-y-4">
               {/* All metric cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                <MetricCard label="Above 20 MA"   value={fmt(snap?.pct_above_20ma, 0)}   color={pcolor(snap?.pct_above_20ma)}   bar={snap?.pct_above_20ma  ?? undefined} />
-                <MetricCard label="Above 50 MA"   value={fmt(snap?.pct_above_50ma, 0)}   color={pcolor(snap?.pct_above_50ma)}   bar={snap?.pct_above_50ma  ?? undefined} />
-                <MetricCard label="Above 100 MA"  value={fmt(snap?.pct_above_100ma, 0)}  color={pcolor(snap?.pct_above_100ma)}  bar={snap?.pct_above_100ma ?? undefined} />
-                <MetricCard label="Above 200 MA"  value={fmt(snap?.pct_above_200ma, 0)}  color={pcolor(snap?.pct_above_200ma)}  bar={snap?.pct_above_200ma ?? undefined} />
-                <MetricCard label="A/D Ratio"     value={fmtN(snap?.ad_ratio, 2)}         color={(snap?.ad_ratio ?? 1) >= 1 ? "#22c55e" : "#ef4444"} />
-                <MetricCard label="Advancing"     value={String(snap?.advancing ?? 0)}    color="#22c55e" sub={`of ${(snap?.n_stocks ?? 0)} stocks`} />
-                <MetricCard label="Declining"     value={String(snap?.declining ?? 0)}    color="#ef4444" />
-                <MetricCard label="New Highs"     value={fmt(snap?.pct_new_highs, 1)}     color="#22c55e" sub="near 52W high" />
-                <MetricCard label="New Lows"      value={fmt(snap?.pct_new_lows, 1)}      color={(snap?.pct_new_lows ?? 0) > 0.05 ? "#ef4444" : "#6b6b80"} sub="near 52W low" />
-                <MetricCard label="Net NH"        value={fmtPct(snap?.net_new_highs_pct)} color={(snap?.net_new_highs_pct ?? 0) >= 0 ? "#22c55e" : "#ef4444"} />
-                <MetricCard label="BPI"           value={fmt(snap?.bpi, 0)}               color={pcolor(snap?.bpi)}  bar={snap?.bpi ?? undefined} sub="Bullish % (50MA)" />
-                <MetricCard label="Breadth Thrust" value={fmt(snap?.breadth_thrust, 1)}   color={(snap?.breadth_thrust ?? 0) > 0.6 ? "#22c55e" : "#6b6b80"} bar={snap?.breadth_thrust ?? undefined} sub="Zweig 10d EMA" />
-                <MetricCard label="Median Ret 1M"  value={fmtPct(snap?.median_return_1m)} color={(snap?.median_return_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444"} />
-                <MetricCard label="EW vs CW 1M"    value={fmtPct(snap?.rsp_vs_spy_1m)}   color={(snap?.rsp_vs_spy_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub="Equal wt vs Cap wt" />
-                <MetricCard label="Health Score"   value={`${snap?.breadth_health_score?.toFixed(0) ?? "—"}`} color={gradeColor} bar={(snap?.breadth_health_score ?? 50) / 100} />
+                <MetricCard label="Above 20 MA"   value={fmt(snap?.pct_above_20ma, 0)}   color={pcolor(snap?.pct_above_20ma)}   bar={snap?.pct_above_20ma  ?? undefined} onClick={d("above_20ma",  "Stocks Above 20 MA",  pcolor(snap?.pct_above_20ma),  "ma20")} />
+                <MetricCard label="Above 50 MA"   value={fmt(snap?.pct_above_50ma, 0)}   color={pcolor(snap?.pct_above_50ma)}   bar={snap?.pct_above_50ma  ?? undefined} onClick={d("above_50ma",  "Stocks Above 50 MA",  pcolor(snap?.pct_above_50ma),  "ma50")} />
+                <MetricCard label="Above 100 MA"  value={fmt(snap?.pct_above_100ma, 0)}  color={pcolor(snap?.pct_above_100ma)}  bar={snap?.pct_above_100ma ?? undefined} onClick={d("above_100ma", "Stocks Above 100 MA", pcolor(snap?.pct_above_100ma), "ma100")} />
+                <MetricCard label="Above 200 MA"  value={fmt(snap?.pct_above_200ma, 0)}  color={pcolor(snap?.pct_above_200ma)}  bar={snap?.pct_above_200ma ?? undefined} onClick={d("above_200ma", "Stocks Above 200 MA", pcolor(snap?.pct_above_200ma), "ma200")} />
+                <MetricCard label="A/D Ratio"     value={fmtN(snap?.ad_ratio, 2)}         color={(snap?.ad_ratio ?? 1) >= 1 ? "#22c55e" : "#ef4444"} onClick={d("above_50ma", "A/D Ratio — Leading Stocks", (snap?.ad_ratio ?? 1) >= 1 ? "#22c55e" : "#ef4444", "ad_ratio")} />
+                <MetricCard label="Advancing"     value={String(snap?.advancing ?? 0)}    color="#22c55e" sub={`of ${(snap?.n_stocks ?? 0)} stocks`} onClick={d("above_20ma", "Advancing Stocks", "#22c55e", "ma20")} />
+                <MetricCard label="Declining"     value={String(snap?.declining ?? 0)}    color="#ef4444" onClick={d("below_20ma", "Declining Stocks", "#ef4444", "ma20")} />
+                <MetricCard label="New Highs"     value={fmt(snap?.pct_new_highs, 1)}     color="#22c55e" sub="near 52W high" onClick={d("new_highs", "New 52-Week Highs", "#22c55e", "new_highs_net")} />
+                <MetricCard label="New Lows"      value={fmt(snap?.pct_new_lows, 1)}      color={(snap?.pct_new_lows ?? 0) > 0.05 ? "#ef4444" : "#6b6b80"} sub="near 52W low" onClick={d("new_lows", "New 52-Week Lows", "#ef4444", "new_highs_net")} />
+                <MetricCard label="Net NH"        value={fmtPct(snap?.net_new_highs_pct)} color={(snap?.net_new_highs_pct ?? 0) >= 0 ? "#22c55e" : "#ef4444"} onClick={d("new_highs", "Net New Highs", (snap?.net_new_highs_pct ?? 0) >= 0 ? "#22c55e" : "#ef4444", "new_highs_net")} />
+                <MetricCard label="BPI"           value={fmt(snap?.bpi, 0)}               color={pcolor(snap?.bpi)}  bar={snap?.bpi ?? undefined} sub="Bullish % (50MA)" onClick={d("bpi", "Bullish Percent Index", pcolor(snap?.bpi), "ma50")} />
+                <MetricCard label="Breadth Thrust" value={fmt(snap?.breadth_thrust, 1)}   color={(snap?.breadth_thrust ?? 0) > 0.6 ? "#22c55e" : "#6b6b80"} bar={snap?.breadth_thrust ?? undefined} sub="Zweig 10d EMA" onClick={d("zweig", "Zweig Breadth Thrust", "#22c55e", "breadth_thrust")} />
+                <MetricCard label="Median Ret 1M"  value={fmtPct(snap?.median_return_1m)} color={(snap?.median_return_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444"} onClick={d("above_50ma", "Median Return — 1M", (snap?.median_return_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444", "ma50")} />
+                <MetricCard label="EW vs CW 1M"    value={fmtPct(snap?.rsp_vs_spy_1m)}   color={(snap?.rsp_vs_spy_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub="Equal wt vs Cap wt" onClick={d("above_50ma", "Equal Weight vs Cap Weight", (snap?.rsp_vs_spy_1m ?? 0) >= 0 ? "#22c55e" : "#ef4444", "ma50")} />
+                <MetricCard label="Health Score"   value={`${snap?.breadth_health_score?.toFixed(0) ?? "—"}`} color={gradeColor} bar={(snap?.breadth_health_score ?? 50) / 100} onClick={d("health_score", "Breadth Health Score", gradeColor, "ma50")} />
               </div>
 
               {/* Interactive history chart */}
@@ -693,8 +704,8 @@ export default function BreadthPage() {
           {tab === "McClellan" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <MetricCard label="McClellan Oscillator" value={fmtN(snap?.mcclellan, 1)} color={(snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub=">+100 overbought · <-100 oversold" />
-                <MetricCard label="Summation Index" value={fmtN(snap?.summation_index, 0)} color={(snap?.summation_index ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub=">0 bullish · <0 bearish" />
+                <MetricCard label="McClellan Oscillator" value={fmtN(snap?.mcclellan, 1)} color={(snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub=">+100 overbought · <-100 oversold" onClick={d("mcclellan", "McClellan Oscillator", (snap?.mcclellan ?? 0) >= 0 ? "#22c55e" : "#ef4444", "mcclellan")} />
+                <MetricCard label="Summation Index" value={fmtN(snap?.summation_index, 0)} color={(snap?.summation_index ?? 0) >= 0 ? "#22c55e" : "#ef4444"} sub=">0 bullish · <0 bearish" onClick={d("mcclellan", "Summation Index", (snap?.summation_index ?? 0) >= 0 ? "#22c55e" : "#ef4444", "mcclellan")} />
               </div>
               <div className="rounded-lg border border-border bg-surface p-4">
                 <div className="text-sm font-medium mb-3">McClellan Oscillator + Summation Index</div>
@@ -706,7 +717,7 @@ export default function BreadthPage() {
               </div>
 
               {/* Breadth Thrust */}
-              <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="rounded-lg border border-border bg-surface p-4 cursor-pointer hover:border-border-2 transition-colors" onClick={d("zweig", "Zweig Breadth Thrust", "#22c55e", "breadth_thrust")}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-sm font-medium">Breadth Thrust (Zweig)</div>
                   {(data.zweig.current_thrust ?? 0) > 0.615 && (
@@ -727,7 +738,7 @@ export default function BreadthPage() {
               </div>
 
               {/* Hindenburg Omen */}
-              <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="rounded-lg border border-border bg-surface p-4 cursor-pointer hover:border-border-2 transition-colors" onClick={d("hindenburg", "Hindenburg Omen Constituents", "#ef4444", "new_highs_net")}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className="text-sm font-medium">Hindenburg Omen</div>
                   <span className={cn(
@@ -768,7 +779,7 @@ export default function BreadthPage() {
                 <div className="text-xs text-text-muted mb-4">
                   Ranked by composite breadth score · RS = return vs SPY benchmark
                 </div>
-                <SectorTable sectors={data.sectors} />
+                <SectorTable sectors={data.sectors} onSectorClick={(sec) => setActiveDrill({ key: `sector:${sec}`, label: sec, color: pcolor(data.sectors.find(s => s.sector === sec)?.above_50ma ?? 0.5) })} />
               </div>
 
               {/* Sector breadth heatmap */}
@@ -778,7 +789,7 @@ export default function BreadthPage() {
                   {data.sectors.map((s) => {
                     const col = pcolor(s.above_50ma);
                     return (
-                      <div key={s.sector} className="rounded-lg border border-border p-3" style={{ borderColor: `${col}40`, background: `${col}08` }}>
+                      <div key={s.sector} className="rounded-lg border border-border p-3 cursor-pointer hover:border-border-2 transition-colors" style={{ borderColor: `${col}40`, background: `${col}08` }} onClick={() => setActiveDrill({ key: `sector:${s.sector}`, label: s.sector, color: col })}>
                         <div className="text-[10px] text-text-muted mb-1 truncate">{s.sector}</div>
                         <div className="text-xl font-semibold font-mono" style={{ color: col }}>{fmt(s.above_50ma, 0)}</div>
                         <div className="text-[10px] text-text-muted mt-1">{s.rating}</div>
@@ -794,14 +805,14 @@ export default function BreadthPage() {
           {tab === "Risk & Liquidity" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <MetricCard label="VIX" value={risk?.vix?.toFixed(1) ?? "—"} color={(risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e"} sub={risk?.vix_1m_change != null ? `${risk.vix_1m_change >= 0 ? "+" : ""}${risk.vix_1m_change.toFixed(1)} vs 1M ago` : undefined} />
-                <MetricCard label="VIX Percentile 1Y" value={risk?.vix_percentile_1y != null ? `${(risk.vix_percentile_1y * 100).toFixed(0)}th` : "—"} color={(risk?.vix_percentile_1y ?? 0.5) > 0.75 ? "#ef4444" : "#eab308"} />
-                <MetricCard label="HY Spread Score" value={risk?.hy_spread_score?.toFixed(0) ?? "—"} color={(risk?.hy_spread_score ?? 50) > 60 ? "#22c55e" : "#ef4444"} bar={(risk?.hy_spread_score ?? 50) / 100} sub="100 = tight spreads (bullish)" />
-                <MetricCard label="Yield Curve" value={risk?.yield_curve != null ? `${(risk.yield_curve * 100).toFixed(0)}bp` : "—"} color={(risk?.yield_curve ?? 0) > 0 ? "#22c55e" : "#ef4444"} sub="10Y − 3M" />
-                <MetricCard label="Credit Stress" value={risk?.credit_stress ?? "—"} color={({ Low: "#22c55e", Moderate: "#eab308", High: "#f97316", Extreme: "#ef4444", Unknown: "#6b6b80" } as Record<string, string>)[risk?.credit_stress ?? "Unknown"] ?? "#6b6b80"} />
-                <MetricCard label="Market Risk" value={`${risk?.market_risk_score?.toFixed(0) ?? "—"}/100`} color={(risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308"} bar={(risk?.market_risk_score ?? 50) / 100} sub="Higher = more risk" />
-                <MetricCard label="Crash Probability" value={`${((risk?.crash_probability ?? 0) * 100).toFixed(1)}%`} color={(risk?.crash_probability ?? 0) > 0.15 ? "#ef4444" : "#eab308"} sub="30-day model estimate" />
-                <MetricCard label="Liquidity Score" value={`${risk?.liquidity_score?.toFixed(0) ?? "—"}/100`} color={(risk?.liquidity_score ?? 50) > 60 ? "#22c55e" : "#ef4444"} bar={(risk?.liquidity_score ?? 50) / 100} />
+                <MetricCard label="VIX" value={risk?.vix?.toFixed(1) ?? "—"} color={(risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e"} sub={risk?.vix_1m_change != null ? `${risk.vix_1m_change >= 0 ? "+" : ""}${risk.vix_1m_change.toFixed(1)} vs 1M ago` : undefined} onClick={d("vix", "VIX — Volatility Index", (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e")} />
+                <MetricCard label="VIX Percentile 1Y" value={risk?.vix_percentile_1y != null ? `${(risk.vix_percentile_1y * 100).toFixed(0)}th` : "—"} color={(risk?.vix_percentile_1y ?? 0.5) > 0.75 ? "#ef4444" : "#eab308"} onClick={d("vix", "VIX Percentile (1Y)", (risk?.vix_percentile_1y ?? 0.5) > 0.75 ? "#ef4444" : "#eab308")} />
+                <MetricCard label="HY Spread Score" value={risk?.hy_spread_score?.toFixed(0) ?? "—"} color={(risk?.hy_spread_score ?? 50) > 60 ? "#22c55e" : "#ef4444"} bar={(risk?.hy_spread_score ?? 50) / 100} sub="100 = tight spreads (bullish)" onClick={d("above_50ma", "High Yield Spread Health", (risk?.hy_spread_score ?? 50) > 60 ? "#22c55e" : "#ef4444", "ma50")} />
+                <MetricCard label="Yield Curve" value={risk?.yield_curve != null ? `${(risk.yield_curve * 100).toFixed(0)}bp` : "—"} color={(risk?.yield_curve ?? 0) > 0 ? "#22c55e" : "#ef4444"} sub="10Y − 3M" onClick={d("above_200ma", "Yield Curve Signal", (risk?.yield_curve ?? 0) > 0 ? "#22c55e" : "#ef4444", "ma200")} />
+                <MetricCard label="Credit Stress" value={risk?.credit_stress ?? "—"} color={({ Low: "#22c55e", Moderate: "#eab308", High: "#f97316", Extreme: "#ef4444", Unknown: "#6b6b80" } as Record<string, string>)[risk?.credit_stress ?? "Unknown"] ?? "#6b6b80"} onClick={d("vix", "Credit Stress Environment", "#eab308")} />
+                <MetricCard label="Market Risk" value={`${risk?.market_risk_score?.toFixed(0) ?? "—"}/100`} color={(risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308"} bar={(risk?.market_risk_score ?? 50) / 100} sub="Higher = more risk" onClick={d("below_50ma", "High Risk Stocks", (risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308", "ma50")} />
+                <MetricCard label="Crash Probability" value={`${((risk?.crash_probability ?? 0) * 100).toFixed(1)}%`} color={(risk?.crash_probability ?? 0) > 0.15 ? "#ef4444" : "#eab308"} sub="30-day model estimate" onClick={d("below_200ma", "Crash Risk — Below 200MA", (risk?.crash_probability ?? 0) > 0.15 ? "#ef4444" : "#eab308", "ma200")} />
+                <MetricCard label="Liquidity Score" value={`${risk?.liquidity_score?.toFixed(0) ?? "—"}/100`} color={(risk?.liquidity_score ?? 50) > 60 ? "#22c55e" : "#ef4444"} bar={(risk?.liquidity_score ?? 50) / 100} onClick={d("above_50ma", "Liquidity — Leading Stocks", (risk?.liquidity_score ?? 50) > 60 ? "#22c55e" : "#ef4444", "ma50")} />
               </div>
 
               {/* Risk score bar */}

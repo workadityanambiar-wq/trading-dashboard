@@ -26,6 +26,10 @@ _CACHE: dict[str, tuple[datetime, dict]] = {}
 _LOCK = Lock()
 _TTL = timedelta(minutes=30)
 
+_CONST_CACHE: dict[str, tuple[datetime, list]] = {}
+_CONST_LOCK = Lock()
+_CONST_TTL  = timedelta(minutes=5)
+
 
 def _get_cached(key: str):
     with _LOCK:
@@ -881,3 +885,142 @@ async def refresh_breadth(universe: str = Query("sp500")):
     with _LOCK:
         _CACHE.pop(key, None)
     return {"status": "cache cleared", "universe": universe}
+
+
+# ── Per-Stock Breadth Metrics ────────────────────────────────────────────────
+
+def _compute_stock_metrics(prices: pd.DataFrame, sector_map: dict[str, str]) -> list[dict]:
+    """Per-stock MA, distance, crossover and return metrics."""
+    if prices.empty or len(prices) < 22:
+        return []
+
+    stocks = prices.ffill()
+    n = len(stocks)
+
+    ma20_m  = stocks.rolling(20,  min_periods=15).mean()
+    ma50_m  = stocks.rolling(50,  min_periods=40).mean()
+    ma100_m = stocks.rolling(100, min_periods=80).mean()
+    ma200_m = stocks.rolling(200, min_periods=150).mean()
+
+    daily_ret = stocks.pct_change()
+    use_252   = min(252, n)
+    high252   = stocks.rolling(use_252, min_periods=int(use_252 * 0.8)).max()
+    low252    = stocks.rolling(use_252, min_periods=int(use_252 * 0.8)).min()
+
+    cur  = stocks.iloc[-1]
+    prev = stocks.iloc[-2] if n >= 2 else stocks.iloc[-1]
+
+    cma20  = ma20_m.iloc[-1];  pma20  = ma20_m.iloc[-2]  if n >= 2 else cma20
+    cma50  = ma50_m.iloc[-1];  pma50  = ma50_m.iloc[-2]  if n >= 2 else cma50
+    cma100 = ma100_m.iloc[-1]; pma100 = ma100_m.iloc[-2] if n >= 2 else cma100
+    cma200 = ma200_m.iloc[-1]; pma200 = ma200_m.iloc[-2] if n >= 2 else cma200
+
+    ch = high252.iloc[-1]
+    cl = low252.iloc[-1]
+
+    ret_1d = daily_ret.iloc[-1]
+    ret_1w = (cur / stocks.iloc[-6]  - 1).clip(-1, 5) if n >= 6  else pd.Series(dtype=float)
+    ret_1m = (cur / stocks.iloc[-22] - 1).clip(-1, 5) if n >= 22 else pd.Series(dtype=float)
+
+    def _v(s: pd.Series, t: str) -> Optional[float]:
+        try:
+            v = s[t]
+            return None if (v is None or (isinstance(v, float) and np.isnan(v))) else float(v)
+        except (KeyError, TypeError):
+            return None
+
+    result = []
+    for ticker in stocks.columns:
+        p = _v(cur, ticker)
+        if p is None:
+            continue
+
+        m20  = _v(cma20,  ticker)
+        m50  = _v(cma50,  ticker)
+        m100 = _v(cma100, ticker)
+        m200 = _v(cma200, ticker)
+
+        pp   = _v(prev,   ticker)
+        pm20  = _v(pma20,  ticker)
+        pm50  = _v(pma50,  ticker)
+        pm100 = _v(pma100, ticker)
+        pm200 = _v(pma200, ticker)
+
+        h252 = _v(ch, ticker)
+        l252 = _v(cl, ticker)
+
+        def dist(ma: Optional[float]) -> Optional[float]:
+            return round((p / ma - 1) * 100, 2) if ma else None
+
+        def above(ma: Optional[float]) -> Optional[bool]:
+            return bool(p > ma) if ma is not None else None
+
+        def xup(pm: Optional[float], cm: Optional[float]) -> bool:
+            return bool(pp is not None and pm is not None and cm is not None
+                        and pp <= pm and p > cm)
+
+        def xdn(pm: Optional[float], cm: Optional[float]) -> bool:
+            return bool(pp is not None and pm is not None and cm is not None
+                        and pp >= pm and p < cm)
+
+        r1d = _v(ret_1d, ticker)
+        r1w = _v(ret_1w, ticker) if isinstance(ret_1w, pd.Series) else None
+        r1m = _v(ret_1m, ticker) if isinstance(ret_1m, pd.Series) else None
+
+        result.append({
+            "ticker":  ticker,
+            "sector":  sector_map.get(ticker, ""),
+            "price":   round(p, 2),
+            "ma20":    round(m20,  2) if m20  is not None else None,
+            "ma50":    round(m50,  2) if m50  is not None else None,
+            "ma100":   round(m100, 2) if m100 is not None else None,
+            "ma200":   round(m200, 2) if m200 is not None else None,
+            "above_20ma":  above(m20),
+            "above_50ma":  above(m50),
+            "above_100ma": above(m100),
+            "above_200ma": above(m200),
+            "dist_20ma":  dist(m20),
+            "dist_50ma":  dist(m50),
+            "dist_100ma": dist(m100),
+            "dist_200ma": dist(m200),
+            "ret_1d": round(r1d * 100, 2) if r1d is not None else None,
+            "ret_1w": round(r1w * 100, 2) if r1w is not None else None,
+            "ret_1m": round(r1m * 100, 2) if r1m is not None else None,
+            "new_high": bool(h252 is not None and p >= h252 * 0.99),
+            "new_low":  bool(l252 is not None and p <= l252 * 1.01),
+            "crossed_above_20ma":  xup(pm20,  m20),
+            "crossed_below_20ma":  xdn(pm20,  m20),
+            "crossed_above_50ma":  xup(pm50,  m50),
+            "crossed_below_50ma":  xdn(pm50,  m50),
+            "crossed_above_100ma": xup(pm100, m100),
+            "crossed_below_100ma": xdn(pm100, m100),
+            "crossed_above_200ma": xup(pm200, m200),
+            "crossed_below_200ma": xdn(pm200, m200),
+        })
+
+    return result
+
+
+@router.get("/constituents")
+async def get_breadth_constituents(universe: str = Query("sp500")):
+    cache_key = f"const:{universe}"
+    with _CONST_LOCK:
+        if cache_key in _CONST_CACHE:
+            ts, val = _CONST_CACHE[cache_key]
+            if datetime.utcnow() - ts < _CONST_TTL:
+                return val
+
+    tickers, sector_map = _get_sp500_meta()
+    if not tickers:
+        return []
+
+    prices = _load_prices_from_db(tickers)
+    if prices.empty:
+        return []
+
+    stocks = _compute_stock_metrics(prices, sector_map)
+
+    with _CONST_LOCK:
+        _CONST_CACHE[cache_key] = (datetime.utcnow(), stocks)
+
+    return stocks
