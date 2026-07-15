@@ -1,6 +1,7 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMarket } from "@/contexts/MarketContext";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, BarChart, Bar, Cell, RadarChart,
@@ -370,16 +371,19 @@ function HealthRadar({ components }: { components: Record<string, { score: numbe
 const TABS = ["Overview", "Breadth", "McClellan", "Sectors", "Risk & Liquidity", "Signals"] as const;
 type Tab = typeof TABS[number];
 
-const UNIVERSES = [
-  { value: "sp500",  label: "S&P 500" },
-  { value: "sp1500", label: "S&P 1500" },
-];
+const UNIVERSE_MAP: Record<string, string> = {
+  spx:      "sp500",
+  nifty50:  "nifty50",
+  nifty500: "nifty500",
+};
 
 export default function BreadthPage() {
-  const [tab,      setTab]      = useState<Tab>("Overview");
-  const [universe, setUniverse] = useState("sp500");
+  const { market, isIndia, marketOption } = useMarket();
+  const universe = UNIVERSE_MAP[market] ?? "sp500";
+
+  const [tab,          setTab]          = useState<Tab>("Overview");
   const [chartMetrics, setChartMetrics] = useState<(keyof BreadthHistoryPoint)[]>(["ma50", "ma200"]);
-  const [activeDrill, setActiveDrill] = useState<DrillConfig | null>(null);
+  const [activeDrill,  setActiveDrill]  = useState<DrillConfig | null>(null);
 
   function d(key: string, label: string, color: string, historyKey?: string): () => void {
     return () => setActiveDrill({ key, label, color, historyKey });
@@ -412,7 +416,9 @@ export default function BreadthPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Market Breadth Intelligence</h1>
+          <h1 className="text-xl font-bold text-text-primary">
+            {marketOption.flag} {marketOption.label} Breadth Intelligence
+          </h1>
           <p className="text-[12px] text-text-muted mt-0.5 flex items-center gap-2">
             {data ? (
               <>
@@ -422,20 +428,10 @@ export default function BreadthPage() {
             ) : "Loading universe…"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {UNIVERSES.map((u) => (
-            <button key={u.value} onClick={() => setUniverse(u.value)}
-              className={cn("px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all",
-                universe === u.value
-                  ? "bg-accent text-white shadow-glow-sm"
-                  : "bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2")}
-            >{u.label}</button>
-          ))}
-          <button onClick={() => refetch()} disabled={isFetching}
-            className="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2 disabled:opacity-50 transition-all">
-            <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
-          </button>
-        </div>
+        <button onClick={() => refetch()} disabled={isFetching}
+          className="p-2 rounded-lg bg-surface border border-border text-text-muted hover:text-text-primary hover:border-border-2 disabled:opacity-50 transition-all">
+          <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
+        </button>
       </div>
 
       {isLoading && (
@@ -528,7 +524,7 @@ export default function BreadthPage() {
             <GlassCard className="p-4 space-y-2" onClick={d("vix", "VIX & Risk Overview", (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e")}>
               <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted">Liquidity & Risk</div>
               {[
-                { label: "VIX", value: risk?.vix?.toFixed(1) ?? "—", color: (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e" },
+                { label: isIndia ? "India VIX" : "VIX", value: risk?.vix?.toFixed(1) ?? "—", color: (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e" },
                 { label: "Credit Stress", value: risk?.credit_stress ?? "—", color: ({ Low: "#22c55e", Moderate: "#eab308", High: "#f97316", Extreme: "#ef4444", Unknown: "#6b6b80" } as Record<string,string>)[risk?.credit_stress ?? "Unknown"] ?? "#6b6b80" },
                 { label: "Crash Prob", value: `${((risk?.crash_probability ?? 0) * 100).toFixed(1)}%`, color: "rgb(var(--text-primary))" },
                 { label: "Risk Score", value: `${risk?.market_risk_score?.toFixed(0) ?? "—"}/100`, color: (risk?.market_risk_score ?? 50) > 60 ? "#ef4444" : "#eab308" },
@@ -777,7 +773,7 @@ export default function BreadthPage() {
               <div className="rounded-lg border border-border bg-surface p-4">
                 <div className="text-sm font-medium mb-1">Sector Leadership Dashboard</div>
                 <div className="text-xs text-text-muted mb-4">
-                  Ranked by composite breadth score · RS = return vs SPY benchmark
+                  Ranked by composite breadth score · RS = return vs {isIndia ? "NIFTY" : "SPY"} benchmark
                 </div>
                 <SectorTable sectors={data.sectors} onSectorClick={(sec) => setActiveDrill({ key: `sector:${sec}`, label: sec, color: pcolor(data.sectors.find(s => s.sector === sec)?.above_50ma ?? 0.5) })} />
               </div>
@@ -805,7 +801,7 @@ export default function BreadthPage() {
           {tab === "Risk & Liquidity" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                <MetricCard label="VIX" value={risk?.vix?.toFixed(1) ?? "—"} color={(risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e"} sub={risk?.vix_1m_change != null ? `${risk.vix_1m_change >= 0 ? "+" : ""}${risk.vix_1m_change.toFixed(1)} vs 1M ago` : undefined} onClick={d("vix", "VIX — Volatility Index", (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e")} />
+                <MetricCard label={isIndia ? "India VIX" : "VIX"} value={risk?.vix?.toFixed(1) ?? "—"} color={(risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e"} sub={risk?.vix_1m_change != null ? `${risk.vix_1m_change >= 0 ? "+" : ""}${risk.vix_1m_change.toFixed(1)} vs 1M ago` : undefined} onClick={d("vix", isIndia ? "India VIX" : "VIX — Volatility Index", (risk?.vix ?? 18) > 25 ? "#ef4444" : (risk?.vix ?? 18) > 18 ? "#eab308" : "#22c55e")} />
                 <MetricCard label="VIX Percentile 1Y" value={risk?.vix_percentile_1y != null ? `${(risk.vix_percentile_1y * 100).toFixed(0)}th` : "—"} color={(risk?.vix_percentile_1y ?? 0.5) > 0.75 ? "#ef4444" : "#eab308"} onClick={d("vix", "VIX Percentile (1Y)", (risk?.vix_percentile_1y ?? 0.5) > 0.75 ? "#ef4444" : "#eab308")} />
                 <MetricCard label="HY Spread Score" value={risk?.hy_spread_score?.toFixed(0) ?? "—"} color={(risk?.hy_spread_score ?? 50) > 60 ? "#22c55e" : "#ef4444"} bar={(risk?.hy_spread_score ?? 50) / 100} sub="100 = tight spreads (bullish)" onClick={d("above_50ma", "High Yield Spread Health", (risk?.hy_spread_score ?? 50) > 60 ? "#22c55e" : "#ef4444", "ma50")} />
                 <MetricCard label="Yield Curve" value={risk?.yield_curve != null ? `${(risk.yield_curve * 100).toFixed(0)}bp` : "—"} color={(risk?.yield_curve ?? 0) > 0 ? "#22c55e" : "#ef4444"} sub="10Y − 3M" onClick={d("above_200ma", "Yield Curve Signal", (risk?.yield_curve ?? 0) > 0 ? "#22c55e" : "#ef4444", "ma200")} />

@@ -17,6 +17,7 @@ from fastapi import APIRouter, Query
 
 from app.core.data import cache
 from app.core.data import universe as uni_module
+from app.core.data.market_config import get_market
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -61,6 +62,28 @@ def _get_sp500_meta() -> tuple[list[str], dict[str, str]]:
     except Exception as exc:
         logger.warning("SP500 meta load failed: %s", exc)
         return [], {}
+
+
+_UNIVERSE_TO_MARKET: dict[str, str] = {
+    "sp500":    "spx",
+    "sp1500":   "spx",
+    "nifty50":  "nifty50",
+    "nifty500": "nifty500",
+}
+
+
+def _get_universe_meta(universe: str):
+    """Returns (tickers, sector_map, MarketConfig) for any supported universe."""
+    market_key = _UNIVERSE_TO_MARKET.get(universe, "spx")
+    try:
+        cfg = get_market(market_key)
+        df  = cfg.constituents()
+        tickers    = df["ticker"].tolist()
+        sector_map = df.set_index("ticker")["sector"].to_dict()
+        return tickers, sector_map, cfg
+    except Exception as exc:
+        logger.warning("Universe meta load failed (%s): %s", universe, exc)
+        return [], {}, None
 
 
 def _load_prices_from_db(tickers: list[str], days: int = 310) -> pd.DataFrame:
@@ -412,6 +435,45 @@ def _compute_risk(etf_prices: pd.DataFrame) -> dict:
     return result
 
 
+# ── India Risk Metrics ───────────────────────────────────────────────────────
+
+def _compute_risk_india(etf_prices: pd.DataFrame, vix_ticker: str = "^INDIAVIX") -> dict:
+    """India-specific risk metrics using only India VIX (no HYG/LQD/TNX)."""
+    result: dict = {
+        "vix":               None,
+        "vix_1m_change":     None,
+        "vix_percentile_1y": None,
+        "hy_spread_score":   50,
+        "yield_curve":       None,
+        "credit_stress":     "N/A",
+        "market_risk_score": 50,
+        "crash_probability": 0.10,
+        "liquidity_score":   50,
+    }
+    if etf_prices.empty:
+        return result
+    vix_s = etf_prices[vix_ticker].dropna() if vix_ticker in etf_prices.columns else None
+    if vix_s is None or vix_s.empty:
+        return result
+    v_last = float(vix_s.iloc[-1])
+    result["vix"] = round(v_last, 2)
+    if len(vix_s) >= 21:
+        result["vix_1m_change"] = round(float(vix_s.iloc[-1] - vix_s.iloc[-21]), 2)
+    if len(vix_s) >= 252:
+        result["vix_percentile_1y"] = round(float((vix_s.iloc[-252:] < v_last).mean()), 3)
+    if v_last > 25:
+        result["credit_stress"] = "High"
+    elif v_last > 18:
+        result["credit_stress"] = "Moderate"
+    else:
+        result["credit_stress"] = "Low"
+    vix_risk = float(np.clip((v_last - 10) / 20, 0, 1)) * 100
+    result["market_risk_score"] = round(vix_risk, 1)
+    result["crash_probability"] = round(min(0.35, 0.03 + max(0, (v_last - 18) / 60)), 3)
+    result["liquidity_score"]   = round(100 - vix_risk * 0.8, 1)
+    return result
+
+
 # ── Sector RS Enrichment ─────────────────────────────────────────────────────
 
 SECTOR_ETF_MAP = {
@@ -429,38 +491,42 @@ SECTOR_ETF_MAP = {
 }
 
 
-def _enrich_sector_rs(sectors: list[dict], etf_prices: pd.DataFrame) -> list[dict]:
+def _enrich_sector_rs(
+    sectors: list[dict],
+    etf_prices: pd.DataFrame,
+    benchmark: str = "SPY",
+    sector_etf_map: Optional[dict] = None,
+) -> list[dict]:
     if etf_prices.empty:
         return sectors
-    spy = etf_prices.get("SPY") if hasattr(etf_prices, "get") else (
-        etf_prices["SPY"].dropna() if "SPY" in etf_prices.columns else None
-    )
-    if spy is None or spy.empty:
+    emap = sector_etf_map if sector_etf_map is not None else SECTOR_ETF_MAP
+    bench = etf_prices[benchmark].dropna() if benchmark in etf_prices.columns else None
+    if bench is None or bench.empty:
         return sectors
     for row in sectors:
         sec = row["sector"]
-        etf = SECTOR_ETF_MAP.get(sec)
+        etf = emap.get(sec)
         if not etf or etf not in etf_prices.columns:
             continue
         s = etf_prices[etf].dropna()
-        spy_r = spy.reindex(s.index).ffill().dropna()
-        common = s.index.intersection(spy_r.index)
+        bench_r = bench.reindex(s.index).ffill().dropna()
+        common = s.index.intersection(bench_r.index)
         if len(common) < 22:
             continue
         s_c   = s[common]
-        spy_c = spy_r[common]
+        b_c   = bench_r[common]
         if len(s_c) >= 21:
-            rs_1m = float(s_c.iloc[-1] / s_c.iloc[-21] - 1) - float(spy_c.iloc[-1] / spy_c.iloc[-21] - 1)
+            rs_1m = float(s_c.iloc[-1] / s_c.iloc[-21] - 1) - float(b_c.iloc[-1] / b_c.iloc[-21] - 1)
             row["rs_1m"] = round(rs_1m, 4)
         if len(s_c) >= 63:
-            rs_3m = float(s_c.iloc[-1] / s_c.iloc[-63] - 1) - float(spy_c.iloc[-1] / spy_c.iloc[-63] - 1)
+            rs_3m = float(s_c.iloc[-1] / s_c.iloc[-63] - 1) - float(b_c.iloc[-1] / b_c.iloc[-63] - 1)
             row["rs_3m"] = round(rs_3m, 4)
     return sectors
 
 
 # ── 7-State Regime ───────────────────────────────────────────────────────────
 
-def _classify_7state(breadth: dict, risk: dict, etf_prices: pd.DataFrame) -> dict:
+def _classify_7state(breadth: dict, risk: dict, etf_prices: pd.DataFrame, benchmark: str = "SPY") -> dict:
     snap = breadth.get("snapshot", {})
     ma50  = snap.get("pct_above_50ma")  or 0.5
     ma200 = snap.get("pct_above_200ma") or 0.5
@@ -471,10 +537,10 @@ def _classify_7state(breadth: dict, risk: dict, etf_prices: pd.DataFrame) -> dic
     hy_score  = risk.get("hy_spread_score") or 50
     rsk_score = risk.get("market_risk_score") or 50
 
-    # SPY trend
+    # Benchmark trend
     spy_trend = 0.0
-    if not etf_prices.empty and "SPY" in etf_prices.columns:
-        spy = etf_prices["SPY"].dropna()
+    if not etf_prices.empty and benchmark in etf_prices.columns:
+        spy = etf_prices[benchmark].dropna()
         if len(spy) >= 200:
             ma50v  = float(spy.iloc[-50:].mean())
             ma200v = float(spy.iloc[-200:].mean())
@@ -561,15 +627,15 @@ def _classify_7state(breadth: dict, risk: dict, etf_prices: pd.DataFrame) -> dic
 
 # ── Market Health Composite Score ────────────────────────────────────────────
 
-def _composite_health(breadth_h: float, risk: dict, etf_prices: pd.DataFrame) -> dict:
+def _composite_health(breadth_h: float, risk: dict, etf_prices: pd.DataFrame, benchmark: str = "SPY") -> dict:
     vix   = risk.get("vix") or 18
     hy    = risk.get("hy_spread_score") or 50
     rsk   = risk.get("market_risk_score") or 50
 
-    # SPY momentum
+    # Benchmark momentum
     spy_mom = 50.0
-    if not etf_prices.empty and "SPY" in etf_prices.columns:
-        spy = etf_prices["SPY"].dropna()
+    if not etf_prices.empty and benchmark in etf_prices.columns:
+        spy = etf_prices[benchmark].dropna()
         if len(spy) >= 63:
             m3 = float(spy.iloc[-1] / spy.iloc[-63] - 1)
             spy_mom = float(np.clip(50 + m3 * 200, 0, 100))
@@ -614,34 +680,31 @@ def _composite_health(breadth_h: float, risk: dict, etf_prices: pd.DataFrame) ->
 
 # ── Divergence Detector ──────────────────────────────────────────────────────
 
-def _detect_divergences(breadth: dict, etf_prices: pd.DataFrame) -> list[dict]:
+def _detect_divergences(breadth: dict, etf_prices: pd.DataFrame, benchmark: str = "SPY") -> list[dict]:
     divs: list[dict] = []
     history = breadth.get("history", [])
     if len(history) < 8:
         return divs
 
-    dates   = [h["date"] for h in history]
-    ma50s   = [h.get("ma50") for h in history]
-    ma50s   = [v for v in ma50s if v is not None]
+    ma50s = [h.get("ma50") for h in history]
+    ma50s = [v for v in ma50s if v is not None]
 
-    if not etf_prices.empty and "SPY" in etf_prices.columns and len(ma50s) >= 8:
-        spy = etf_prices["SPY"].dropna()
-        if not spy.empty:
-            # Bearish: SPY higher than 4 weeks ago, but MA50 breadth lower
-            spy_4w_chg = float(spy.iloc[-1] / spy.iloc[max(-20, -len(spy))] - 1) if len(spy) >= 20 else 0
-            ma50_4w_chg = ma50s[-1] - ma50s[max(-8, -len(ma50s))]
-            if spy_4w_chg > 0.02 and ma50_4w_chg < -0.03:
+    if not etf_prices.empty and benchmark in etf_prices.columns and len(ma50s) >= 8:
+        bench = etf_prices[benchmark].dropna()
+        if not bench.empty:
+            bench_4w_chg = float(bench.iloc[-1] / bench.iloc[max(-20, -len(bench))] - 1) if len(bench) >= 20 else 0
+            ma50_4w_chg  = ma50s[-1] - ma50s[max(-8, -len(ma50s))]
+            if bench_4w_chg > 0.02 and ma50_4w_chg < -0.03:
                 divs.append({
                     "type":        "Bearish",
                     "severity":    "Warning",
-                    "description": f"Index +{spy_4w_chg*100:.1f}% (4W) but % above 50MA down {ma50_4w_chg*100:.1f}pp — narrowing rally",
+                    "description": f"Index +{bench_4w_chg*100:.1f}% (4W) but % above 50MA down {ma50_4w_chg*100:.1f}pp — narrowing rally",
                 })
-            # Bullish: SPY lower, breadth recovering
-            if spy_4w_chg < -0.02 and ma50_4w_chg > 0.03:
+            if bench_4w_chg < -0.02 and ma50_4w_chg > 0.03:
                 divs.append({
                     "type":        "Bullish",
                     "severity":    "Opportunity",
-                    "description": f"Index {spy_4w_chg*100:.1f}% (4W) but breadth expanding +{ma50_4w_chg*100:.1f}pp — stealth accumulation",
+                    "description": f"Index {bench_4w_chg*100:.1f}% (4W) but breadth expanding +{ma50_4w_chg*100:.1f}pp — stealth accumulation",
                 })
 
     snap = breadth.get("snapshot", {})
@@ -784,18 +847,22 @@ def _generate_signals(breadth: dict, risk: dict, regime: dict) -> list[dict]:
 
 # ── Equal Weight vs Cap Weight ────────────────────────────────────────────────
 
-def _ew_vs_cw(etf_prices: pd.DataFrame, stock_prices: pd.DataFrame) -> dict:
+def _ew_vs_cw(
+    etf_prices: pd.DataFrame,
+    stock_prices: pd.DataFrame,
+    benchmark: str = "SPY",
+    ew_ticker: Optional[str] = "RSP",
+) -> dict:
     result = {"rsp_vs_spy_1m": None, "rsp_vs_spy_3m": None, "equal_weight_advantage": None}
     if etf_prices.empty:
         return result
 
-    # Try RSP from DB
-    rsp_s = etf_prices["RSP"].dropna() if "RSP" in etf_prices.columns else None
-    spy_s = etf_prices["SPY"].dropna() if "SPY" in etf_prices.columns else None
+    rsp_s = etf_prices[ew_ticker].dropna() if (ew_ticker and ew_ticker in etf_prices.columns) else None
+    spy_s = etf_prices[benchmark].dropna() if benchmark in etf_prices.columns else None
 
     # Fallback: compute equal-weight return from individual stocks
     if rsp_s is None and not stock_prices.empty:
-        ew_ret = stock_prices.pct_change().mean(axis=1).dropna()
+        ew_ret  = stock_prices.pct_change().mean(axis=1).dropna()
         spy_ret = spy_s.pct_change().dropna() if spy_s is not None else None
         if spy_ret is not None and len(ew_ret) >= 21:
             common = ew_ret.index.intersection(spy_ret.index)
@@ -828,31 +895,44 @@ async def get_breadth_dashboard(universe: str = Query("sp500")):
     if cached:
         return cached
 
-    # Load SP500 stocks
-    sp500_tickers, sector_map = _get_sp500_meta()
-    if not sp500_tickers:
-        return {"error": "No SP500 universe in cache", "universe": universe}
+    tickers, sector_map, cfg = _get_universe_meta(universe)
+    if not tickers:
+        return {"error": f"No universe data for {universe}", "universe": universe}
 
-    stock_prices = _load_prices_from_db(sp500_tickers, days=310)
+    is_india  = cfg is not None and cfg.region == "india"
+    benchmark = cfg.benchmark if cfg else "SPY"
+    vix_t     = cfg.vix_ticker if cfg else "^VIX"
+    sector_etfs = cfg.sector_etfs if cfg else SECTOR_ETF_MAP
+    currency  = cfg.currency if cfg else "USD"
+    region    = cfg.region if cfg else "us"
 
-    # Load macro ETFs
-    etf_tickers = ["SPY", "^VIX", "HYG", "LQD", "IEF", "TIP", "^TNX", "^IRX",
-                   "RSP", "XLK", "XLV", "XLF", "XLI", "XLY", "XLP",
-                   "XLE", "XLU", "XLRE", "XLB", "XLC", "GLD", "TLT"]
-    etf_prices = _load_etf_prices(etf_tickers, days=310)
+    # Load stock prices
+    if is_india:
+        stock_prices = _load_etf_prices(tickers, days=310)
+    else:
+        stock_prices = _load_prices_from_db(tickers, days=310)
 
     if stock_prices.empty:
         return {"error": "No price data available", "universe": universe}
 
+    # Load macro / benchmark tickers
+    if is_india:
+        etf_tickers = [benchmark, vix_t] + list(sector_etfs.values())
+    else:
+        etf_tickers = [benchmark, "^VIX", "HYG", "LQD", "IEF", "TIP", "^TNX", "^IRX",
+                       "RSP", "XLK", "XLV", "XLF", "XLI", "XLY", "XLP",
+                       "XLE", "XLU", "XLRE", "XLB", "XLC", "GLD", "TLT"]
+    etf_prices = _load_etf_prices(etf_tickers, days=310)
+
     # Core breadth computation
-    breadth  = _compute_all(stock_prices, sector_map)
-    risk     = _compute_risk(etf_prices)
-    sectors  = _enrich_sector_rs(breadth.get("sectors", []), etf_prices)
-    ew_cw    = _ew_vs_cw(etf_prices, stock_prices)
-    regime   = _classify_7state(breadth, risk, etf_prices)
-    health   = _composite_health(breadth.get("breadth_health", 50), risk, etf_prices)
-    divs     = _detect_divergences(breadth, etf_prices)
-    signals  = _generate_signals(breadth, risk, regime)
+    breadth = _compute_all(stock_prices, sector_map)
+    risk    = _compute_risk_india(etf_prices, vix_t) if is_india else _compute_risk(etf_prices)
+    sectors = _enrich_sector_rs(breadth.get("sectors", []), etf_prices, benchmark, sector_etfs)
+    ew_cw   = _ew_vs_cw(etf_prices, stock_prices, benchmark, None if is_india else "RSP")
+    regime  = _classify_7state(breadth, risk, etf_prices, benchmark)
+    health  = _composite_health(breadth.get("breadth_health", 50), risk, etf_prices, benchmark)
+    divs    = _detect_divergences(breadth, etf_prices, benchmark)
+    signals = _generate_signals(breadth, risk, regime)
 
     snap = breadth.get("snapshot", {})
     snap.update(ew_cw)
@@ -860,19 +940,23 @@ async def get_breadth_dashboard(universe: str = Query("sp500")):
     as_of = str(stock_prices.index[-1].date()) if not stock_prices.empty else None
 
     result = {
-        "universe":  universe,
-        "n_stocks":  len(stock_prices.columns),
-        "as_of":     as_of,
+        "universe":   universe,
+        "market":     cfg.key if cfg else "spx",
+        "region":     region,
+        "currency":   currency,
+        "benchmark":  benchmark,
+        "n_stocks":   len(stock_prices.columns),
+        "as_of":      as_of,
         "market_health": health,
-        "regime":    regime,
-        "snapshot":  snap,
+        "regime":     regime,
+        "snapshot":   snap,
         "hindenburg": breadth.get("hindenburg", {}),
-        "zweig":     breadth.get("zweig", {}),
-        "history":   breadth.get("history", []),
-        "sectors":   sectors,
-        "risk":      risk,
+        "zweig":      breadth.get("zweig", {}),
+        "history":    breadth.get("history", []),
+        "sectors":    sectors,
+        "risk":       risk,
         "divergences": divs,
-        "signals":   signals,
+        "signals":    signals,
     }
 
     _set_cached(cache_key, result)
@@ -1010,11 +1094,12 @@ async def get_breadth_constituents(universe: str = Query("sp500")):
             if datetime.utcnow() - ts < _CONST_TTL:
                 return val
 
-    tickers, sector_map = _get_sp500_meta()
+    tickers, sector_map, cfg = _get_universe_meta(universe)
     if not tickers:
         return []
 
-    prices = _load_prices_from_db(tickers)
+    is_india = cfg is not None and cfg.region == "india"
+    prices   = _load_etf_prices(tickers) if is_india else _load_prices_from_db(tickers)
     if prices.empty:
         return []
 
