@@ -13,10 +13,11 @@ import {
   MonitorDot, SigmaSquare, Radar, Landmark, Users, Milestone, LogIn,
   LogOut, UserCircle, Wand2, Sparkles, BellRing, FileDown, DollarSign,
   FlameKindling, Gem, Droplets, CircleDollarSign, Sun, Moon, Smartphone,
-  Monitor, Menu, X, Search, Command, ScanLine, Database,
+  Monitor, Menu, X, Search, Command, ScanLine, Database, TrendingDown,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
+import { MarketSelector } from "@/components/MarketSelector";
 
 const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: React.ElementType }[] }[] = [
   {
@@ -41,6 +42,8 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: R
       { href: "/rs",            label: "RS Rankings",     icon: BarChart3 },
       { href: "/breadth",       label: "Breadth Intel",   icon: Gauge },
       { href: "/regime",        label: "Regime",          icon: Radar },
+      { href: "/fo",            label: "F&O Dashboard",   icon: TrendingDown },
+      { href: "/index-fo",      label: "Index Options",   icon: Percent },
     ],
   },
   {
@@ -178,6 +181,11 @@ export function Sidebar() {
             <Command size={8} />K
           </div>
         </button>
+
+        {/* Global market selector */}
+        <div className="mt-2">
+          <MarketSelector />
+        </div>
       </div>
 
       {/* Nav */}

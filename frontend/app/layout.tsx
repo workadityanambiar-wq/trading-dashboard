@@ -4,6 +4,7 @@ import { QueryProvider } from "@/components/QueryProvider";
 import { ChartProvider } from "@/contexts/ChartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
+import { MarketProvider } from "@/contexts/MarketContext";
 import { ThemeLayoutWrapper } from "@/components/ThemeLayoutWrapper";
 import { LayoutShell } from "@/components/LayoutShell";
 
@@ -24,13 +25,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background text-text-primary font-sans text-[12px] antialiased">
         <AppSettingsProvider>
           <ThemeLayoutWrapper />
-          <AuthProvider>
-            <QueryProvider>
-              <ChartProvider>
-                <LayoutShell>{children}</LayoutShell>
-              </ChartProvider>
-            </QueryProvider>
-          </AuthProvider>
+          <MarketProvider>
+            <AuthProvider>
+              <QueryProvider>
+                <ChartProvider>
+                  <LayoutShell>{children}</LayoutShell>
+                </ChartProvider>
+              </QueryProvider>
+            </AuthProvider>
+          </MarketProvider>
         </AppSettingsProvider>
       </body>
     </html>
