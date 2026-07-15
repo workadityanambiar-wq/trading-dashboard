@@ -35,6 +35,8 @@ from app.api import copilot as copilot_api
 from app.api import breadth as breadth_api
 from app.api import scanner as scanner_api
 from app.api import universe as universe_api
+from app.api import fo as fo_api
+from app.api import index_fo as index_fo_api
 from app.core.data.cache import init_db
 from app.core.universe.db import init_universe_tables
 from app.core.data import fetcher, universe
@@ -155,6 +157,8 @@ app.include_router(copilot_api.router,       prefix="/api/copilot")
 app.include_router(breadth_api.router,       prefix="/api/breadth")
 app.include_router(scanner_api.router,       prefix="/api/scanner")
 app.include_router(universe_api.router,      prefix="/api/universe")
+app.include_router(fo_api.router,            prefix="/api/fo")
+app.include_router(index_fo_api.router,      prefix="/api/index-fo")
 
 
 @app.get("/health")

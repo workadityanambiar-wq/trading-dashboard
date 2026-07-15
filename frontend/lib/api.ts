@@ -1718,6 +1718,18 @@ export const api = {
   getScannerPerformance: () => apiFetch<any>("/scanner/performance"),
   getScannerStatus: () => apiFetch<{ is_scanning: boolean; cached_count: number; last_scan_time: string | null }>("/scanner/status"),
   purgeScannerResults: () => apiFetch<any>("/scanner/results", { method: "DELETE" }),
+
+  // ── NSE F&O Dashboard ─────────────────────────────────────────────────────
+  getFoDashboard:      () => apiFetch<FODashboard>("/fo/dashboard"),
+  refreshFo:           () => apiFetch<any>("/fo/refresh", { method: "POST" }),
+  getFoOptionChain:    (symbol: string) => apiFetch<FOOptionChain>(`/fo/option-chain/${encodeURIComponent(symbol)}`),
+  getFoOiAnalysis:     () => apiFetch<FOOiAnalysis>("/fo/oi-analysis"),
+  getFoUniverse:       () => apiFetch<FOStock[]>("/fo/universe"),
+
+  // ── NSE Index Options ─────────────────────────────────────────────────────
+  getIndexFoDashboard:     () => apiFetch<any>("/index-fo/dashboard"),
+  getIndexFoOptionChain:   (index: string) => apiFetch<any>(`/index-fo/option-chain/${encodeURIComponent(index)}`),
+  getIndexFoIndices:       () => apiFetch<any[]>("/index-fo/indices"),
 };
 
 // ── Pattern Scanner types ──────────────────────────────────────────────────────
@@ -2711,4 +2723,111 @@ export interface BreadthDashboard {
   risk:       RiskMetrics;
   divergences: BreadthDivergence[];
   signals:    BreadthSignal[];
+}
+
+// ── NSE F&O types ─────────────────────────────────────────────────────────────
+
+export type BuildupSignal = "Long Build-up" | "Short Build-up" | "Short Covering" | "Long Unwinding" | "N/A";
+
+export interface FOStock {
+  ticker:     string;
+  symbol:     string;
+  sector:     string;
+  lot_size:   number | null;
+  price:      number | null;
+  ret_1d:     number | null;
+  ret_1w:     number | null;
+  ret_1m:     number | null;
+  above_50ma: boolean | null;
+  ma50:       number | null;
+  avg_volume: number | null;
+  oi:         number | null;
+  oi_change:  number | null;
+  pcr:        number | null;
+  buildup:    BuildupSignal | null;
+}
+
+export interface FOSectorSummary {
+  sector:          string;
+  count:           number;
+  long_buildup:    number;
+  short_buildup:   number;
+  long_unwinding:  number;
+  short_covering:  number;
+  avg_ret_1d:      number | null;
+}
+
+export interface FOSignalCounts {
+  long_buildup:   number;
+  short_buildup:  number;
+  short_covering: number;
+  long_unwinding: number;
+  total:          number;
+}
+
+export interface FODashboard {
+  as_of:              string;
+  total_stocks:       number;
+  signal_counts:      FOSignalCounts;
+  sectors:            FOSectorSummary[];
+  stocks:             FOStock[];
+  oi_data_available:  boolean;
+}
+
+export interface FOOptionStrike {
+  strike:    number;
+  ce_oi:     number | null;
+  ce_oi_chg: number | null;
+  ce_vol:    number | null;
+  ce_iv:     number | null;
+  ce_ltp:    number | null;
+  pe_oi:     number | null;
+  pe_oi_chg: number | null;
+  pe_vol:    number | null;
+  pe_iv:     number | null;
+  pe_ltp:    number | null;
+}
+
+export interface FOExpiryMeta {
+  expiry:  string;
+  ce_oi:   number;
+  pe_oi:   number;
+  pcr:     number | null;
+}
+
+export interface FOOptionChain {
+  symbol:      string;
+  underlying:  number | null;
+  timestamp:   string | null;
+  expiries:    string[];
+  expiry_meta: FOExpiryMeta[];
+  overall_pcr: number | null;
+  max_pain:    number | null;
+  strikes:     Record<string, FOOptionStrike[]>;
+}
+
+export interface FOOiSpurt {
+  symbol:    string;
+  oi_change: number | null;
+  oi_pct:    number | null;
+  pcr:       number | null;
+  price:     number | null;
+  price_chg: number | null;
+}
+
+export interface FOOiData {
+  symbol:    string;
+  oi:        number | null;
+  oi_prev:   number | null;
+  oi_change: number | null;
+  pcr:       number | null;
+  volume:    number | null;
+}
+
+export interface FOOiAnalysis {
+  as_of:          string;
+  oi_spurts:      FOOiSpurt[];
+  top_oi_gain:    FOOiData[];
+  top_oi_fall:    FOOiData[];
+  total_tracked:  number;
 }
