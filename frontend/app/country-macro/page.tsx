@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -1019,6 +1020,15 @@ export default function CountryMacroPage() {
     "Generating insights…",
   ];
   const [loadStep] = useState(0);
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers global country macro data with a US-centric focus and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-4">

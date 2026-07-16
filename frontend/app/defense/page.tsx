@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -139,6 +140,15 @@ export default function DefensePage() {
   const nato        = useQuery({ queryKey: ["def-nato"],        queryFn: api.getDefenseNATO,        staleTime: 300_000, enabled: tab === "NATO" });
   const supplyChain = useQuery({ queryKey: ["def-supply"],      queryFn: api.getDefenseSupplyChain, staleTime: 300_000, enabled: tab === "Supply Chain" });
   const composite   = useQuery({ queryKey: ["def-composite"],   queryFn: api.getDefenseComposite,   staleTime: 300_000, enabled: tab === "Composite" });
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US defense contractors and spending data and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">

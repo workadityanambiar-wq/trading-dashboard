@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type AIComputeData, type AIComputeStock } from "@/lib/api";
@@ -869,6 +870,15 @@ export default function AIComputePage() {
     queryFn: api.getAICompute,
     staleTime: 10 * 60_000,
   });
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US AI infrastructure and compute stocks and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4 max-w-screen-2xl">

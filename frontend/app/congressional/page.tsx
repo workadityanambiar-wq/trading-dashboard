@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -219,6 +220,15 @@ export default function CongressionalPage() {
   const legislation = useQuery({ queryKey: ["cong-legislation"], queryFn: api.getCongressionalLegislation, staleTime: 300_000, enabled: tab === "Legislation" });
   const performance = useQuery({ queryKey: ["cong-performance"], queryFn: api.getCongressionalPerformance, staleTime: 300_000, enabled: tab === "Performance" });
   const composite   = useQuery({ queryKey: ["cong-composite"],   queryFn: api.getCongressionalComposite,   staleTime: 300_000, enabled: tab === "Composite" });
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US Congressional trading data and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">

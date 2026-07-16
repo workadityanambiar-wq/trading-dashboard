@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -154,6 +155,15 @@ export default function IPOPage() {
   const refetchAll = () => {
     [overview, perf, calendar, lockup, valuation, sectors, screener, priv].forEach(q => q.refetch());
   };
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US IPO data and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="p-4 max-w-[1600px] mx-auto page-scroll">

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SectorRotationPoint, type RotationQuadrant } from "@/lib/api";
+import { useMarket } from "@/contexts/MarketContext";
 import { cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
@@ -248,9 +249,10 @@ function RankedTable({ sectors, onRowClick }: { sectors: SectorRotationPoint[]; 
 
 export default function RotationPage() {
   const [drawer, setDrawer] = useState<DrawerConfig | null>(null);
+  const { market, isIndia } = useMarket();
   const { data, isLoading, isFetching, refetch, error } = useQuery({
-    queryKey: ["sector-rotation"],
-    queryFn: api.getSectorRotation,
+    queryKey: ["sector-rotation", market],
+    queryFn: () => api.getSectorRotation(market),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
@@ -270,8 +272,8 @@ export default function RotationPage() {
         howItWorks={[
           { title: "JdK RS-Ratio Calculation", detail: "The RS-Ratio (x-axis) measures a sector's price relative to the S&P 500 benchmark, smoothed using a Jurik Moving Average-based algorithm. Values above 100 = sector is outperforming SPY." },
           { title: "JdK RS-Momentum Calculation", detail: "The RS-Momentum (y-axis) measures the rate of change of the RS-Ratio itself. Above 100 = the relative performance is accelerating; below 100 = decelerating." },
-          { title: "Sector ETF Proxies", detail: "Each GICS sector is represented by its SPDR ETF: XLK (Tech), XLF (Financials), XLE (Energy), XLV (Healthcare), XLI (Industrials), XLY (Consumer Disc), XLP (Consumer Staples), XLU (Utilities), XLB (Materials), XLRE (Real Estate), XLC (Communication)." },
-          { title: "Benchmark", detail: "The S&P 500 (SPY) is the benchmark at the center (100, 100). All sector readings are relative to SPY." },
+          { title: "Sector Proxies", detail: isIndia ? "Each sector is represented by its NSE index: ^CNXIT (IT), ^CNXBANK (Banking), ^CNXPHARMA (Pharma), ^CNXAUTO (Auto), ^CNXFMCG (FMCG), ^CNXMETAL (Metals), ^CNXENERGY (Energy), ^CNXINFRA (Infra), ^CNXREALTY (Realty)." : "Each GICS sector is represented by its SPDR ETF: XLK (Tech), XLF (Financials), XLE (Energy), XLV (Healthcare), XLI (Industrials), XLY (Consumer Disc), XLP (Consumer Staples), XLU (Utilities), XLB (Materials), XLRE (Real Estate), XLC (Communication)." },
+          { title: "Benchmark", detail: isIndia ? "The Nifty 50 (^NSEI) is the benchmark at the center. All sector readings are relative to Nifty 50." : "The S&P 500 (SPY) is the benchmark at the center (100, 100). All sector readings are relative to SPY." },
         ]}
         tips={[
           "The best trades are sectors rotating from Improving into Leading with strong momentum.",
@@ -284,7 +286,7 @@ export default function RotationPage() {
         <div>
           <h1 className="text-base font-semibold">Sector Leadership Rotation</h1>
           <p className="text-xs text-text-muted mt-0.5">
-            RS Ratio vs RS Momentum — 11 GICS sector ETFs vs SPY · 8-week trails
+            RS Ratio vs RS Momentum — {isIndia ? "NSE sector indices vs Nifty 50" : "11 GICS sector ETFs vs SPY"} · 8-week trails
           </p>
         </div>
         <div className="flex items-center gap-3">

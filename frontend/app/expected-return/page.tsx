@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -152,7 +153,8 @@ function DetailRow({ result }: { result: ERResult }) {
 const SECTORS = ["All Sectors", "Technology", "Health Care", "Financials", "Consumer Discretionary", "Industrials", "Communication Services", "Energy", "Materials", "Consumer Staples", "Utilities", "Real Estate"];
 
 export default function ExpectedReturnPage() {
-  const [universe, setUniverse] = useState("sp500");
+  const { market } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [topN, setTopN]         = useState(200);
   const [sectorFilter, setSectorFilter] = useState("All Sectors");
   const [search, setSearch]     = useState("");
@@ -160,7 +162,7 @@ export default function ExpectedReturnPage() {
   const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["expected-return", universe, topN],
+    queryKey: ["expected-return", market, topN],
     queryFn:  () => api.getExpectedReturn(universe, topN),
     staleTime: 30 * 60 * 1000,
   });
@@ -226,15 +228,6 @@ export default function ExpectedReturnPage() {
             className="h-8 px-2 text-sm bg-surface-2 border border-border rounded-md text-text-primary focus:outline-none"
           >
             {SECTORS.map((s) => <option key={s}>{s}</option>)}
-          </select>
-          <select
-            value={universe}
-            onChange={(e) => setUniverse(e.target.value)}
-            className="h-8 px-2 text-sm bg-surface-2 border border-border rounded-md text-text-primary focus:outline-none"
-          >
-            <option value="sp500">S&P 500</option>
-            <option value="nasdaq100">Nasdaq 100</option>
-            <option value="russell2000">Russell 2000</option>
           </select>
           <button
             onClick={() => refetch()}

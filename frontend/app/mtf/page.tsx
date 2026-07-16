@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MTFSignal } from "@/lib/api";
+import { useMarket } from "@/contexts/MarketContext";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, AlignCenter } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
@@ -98,13 +99,14 @@ const SORT_OPTIONS = [
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MTFPage() {
+  const { market, isIndia } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [page, setPage]         = useState(1);
   const [minAlign, setMinAlign] = useState(2);
   const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
   const [sortBy, setSortBy]     = useState("mtf_score");
-  const [universe, setUniverse] = useState("sp500");
 
-  const queryKey = ["mtf", universe, minAlign, sortBy, page];
+  const queryKey = ["mtf", market, minAlign, sortBy, page];
 
   const { data, isFetching, refetch } = useQuery({
     queryKey,
@@ -177,20 +179,6 @@ export default function MTFPage() {
 
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center">
-        {/* Universe */}
-        <select
-          value={universe}
-          onChange={e => { setUniverse(e.target.value); setPage(1); }}
-          className="text-xs bg-surface-2 border border-border rounded-md px-2.5 py-1.5 text-text-primary focus:outline-none"
-        >
-          <option value="sp500">S&P 500</option>
-          <option value="sp1500">S&P 1500</option>
-          <option value="nifty50">Nifty 50</option>
-          <option value="euro_top">Europe Top 40</option>
-          <option value="etfs">Popular ETFs</option>
-          <option value="all_cached">All Cached</option>
-        </select>
-
         {/* Min alignment */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-text-muted">Min Alignment</span>
@@ -289,7 +277,7 @@ export default function MTFPage() {
 
                 {/* Price */}
                 <td className="px-3 py-2 text-right tabular-nums text-text-primary">
-                  {r.price != null ? `$${r.price.toFixed(2)}` : "—"}
+                  {r.price != null ? `${isIndia ? "₹" : "$"}${r.price.toFixed(2)}` : "—"}
                 </td>
 
                 {/* 1D change */}

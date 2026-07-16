@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -1106,6 +1107,14 @@ function CompositeTab() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SpacePage() {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US space and satellite companies and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">

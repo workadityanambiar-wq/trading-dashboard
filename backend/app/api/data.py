@@ -176,41 +176,54 @@ def _bg_fetch_sp500(tickers: List[str]) -> None:
 
 
 @router.get("/sector-rotation")
-async def get_sector_rotation():
+async def get_sector_rotation(market: str = Query("spx")):
     """
-    Relative Rotation Graph data for all 11 GICS sector ETFs vs SPY.
-    RS Ratio  = % deviation of (sector/SPY) from its 252-day mean  → strength level
-    RS Momentum = 21-day change in RS Ratio                         → acceleration
+    Relative Rotation Graph data for sector indices vs benchmark.
+    RS Ratio  = % deviation of (sector/benchmark) from its 252-day mean
+    RS Momentum = 21-day change in RS Ratio
     """
-    watchlist = universe.get_watchlist_tickers()
+    from app.core.data.market_config import INDIA_SECTOR_INDICES
+
     today = datetime.today().strftime("%Y-%m-%d")
+    is_india = market in ("nifty50", "nifty500")
+
+    if is_india:
+        benchmark_ticker = "^NSEI"
+        # INDIA_SECTOR_INDICES: {sector_name: index_ticker}
+        sector_map = {ticker: {"name": name, "sector": name}
+                      for name, ticker in INDIA_SECTOR_INDICES.items()}
+        tickers_to_fetch = [benchmark_ticker] + list(sector_map.keys())
+    else:
+        benchmark_ticker = "SPY"
+        sector_map = {ticker: meta for ticker, meta in universe.SECTOR_ETFS.items()}
+        tickers_to_fetch = universe.get_watchlist_tickers()
 
     await asyncio.get_event_loop().run_in_executor(
-        None, fetcher.ensure_prices, watchlist, _START_2Y, today
+        None, fetcher.ensure_prices, tickers_to_fetch, _START_2Y, today
     )
 
-    prices = cache.get_adj_close(watchlist, _START_2Y, today)
-    if prices.empty or "SPY" not in prices.columns:
+    prices = cache.get_adj_close(tickers_to_fetch, _START_2Y, today)
+    if prices.empty or benchmark_ticker not in prices.columns:
         raise HTTPException(503, "Price data unavailable")
 
     prices = prices.ffill()
-    spy    = prices["SPY"].dropna()
+    benchmark = prices[benchmark_ticker].dropna()
 
     sectors_out = []
     current_rs: dict[str, float] = {}
 
-    for ticker, meta in universe.SECTOR_ETFS.items():
+    for ticker, meta in sector_map.items():
         if ticker not in prices.columns:
             continue
         sec = prices[ticker].dropna()
-        common = sec.index.intersection(spy.index)
+        common = sec.index.intersection(benchmark.index)
         if len(common) < 252:
             continue
 
         s  = sec.loc[common]
-        sp = spy.loc[common]
+        bm = benchmark.loc[common]
 
-        rel      = s / sp
+        rel      = s / bm
         rs_mean  = rel.rolling(252).mean()
         rs_ratio = ((rel - rs_mean) / rs_mean * 100)
 
@@ -269,7 +282,7 @@ async def get_sector_rotation():
     sectors_out.sort(key=lambda x: x["rs_rank"])
 
     return {
-        "as_of":   str(spy.index[-1].date()) if not spy.empty else today,
+        "as_of":   str(benchmark.index[-1].date()) if not benchmark.empty else today,
         "sectors": sectors_out,
     }
 

@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState, useEffect, useCallback } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, ScatterChart, Scatter,
@@ -1356,6 +1357,15 @@ export default function TreasuryPage() {
 
   const currentMats = overview?.maturities;
   const composite10 = composite?.composite_score;
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers US Treasury yields and bond market data and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">

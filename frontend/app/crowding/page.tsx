@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -735,13 +736,14 @@ const VIEWS: { id: ViewMode; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function CrowdingPage() {
+  const { market } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [view, setView]         = useState<ViewMode>("overview");
-  const [universe, setUniverse] = useState("sp500");
   const [search, setSearch]     = useState("");
   const [drawer, setDrawer]     = useState<DrawerConfig | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey:  ["crowding", universe],
+    queryKey:  ["crowding", market],
     queryFn:   () => api.getCrowding(universe, 150),
     staleTime: 24 * 60 * 60 * 1000,
   });
@@ -807,14 +809,6 @@ export default function CrowdingPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <select
-              value={universe}
-              onChange={e => setUniverse(e.target.value)}
-              className="h-8 px-2 text-[12px] bg-surface-2 border border-border rounded-lg text-text-primary"
-            >
-              <option value="sp500">S&amp;P 500</option>
-              <option value="nasdaq100">Nasdaq 100</option>
-            </select>
             <button
               onClick={() => refetch()}
               className="h-8 px-3 flex items-center gap-1.5 text-[12px] bg-accent/15 border border-accent/30 text-accent rounded-lg hover:bg-accent/25 transition-colors"

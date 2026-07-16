@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type RSRankingEntry } from "@/lib/api";
+import { useMarket } from "@/contexts/MarketContext";
 import { cn } from "@/lib/utils";
 import { RefreshCw, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, LineChart } from "lucide-react";
 import Link from "next/link";
@@ -117,7 +118,8 @@ const SORT_OPTIONS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function RSPage() {
-  const [universe,      setUniverse]     = useState("sp500");
+  const { market, isIndia } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [minRsRank,     setMinRsRank]    = useState(0);
   const [sectorFlt,     setSectorFlt]    = useState("");
   const [trendFlt,      setTrendFlt]     = useState<"all" | "rising" | "falling">("all");
@@ -127,7 +129,7 @@ export default function RSPage() {
   const { openChart } = useChart();
   const PAGE_SIZE = 100;
 
-  const queryKey = ["rs-rankings", universe, minRsRank, sectorFlt, trendFlt, sortBy, page];
+  const queryKey = ["rs-rankings", market, minRsRank, sectorFlt, trendFlt, sortBy, page];
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey,
@@ -204,20 +206,6 @@ export default function RSPage() {
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Universe */}
-        <select
-          value={universe}
-          onChange={e => { setUniverse(e.target.value); setPage(1); setSectorFlt(""); }}
-          className="text-xs bg-surface-2 border border-border rounded-md px-2.5 py-1.5 text-text-primary focus:outline-none"
-        >
-          <option value="sp500">S&P 500</option>
-          <option value="sp1500">S&P 1500</option>
-          <option value="nifty50">Nifty 50</option>
-          <option value="euro_top">Europe Top 40</option>
-          <option value="etfs">Popular ETFs</option>
-          <option value="all_cached">All Cached</option>
-        </select>
-
         {/* Min RS rank */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-text-muted">Min RS</span>
@@ -400,7 +388,7 @@ export default function RSPage() {
                     <TrendIcon trend={r.rs_trend} />
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums text-text-primary">
-                    {r.price != null ? `$${r.price.toFixed(2)}` : "—"}
+                    {r.price != null ? `${isIndia ? "₹" : "$"}${r.price.toFixed(2)}` : "—"}
                   </td>
                   <td className={cn("px-3 py-2 text-right tabular-nums",
                     r.chg_1d != null ? r.chg_1d > 0 ? "text-emerald-400" : "text-red-400" : "text-text-muted"

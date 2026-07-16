@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -1006,6 +1007,14 @@ function CompositeTab() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CryptoPage() {
   const [tab, setTab] = useState(TABS[0]);
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers crypto market data sourced from US-centric exchanges and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div style={{ flex: 1, overflowY: "auto", background: C.bg, padding: "20px 24px", minHeight: "100vh" }}>

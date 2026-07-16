@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type SetupName, type RegimeResponse, type SetupWinRateStat, type SetupSignal } from "@/lib/api";
+import { useMarket } from "@/contexts/MarketContext";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import { PageGuide } from "@/components/PageGuide";
 import { cn } from "@/lib/utils";
@@ -835,7 +836,7 @@ function ScreenerTab({
   onSetupFilter,
   onStageFilter,
   onSortBy,
-  onUniverse,
+
   onPage,
   onSelectRow,
   onTrade,
@@ -858,7 +859,7 @@ function ScreenerTab({
   onSetupFilter: (s: string) => void;
   onStageFilter: (s: string) => void;
   onSortBy: (s: string) => void;
-  onUniverse: (s: string) => void;
+
   onPage: (p: number) => void;
   onSelectRow: (r: SetupSignal) => void;
   onTrade: (r: SetupSignal) => void;
@@ -931,18 +932,6 @@ function ScreenerTab({
 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={universe}
-          onChange={(e) => onUniverse(e.target.value)}
-          className="text-xs bg-surface-2 border border-border rounded-md px-2.5 py-1.5 text-text-primary focus:outline-none"
-        >
-          <option value="sp500">S&P 500</option>
-          <option value="sp1500">S&P 1500</option>
-          <option value="nifty50">Nifty 50</option>
-          <option value="euro_top">Europe Top 40</option>
-          <option value="etfs">Popular ETFs</option>
-          <option value="all_cached">All Cached</option>
-        </select>
         <div className="flex items-center gap-1">
           <span className="text-xs text-text-muted mr-1">Stage</span>
           {[1, 2, 3, 4].map((s) => {
@@ -1583,11 +1572,12 @@ const TABS: { id: TabName; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function SetupsPage() {
+  const { market } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [activeTab, setActiveTab]               = useState<TabName>("overview");
   const [setupFilter, setSetupFilter]           = useState<string>("");
   const [stageFilter, setStageFilter]           = useState<string>("");
   const [sortBy, setSortBy]                     = useState("regime_adjusted_score");
-  const [universe, setUniverse]                 = useState("sp500");
   const [page, setPage]                         = useState(1);
   const [fetchingEvents, setFetchingEvents]     = useState(false);
   const [tradeSetup, setTradeSetup]             = useState<SetupSignal | null>(null);
@@ -1612,7 +1602,7 @@ export default function SetupsPage() {
   });
 
   const setupsQuery = useQuery({
-    queryKey: ["setups", universe, setupFilter, stageFilter, sortBy, page],
+    queryKey: ["setups", market, setupFilter, stageFilter, sortBy, page],
     queryFn:  () => api.getSetups({
       universe,
       setup_filter: setupFilter,
@@ -1783,7 +1773,6 @@ export default function SetupsPage() {
           onSetupFilter={handleSetupFilter}
           onStageFilter={handleStageFilter}
           onSortBy={(s) => { setSortBy(s); setPage(1); }}
-          onUniverse={(s) => { setUniverse(s); setPage(1); }}
           onPage={setPage}
           onSelectRow={setSelectedRow}
           onTrade={setTradeSetup}

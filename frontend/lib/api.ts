@@ -1342,7 +1342,7 @@ export interface CryptoCompositeResponse {
 
 export const api = {
   getOverview: () => apiFetch<OverviewResponse>("/data/overview"),
-  getSectorRotation: () => apiFetch<SectorRotationResponse>("/data/sector-rotation"),
+  getSectorRotation: (market = "spx") => apiFetch<SectorRotationResponse>(`/data/sector-rotation?market=${market}`),
   getPrices: (ticker: string, period = "1y") =>
     apiFetch<PricesResponse>(`/data/prices/${ticker}?period=${period}`),
   getUniverse: () => apiFetch<{ ticker: string; name: string; sector: string; sub_industry: string }[]>("/data/universe"),

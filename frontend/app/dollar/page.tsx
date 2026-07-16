@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useState, useEffect, useCallback } from "react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -741,6 +742,15 @@ export default function DollarPage() {
   const dxydaily = overview?.daily ?? 0;
 
   const TAB_LIST = TABS.map(t => ({ value: t, label: t }));
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers the US Dollar Index (DXY) and USD-specific macro data and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">

@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
 import { Gem, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import { PageGuide } from "@/components/PageGuide";
+import { useMarket } from "@/contexts/MarketContext";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const UNIVERSE_OPTIONS = ["sp500", "nasdaq100", "watchlist"] as const;
+const UNIVERSE_OPTIONS = ["sp500", "nasdaq100", "watchlist", "nifty50", "nifty500"] as const;
 type Universe = (typeof UNIVERSE_OPTIONS)[number];
 
 type FilterTab = "all" | "quality_mo" | "quality" | "momentum";
@@ -359,14 +360,15 @@ function QualityRow({ row, rank }: { row: QualityResult; rank: number }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function QualityPage() {
-  const [universe, setUniverse] = useState<Universe>("sp500");
+  const { market } = useMarket();
+  const universe: Universe = market === "nifty50" ? "nifty50" : market === "nifty500" ? "nifty500" : "sp500";
   const [filter, setFilter] = useState<FilterTab>("all");
   const [sortKey, setSortKey] = useState<keyof QualityResult>("quality_score");
   const [sortAsc, setSortAsc] = useState(false);
   const [search, setSearch] = useState("");
 
   const { data, isLoading, error, isFetching } = useQuery({
-    queryKey: ["quality", universe],
+    queryKey: ["quality", market],
     queryFn: () => api.getQuality(universe, 200),
     staleTime: 1000 * 60 * 60 * 4,
     retry: 1,
@@ -463,19 +465,8 @@ export default function QualityPage() {
             ROIC · ROE · Gross Margin Trend · Earnings Growth · FCF Growth — cross-sectional quality scoring
           </p>
         </div>
-        <div className="flex rounded-lg overflow-hidden border border-border">
-          {UNIVERSE_OPTIONS.map(u => (
-            <button
-              key={u}
-              onClick={() => setUniverse(u)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                universe === u ? "bg-accent text-white" : "bg-surface text-text-muted hover:text-text-primary",
-              )}
-            >
-              {u === "sp500" ? "S&P 500" : u === "nasdaq100" ? "Nasdaq 100" : "Watchlist"}
-            </button>
-          ))}
+        <div className="px-3 py-1.5 text-xs font-medium bg-surface border border-border rounded-lg text-text-muted">
+          {universe === "sp500" ? "S&P 500" : universe === "nasdaq100" ? "Nasdaq 100" : universe === "nifty50" ? "Nifty 50" : universe === "nifty500" ? "Nifty 500" : "Watchlist"}
         </div>
       </div>
 

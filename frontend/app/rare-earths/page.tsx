@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -125,6 +126,15 @@ export default function RareEarthsPage() {
   const companies = useQuery({ queryKey: ["re-companies"], queryFn: api.getRECompanies,  staleTime: 2 * 60_000,  enabled: tab === "Companies" });
   const projects  = useQuery({ queryKey: ["re-projects"],  queryFn: api.getREProjects,   staleTime: 30 * 60_000, enabled: tab === "Projects & Geo" });
   const composite = useQuery({ queryKey: ["re-composite"], queryFn: api.getREComposite,  staleTime: 5 * 60_000,  enabled: tab === "Composite" });
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers rare earth supply chains and US-listed miners and is not available for the Indian market.</p>
+    </div>
+  );
 
   return (
     <div className="p-5 space-y-4">

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import { useMarket } from "@/contexts/MarketContext";
 import { useQuery } from "@tanstack/react-query";
 import {
   api,
@@ -627,13 +628,14 @@ function formatVol(n: number | null | undefined): string {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function EarningsPage() {
-  const [universe,   setUniverse]   = useState("sp500");
+  const { market } = useMarket();
+  const universe = market === "spx" ? "sp500" : market === "nifty500" ? "nifty500" : market === "nifty50" ? "nifty50" : "sp500";
   const [daysAhead,  setDaysAhead]  = useState(21);
   const [onlySetups, setOnlySetups] = useState(false);
   const [minScore,   setMinScore]   = useState(0);
   const [viewMode,   setViewMode]   = useState<ViewMode>("technical");
 
-  const calendarKey = ["earnings-calendar", universe, daysAhead, onlySetups, minScore];
+  const calendarKey = ["earnings-calendar", market, daysAhead, onlySetups, minScore];
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: calendarKey,
@@ -752,17 +754,6 @@ export default function EarningsPage() {
             </button>
           ))}
         </div>
-
-        {/* Universe */}
-        <select value={universe} onChange={e => setUniverse(e.target.value)}
-          className="text-xs bg-surface-2 border border-border rounded-md px-2.5 py-1.5 text-text-primary focus:outline-none">
-          <option value="sp500">S&P 500</option>
-          <option value="sp1500">S&P 1500</option>
-          <option value="nifty50">Nifty 50</option>
-          <option value="euro_top">Europe Top 40</option>
-          <option value="etfs">Popular ETFs</option>
-          <option value="all_cached">All Cached</option>
-        </select>
 
         {/* Days ahead */}
         <div className="flex items-center gap-1.5">

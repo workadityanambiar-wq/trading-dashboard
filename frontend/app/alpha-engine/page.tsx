@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import { useMarket } from "@/contexts/MarketContext";
 import { HistoryDrawer, type DrawerConfig } from "@/components/HistoryDrawer";
 import {
   Zap, Search, TrendingUp, BarChart2, Eye, FileText,
@@ -85,6 +86,14 @@ const UNIVERSES: Record<string, string[]> = {
   "Growth Leaders":  ["NVDA","ASTS","PLTR","CRWD","ZS","DDOG","NET","APP","AXON","MSTR"],
   "Quality Value":   ["BRK-B","JPM","JNJ","PG","KO","WMT","V","MA","UNH","LLY"],
   "Sector ETFs":     ["XLK","XLV","XLF","XLY","XLE","XLB","XLU","XLRE","XLI","XLC","XLP"],
+};
+
+const INDIA_UNIVERSES: Record<string, string[]> = {
+  "Nifty Top 10":    ["RELIANCE.NS","TCS.NS","HDFCBANK.NS","BHARTIARTL.NS","ICICIBANK.NS","INFY.NS","SBIN.NS","HINDUNILVR.NS","ITC.NS","LT.NS"],
+  "IT Leaders":      ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS","MPHASIS.NS"],
+  "Banking":         ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS","INDUSINDBK.NS","BANDHANBNK.NS"],
+  "Consumer":        ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS","DABUR.NS","MARICO.NS"],
+  "Industrials":     ["LT.NS","ADANIPORTS.NS","SIEMENS.NS","ABB.NS","BHEL.NS","HAVELLS.NS"],
 };
 
 // ── Score helpers ──────────────────────────────────────────────────────────────
@@ -518,6 +527,7 @@ function RankTableRow({ row, rank, meta, onSelect, onOpenDrawer }: {
   onSelect: (t: string) => void;
   onOpenDrawer: (t: string) => void;
 }) {
+  const { isIndia } = useMarket();
   const scoreCol = scoreColor(row.score);
   const factors  = FACTOR_ORDER.filter(k => k in row.factor_scores);
 
@@ -582,7 +592,7 @@ function RankTableRow({ row, rank, meta, onSelect, onOpenDrawer }: {
       </td>
       {/* Price */}
       <td className="py-3 pr-4 font-mono text-sm text-text-primary">
-        ${row.spot.toFixed(2)}
+        {isIndia ? "₹" : "$"}{row.spot.toFixed(2)}
       </td>
       {/* Top signal */}
       <td className="py-3 pr-4">
@@ -610,6 +620,7 @@ const PERIODS = [
 ];
 
 export default function AlphaEnginePage() {
+  const { isIndia } = useMarket();
   const [drawer, setDrawer]         = useState<DrawerConfig | null>(null);
   const [tab, setTab]               = useState<"single"|"rank">("single");
   const [ticker, setTicker]         = useState("NVDA");
@@ -762,7 +773,10 @@ export default function AlphaEnginePage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs text-text-muted">Quick picks</label>
               <div className="flex flex-wrap gap-1">
-                {["NVDA","AAPL","MSFT","META","TSLA","AMZN"].map(sym => (
+                {(isIndia
+                  ? ["RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS","SBIN.NS"]
+                  : ["NVDA","AAPL","MSFT","META","TSLA","AMZN"]
+                ).map(sym => (
                   <button key={sym} onClick={() => { setTicker(sym); setTimeout(() => analyze(sym), 0); }}
                     className="px-2 py-1 rounded text-xs bg-surface border border-border text-text-muted hover:text-text-primary hover:border-accent/50 transition-colors">
                     {sym}
@@ -789,7 +803,7 @@ export default function AlphaEnginePage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs text-text-muted">Preset Universes</label>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(UNIVERSES).map(([name, tickers]) => (
+                {Object.entries(isIndia ? INDIA_UNIVERSES : UNIVERSES).map(([name, tickers]) => (
                   <button key={name}
                     onClick={() => { setCustom(tickers.join(",")); runRank(tickers); }}
                     className="px-3 py-1.5 bg-surface border border-border rounded-lg text-xs text-text-muted hover:text-text-primary hover:border-accent/50 transition-colors">
@@ -872,7 +886,7 @@ export default function AlphaEnginePage() {
               <div className="text-center space-y-1">
                 <p className="text-lg font-bold text-text-primary">{data.ticker}</p>
                 {data.spot > 0 && (
-                  <p className="text-sm text-text-muted">${data.spot.toFixed(2)}</p>
+                  <p className="text-sm text-text-muted">{isIndia ? "₹" : "$"}{data.spot.toFixed(2)}</p>
                 )}
                 <p className="text-xs text-text-muted">{data.sector}</p>
                 <p className="text-xs text-text-muted">{data.from_date} → {data.to_date}</p>
@@ -1105,7 +1119,10 @@ export default function AlphaEnginePage() {
             })}
           </div>
           <div className="flex flex-wrap justify-center gap-2">
-            {["NVDA","AAPL","MSFT","META","AMZN","TSLA"].map(sym => (
+            {(isIndia
+              ? ["RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS","SBIN.NS"]
+              : ["NVDA","AAPL","MSFT","META","AMZN","TSLA"]
+            ).map(sym => (
               <button key={sym}
                 onClick={() => { setTicker(sym); analyze(sym); }}
                 className="px-4 py-2 bg-surface border border-border rounded-lg text-sm text-text-muted hover:text-text-primary hover:border-accent/50 transition-colors">
@@ -1113,9 +1130,9 @@ export default function AlphaEnginePage() {
               </button>
             ))}
             <button
-              onClick={() => runRank(UNIVERSES["Magnificent 7"])}
+              onClick={() => runRank(isIndia ? INDIA_UNIVERSES["Nifty Top 10"] : UNIVERSES["Magnificent 7"])}
               className="px-4 py-2 bg-accent/10 border border-accent/30 rounded-lg text-sm text-accent hover:bg-accent/20 transition-colors">
-              Rank Mag 7 →
+              {isIndia ? "Rank Nifty Top 10 →" : "Rank Mag 7 →"}
             </button>
           </div>
         </div>

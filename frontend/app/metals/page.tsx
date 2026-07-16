@@ -1,4 +1,5 @@
 "use client";
+import { useMarket } from "@/contexts/MarketContext";
 import { useEffect, useState } from "react";
 import {
   BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid,
@@ -1393,6 +1394,15 @@ export default function MetalsPage() {
     };
     go();
   }, []);
+
+  const { isIndia } = useMarket();
+  if (isIndia) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-center">
+      <span className="text-5xl">🇺🇸</span>
+      <h2 className="text-base font-semibold text-text-primary">US Markets Only</h2>
+      <p className="text-xs text-text-muted max-w-xs">This tool covers global metals data sourced from US markets and is not available for the Indian market.</p>
+    </div>
+  );
 
   const renderTab = () => {
     switch (tab) {
